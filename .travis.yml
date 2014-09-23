@@ -9,7 +9,7 @@ install:
     - npm install -g jshint
 
 script:
-    - make
+    - make -s
 
 after_success:
     - coveralls
