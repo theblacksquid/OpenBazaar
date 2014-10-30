@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import time
-from threading import Thread
 
 from node import constants, datastore, network_util, routingtable
 from node.protocol import proto_store
@@ -108,8 +107,7 @@ class DHT(object):
             self.log.debug('Back from handshake %s', new_peer)
             self.transport.save_peer_to_db(peer_tuple)
 
-        t = Thread(target=new_peer.start_handshake, args=(cb,))
-        t.start()
+        new_peer.start_handshake(cb)
 
     def _add_known_node(self, node):
         """ Accept a peer tuple and add it to known nodes list
@@ -744,7 +742,7 @@ class DHT(object):
                                "pubkey": contact.transport.pubkey}
                         self.log.debug('Sending findNode to: %s %s', contact.address, msg)
 
-                        Thread(target=contact.send, args=(msg,)).start()
+                        contact.send(msg)
                         new_search.contactedNow += 1
 
                     else:
