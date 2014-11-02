@@ -227,9 +227,6 @@ class MarketApplication(tornado.web.Application):
         else:
             print "MarketApplication.start_app(): Disabling upnp setup"
 
-    def get_transport(self):
-        return self.transport
-
     def setup_upnp_port_mappings(self, p2p_port):
         result = False
 
