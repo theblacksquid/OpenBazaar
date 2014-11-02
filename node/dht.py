@@ -22,9 +22,7 @@ class DHT(object):
         self.settings = settings
         self.knownNodes = []
         self.searches = []
-        self.search_keys = {}
         self.activePeers = []
-        self.republishThreads = []
         self.transport = transport
         self.market_id = market_id
 
@@ -56,32 +54,6 @@ class DHT(object):
 
         self._iterativeFind(self.settings['guid'], self.knownNodes,
                             'findNode')
-
-    def find_active_peer(self, uri, pubkey=None, guid=None, nickname=None):
-        found_peer = False
-        for peer in self.activePeers:
-            if (guid, uri, pubkey, nickname) == (peer.guid, peer.address, peer.pub, peer.nickname):
-                found_peer = peer
-        return found_peer
-
-    def remove_active_peer(self, uri):
-        for idx, peer in enumerate(self.activePeers):
-            if uri == peer.address:
-                self.activePeers[idx].close_socket()
-                del self.activePeers[idx]
-
-    def add_seed(self, uri):
-
-        new_peer = self.transport.get_crypto_peer(uri=uri)
-        self.log.debug(new_peer)
-
-        def start_handshake_cb():
-            self.knownNodes.append(
-                (urlparse(uri).hostname, urlparse(uri).port, new_peer.guid)
-            )
-            self.log.debug('Known Nodes: %s', self.knownNodes)
-
-        Thread(target=new_peer.start_handshake, args=(start_handshake_cb,)).start()
 
     def add_peer(self, uri, pubkey=None, guid=None, nickname=None):
         """ This takes a tuple (pubkey, URI, guid) and adds it to the active
@@ -150,12 +122,6 @@ class DHT(object):
         self.log.debug('Adding known node: %s', node)
         if node not in self.knownNodes and node[1] is not None:
             self.knownNodes.append(node)
-
-    def get_known_nodes(self):
-        """ Get known nodes list and return it
-        :return: (list)
-        """
-        return self.knownNodes
 
     def on_find_node(self, msg):
         """ When a findNode message is received it will be of several types:
@@ -821,10 +787,8 @@ class DHTSearch(object):
         self.already_contacted = []  # Nodes are added to this list when they've been sent a findXXX action
         self.previous_closest_node = None  # This is updated to be the closest node found during search
         self.find_value_result = {}  # If a findValue search is found this is the value
-        self.pendingIterationCalls = []  #
         self.slowNodeCount = [0]  #
         self.contactedNow = 0  # Counter for how many nodes have been contacted
-        self.dhtCallbacks = []  # Callback list
         self.prevShortlistLength = 0
 
         self.log = logging.getLogger(
