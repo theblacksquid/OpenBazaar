@@ -9,12 +9,12 @@ alpha = 3
 
 # Maximum number of contacts stored in a bucket
 # NOTE: Should be an even number.
-k = 80
+k = 8
 
 # Maximum number of contacts stored in the
 # replacement cache of a bucket
 # NOTE: Should be an even number.
-cache_k = 80
+cache_k = 32
 
 # Timeout for network operations
 # [seconds]
