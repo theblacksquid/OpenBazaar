@@ -1,4 +1,4 @@
-IPy==0.81
+IPy==0.82a
 Pillow==2.5.3
 miniupnpc==1.9
 psutil==2.1.3
