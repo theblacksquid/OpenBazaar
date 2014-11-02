@@ -39,14 +39,6 @@ def is_loopback_addr(addr):
     return addr.startswith("127.0.0.") or addr == 'localhost'
 
 
-def is_valid_port(port):
-    return 0 < int(port) <= 65535
-
-
-def is_valid_protocol(protocol):
-    return protocol == 'tcp'
-
-
 def is_private_ip_address(addr):
     return is_loopback_addr(addr) or IPy.IP(addr).iptype() != 'PUBLIC'
 
