@@ -53,7 +53,6 @@ class TestPyellipticAsymmetric(unittest.TestCase):
         cls.alice = ec.ECC(curve=crypto_util.BTC_CURVE)
         cls.bob = ec.ECC(curve=crypto_util.BTC_CURVE)
         cls.bob_pubkey = cls.bob.get_pubkey()
-        cls.bob_privkey = cls.bob.get_privkey()
         cls.alice_pubkey = cls.alice.get_pubkey()
         cls.data = "YELLOW SUBMARINE"
 
