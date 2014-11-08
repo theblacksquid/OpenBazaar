@@ -182,7 +182,7 @@ class TestTreeRoutingTable(TestRoutingTable):
     def test_getRefreshList_noforce(self):
         bucket_count = 7
         self._init_N_buckets(bucket_count)
-        stale_idxs = set((0, 3, 6))
+        stale_idxs = {0, 3, 6}
         for i in range(bucket_count):
             bucket = self.rt.buckets[i]
             self.assertEqual(0, bucket.lastAccessed)
