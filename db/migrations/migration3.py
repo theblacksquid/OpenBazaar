@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
-from pysqlcipher import dbapi2 as sqlite
 import sys
+
+from pysqlcipher import dbapi2
 
 from node import constants
 
-DB_PATH = constants.DB_PATH
-
 
 def upgrade(db_path):
-    with sqlite.connect(db_path) as con:
+    with dbapi2.connect(db_path) as con:
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
@@ -24,12 +23,12 @@ def upgrade(db_path):
                         "ADD COLUMN refund_address TEXT")
             print 'Upgraded'
             con.commit()
-        except sqlite.Error as e:
+        except dbapi2.Error as e:
             print 'Exception: %s' % e
 
 
 def downgrade(db_path):
-    with sqlite.connect(db_path) as con:
+    with dbapi2.connect(db_path) as con:
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
@@ -43,10 +42,10 @@ def downgrade(db_path):
         con.commit()
 
 if __name__ == "__main__":
-
+    db_path = constants.DB_PATH
     if sys.argv[1:] is not None:
-        DB_PATH = sys.argv[1:][0]
+        db_path = sys.argv[1:][0]
         if sys.argv[2:] is "downgrade":
-            downgrade(DB_PATH)
+            downgrade(db_path)
         else:
-            upgrade(DB_PATH)
+            upgrade(db_path)
