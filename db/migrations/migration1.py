@@ -39,7 +39,7 @@ def downgrade(db_path):
         print 'Downgraded'
 
 
-if __name__ == "__main__":
+def main():
     db_path = constants.DB_PATH
     if len(sys.argv) > 2:
         db_path = sys.argv[1]
@@ -47,3 +47,6 @@ if __name__ == "__main__":
             downgrade(db_path)
         else:
             upgrade(db_path)
+
+if __name__ == "__main__":
+    main()
