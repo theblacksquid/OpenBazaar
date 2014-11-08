@@ -9,9 +9,7 @@ DB_PATH = constants.DB_PATH
 
 
 def upgrade(db_path):
-
-    con = sqlite.connect(db_path)
-    with con:
+    with sqlite.connect(db_path) as con:
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
@@ -32,9 +30,7 @@ def upgrade(db_path):
 
 
 def downgrade(db_path):
-
-    con = sqlite.connect(db_path)
-    with con:
+    with sqlite.connect(db_path) as con:
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
