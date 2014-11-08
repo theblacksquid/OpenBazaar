@@ -830,7 +830,7 @@ class ProtocolHandler(object):
         self.log.info('Found Contracts: %s', type(results))
         self.log.info(results)
 
-        if len(results) > 0 and type(results['data']) == unicode:
+        if len(results) > 0 and isinstance(results['data'], unicode):
             results = json.loads(results[0])
 
         self.log.info(results)
@@ -924,7 +924,7 @@ class ProtocolHandler(object):
     def on_global_search_value(self, results, key):
 
         self.log.info('global search: %s %s', results, key)
-        if results and type(results) is not list:
+        if results and not isinstance(results, list):
             self.log.debug('Listing Data: %s %s', results, key)
 
             # Import gpg pubkey
@@ -1034,7 +1034,7 @@ class ProtocolHandler(object):
 
     # send a message
     def send_to_client(self, error, result):
-        assert error is None or type(error) == str
+        assert error is None or isinstance(error, str)
         response = {
             "id": random.randint(0, 1000000),
             "result": result
@@ -1132,7 +1132,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     @staticmethod
     def _check_request(request):
         return "command" in request and "id" in request and \
-               "params" in request and type(request["params"]) == dict
+               "params" in request and isinstance(request["params"], dict)
 
     def on_message(self, message):
         self.log.datadump('Received message: %s', message)

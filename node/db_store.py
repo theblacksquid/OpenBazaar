@@ -103,7 +103,7 @@ class Obdb(object):
             set_part = ",".join(set_part)
             for key, value in where_dict.iteritems():
                 sign = "="
-                if type(value) is dict:
+                if isinstance(value, dict):
                     sign = value["sign"]
                     value = value["value"]
                 key = self._beforeStoring(key)
@@ -168,7 +168,7 @@ class Obdb(object):
             where_part = []
             for key, value in where_dict.iteritems():
                 sign = "="
-                if type(value) is dict:
+                if isinstance(value, dict):
                     sign = value["sign"]
                     value = value["value"]
                 key = self._beforeStoring(key)
@@ -210,7 +210,7 @@ class Obdb(object):
             where_part = []
             for key, value in where_dict.iteritems():
                 sign = "="
-                if type(value) is dict:
+                if isinstance(value, dict):
                     sign = value["sign"]
                     value = value["value"]
                 key = self._beforeStoring(key)
