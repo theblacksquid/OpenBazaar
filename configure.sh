@@ -217,6 +217,44 @@ function installFedora {
   doneMessage
 }
 
+function installSlack {
+  set -x
+
+  sudo /usr/sbin/slackpkg update
+  if ! command_exists python; then 
+    sudo /usr/sbin/slackpkg install python  
+  fi
+   
+  if [ ! -f /usr/sbin/sbopkg ];  then
+      echo "Please install sbopkg for ease of dependency installation from sbopkgs. "
+           "Be sure to run sbopkg and sync before retrying this install."
+      exit 1
+  else	  
+      if ! command_exists pip; then
+        sudo /usr/sbin/sbopkg -i pysetuptools # Required for pip
+        sudo /usr/sbin/sbopkg -i pip
+      fi
+
+      PYZVAR=$(grep "pyzmq" requirements.txt) # Get pip version.
+      /usr/bin/pip install --user $PYZVAR
+      sudo pip install virtualenv  
+      wget http://sourceforge.net/projects/gkernel/files/rng-tools/5/rng-tools-5.tar.gz
+      tar -xvf rng-tools-5.tar.gz 
+      pushd rng-tools-5 
+      ./configure 
+      make 
+      sudo make install 
+      popd
+      sudo /usr/sbin/slackpkg install libjpeg sqlite openssl 
+   fi 
+  
+  if [ ! -d "./env" ]; then
+        virtualenv env
+  fi
+  
+  ./env/bin/pip install -r requirements.txt
+  doneMessage
+}
 
 if [[ $OSTYPE == darwin* ]] ; then
   installMac
@@ -234,6 +272,8 @@ elif [[ $OSTYPE == linux-gnu || $OSTYPE == linux-gnueabihf ]]; then
     installPortage
   elif [ -f /etc/fedora-release ]; then
     installFedora
+  elif [ -f /etc/slackware-version ]; then
+    installSlack
   elif grep Raspbian /etc/os-release ; then
     echo Found Raspberry Pi Raspbian
     installRaspbian "$@"
@@ -241,3 +281,4 @@ elif [[ $OSTYPE == linux-gnu || $OSTYPE == linux-gnueabihf ]]; then
     installUbuntu
   fi
 fi
+
