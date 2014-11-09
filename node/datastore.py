@@ -1,6 +1,7 @@
 import UserDict
 import logging
 import ast
+from abc import ABCMeta, abstractmethod
 
 
 class DataStore(UserDict.DictMixin, object):
@@ -9,18 +10,24 @@ class DataStore(UserDict.DictMixin, object):
 
     @note: This provides an interface for a dict-like object
     """
+
+    __metaclass__ = ABCMeta
+
     def __init__(self):
         return
 
+    @abstractmethod
     def keys(self):
         """ Return a list of the keys in this data store """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def lastPublished(self, key):
         """ Get the time the C{(key, value)} pair identified by C{key}
         was last published """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def originalPublisherID(self, key):
         """ Get the original publisher of the data's node ID
 
@@ -30,24 +37,32 @@ class DataStore(UserDict.DictMixin, object):
         @return: Return the node ID of the original publisher of the
         C{(key, value)} pair identified by C{key}.
         """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def originalPublishTime(self, key):
         """ Get the time the C{(key, value)} pair identified by C{key}
         was originally published """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def setItem(self, key, value, lastPublished, originallyPublished,
                 originalPublisherID, market_id):
         """ Set the value of the (key, value) pair identified by C{key};
         this should set the "last published" value for the (key, value)
         pair to the current time
         """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def __getitem__(self, key):
         """ Get the value identified by C{key} """
-        raise NotImplementedError
+        pass
+
+    @abstractmethod
+    def __delitem__(self, key):
+        """ Delete the specified key (and its value) """
+        pass
 
     def __setitem__(self, key, value):
         """
@@ -55,10 +70,6 @@ class DataStore(UserDict.DictMixin, object):
         (value, lastPublished, originallyPublished, originalPublisherID).
         """
         self.setItem(key, *value)
-
-    def __delitem__(self, key):
-        """ Delete the specified key (and its value) """
-        raise NotImplementedError
 
 
 class SqliteDataStore(DataStore):

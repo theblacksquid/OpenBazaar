@@ -3,61 +3,30 @@ import UserDict
 
 import mock
 
-from node import constants, datastore
+from node import datastore, db_store
 
 
-class TestDataStore(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.key = "a" * constants.HEX_NODE_ID_LEN
-
+class TestSqliteDatastore(unittest.TestCase):
     def setUp(self):
-        self.d = datastore.DataStore()
-
-    def test_sublcassing(self):
-        self.assertTrue(isinstance(self.d, UserDict.DictMixin))
-
-    def test_init(self):
-        # Already covered by the setUp.
-        pass
-
-    def test_keys(self):
-        self.assertRaises(NotImplementedError, self.d.keys)
-
-    def test_lastPublished(self):
-        self.assertRaises(NotImplementedError, self.d.lastPublished, self.key)
-
-    def test_originalPublisherID(self):
-        self.assertRaises(
-            NotImplementedError,
-            self.d.originalPublisherID,
-            self.key
-        )
-
-    def test_originalPublishTime(self):
-        self.assertRaises(
-            NotImplementedError,
-            self.d.originalPublishTime,
-            self.key
-        )
-
-    def test_setItem(self):
-        pass
-
-
-class TestSqliteDatastore(TestDataStore):
-
-    def setUp(self):
-        self.db_mock = mock.MagicMock()
+        self.db_mock = mock.MagicMock(spec=db_store.Obdb)
+        data = {
+        'datastore': [
+            {'key': 'Zurich'.encode('hex')},
+            {'key': 'CH'.encode('hex')}
+            ]
+        }
+        self.db_mock.selectEntries.side_effect = data.__getitem__
         self.d = datastore.SqliteDataStore(self.db_mock)
 
     def test_init(self):
-        super(TestSqliteDatastore, self).test_init()
-        self.assertEqual(self.d.db, self.db_mock)
+        self.assertIs(self.d.db, self.db_mock)
+        self.assertIsInstance(self.d, UserDict.DictMixin)
 
     def test_keys(self):
-        pass
+        keys = self.d.keys()
+        self.assertEqual(len(keys), 2)
+        self.assertIn('Zurich', keys)
+        self.assertIn('CH', keys)
 
     def test_lastPublished(self):
         pass
