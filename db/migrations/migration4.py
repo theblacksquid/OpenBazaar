@@ -1,17 +1,14 @@
 #!/usr/bin/env python
 
+import argparse
+
 from pysqlcipher import dbapi2 as sqlite
-import sys
 
 from node import constants
 
-DB_PATH = constants.DB_PATH
-
 
 def upgrade(db_path):
-
-    con = sqlite.connect(db_path)
-    with con:
+    with sqlite.connect(db_path) as con:
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
@@ -27,9 +24,7 @@ def upgrade(db_path):
 
 
 def downgrade(db_path):
-
-    con = sqlite.connect(db_path)
-    with con:
+    with sqlite.connect(db_path) as con:
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
@@ -40,11 +35,20 @@ def downgrade(db_path):
         print 'Downgraded'
         con.commit()
 
-if __name__ == "__main__":
 
-    if sys.argv[1:] is not None:
-        DB_PATH = sys.argv[1:][0]
-        if sys.argv[2:] is "downgrade":
-            downgrade(DB_PATH)
-        else:
-            upgrade(DB_PATH)
+def main():
+    parser = argparse.ArgumentParser(description="Migrate the database")
+    parser.add_argument("path", help="the location of the database",
+                        nargs='?', default=constants.DB_PATH)
+    parser.add_argument("action", help="the action you want to perform",
+                        choices=("upgrade", "downgrade"))
+
+    args = parser.parse_args()
+    if args.action == "upgrade":
+        upgrade(args.path)
+    else:
+        downgrade(args.path)
+
+
+if __name__ == "__main__":
+    main()
