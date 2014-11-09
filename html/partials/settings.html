@@ -28,7 +28,8 @@
             There are some problems with your form:<br/>
             <ul>
                 <li data-ng-show="profileForm.inputNickname.$invalid">Make sure your nickname is less than 120 characters.</li>
-                <li data-ng-show="profileForm.inputNamecoin_id.$invalid">Make sure your Namecoin id is less than 120 characters.</li>
+                <li data-ng-show="profileForm.inputNamecoin_id.$error.maxlength">Make sure your Namecoin id is less than 40 characters.</li>
+                <li data-ng-show="profileForm.inputNamecoin_id.$error.pattern">Make sure your Namecoin id contains only lower case letters, numbers or dashes.</li>
                 <li data-ng-show="profileForm.inputStoreDescription.$invalid">Make sure your description is less than 2048 characters.</li>
             </ul>
         </div>
@@ -43,7 +44,7 @@
         <div class="form-group">
             <label for="inputNamecoin_id" class="col-sm-3 control-label">Namecoin id</label>
             <div class="col-sm-9">
-                <input data-ng-model="settings.Namecoin_id" data-ng-maxlength="120" class="form-control" id="inputNamecoin_id" name="inputNamecoin_id" placeholder="Namecoin id">
+                <input data-ng-model="settings.Namecoin_id" data-ng-maxlength="39" data-ng-pattern = "/^[a-z0-9\-]+$/" class="form-control" id="inputNamecoin_id" name="inputNamecoin_id" placeholder="Namecoin id">
             </div>
         </div>
 
