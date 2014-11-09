@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-import argparse
-
 from pysqlcipher import dbapi2
 
+import migrations_util
 from node import constants
 
 
@@ -40,12 +39,7 @@ def downgrade(db_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Migrate the database")
-    parser.add_argument("path", help="the location of the database",
-                        nargs='?', default=constants.DB_PATH)
-    parser.add_argument("action", help="the action you want to perform",
-                        choices=("upgrade", "downgrade"))
-
+    parser = migrations_util.make_argument_parser(constants.DB_PATH)
     args = parser.parse_args()
     if args.action == "upgrade":
         upgrade(args.path)
