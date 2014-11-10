@@ -377,9 +377,13 @@ def terminate_or_kill_process(process):
         process.terminate()  # in POSIX, sends SIGTERM.
         process.wait(5)
     except psutil.TimeoutExpired:
-        _, alive = psutil.wait_procs([process], None, None)
-        if process in alive:
+        try:
+            print "process {0} didn't terminate - sending sigkill".format(process.pid)
             process.kill()  # sends KILL signal.
+            process.wait(5)
+        except psutil.TimeoutExpired:
+            print 'timeout waiting for process {0} to end'.format(process.pid)
+            return
 
 
 def stop():
