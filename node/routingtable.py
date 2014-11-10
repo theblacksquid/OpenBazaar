@@ -1,9 +1,11 @@
+from abc import ABCMeta, abstractmethod
 import logging
 import time
 
 import constants
 import guid
 import kbucket
+
 
 
 class RoutingTable(object):
@@ -14,6 +16,8 @@ class RoutingTable(object):
     for a parent Node object (i.e. the local entity in the Kademlia
     network).
     """
+
+    __metaclass__ = ABCMeta
 
     def __init__(self, parent_node_id, market_id):
         """
@@ -33,6 +37,7 @@ class RoutingTable(object):
             '[%s] %s' % (self.market_id, self.__class__.__name__)
         )
 
+    @abstractmethod
     def addContact(self, node_id):
         """
         Add the given node to the correct KBucket; if it already
@@ -41,7 +46,7 @@ class RoutingTable(object):
         @param contact: The contact to add to this node's KBuckets
         @type contact: guid.GUIDMixin or str or unicode
         """
-        raise NotImplementedError
+        pass
 
     @staticmethod
     def distance(node_id1, node_id2):
@@ -110,6 +115,7 @@ class RoutingTable(object):
         # Pad to proper length and return.
         return bare_node_id.rjust(constants.HEX_NODE_ID_LEN, '0')
 
+    @abstractmethod
     def findCloseNodes(self, node_id, count, rpc_node_id=None):
         """
         Find a number of known nodes closest to the node/value with the
@@ -133,8 +139,9 @@ class RoutingTable(object):
                  contacts that it knows of.
         @rtype: list of guid.GUIDMixin
         """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def getContact(self, node_id):
         """
         Return the known node with the specified ID, None if not found.
@@ -145,8 +152,9 @@ class RoutingTable(object):
         @return: The node with the specified ID or None
         @rtype: guid.GUIDMixin or NoneType
         """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def getRefreshList(self, start_index=0, force=False):
         """
         Find all KBuckets that need refreshing, starting at the KBucket
@@ -170,8 +178,9 @@ class RoutingTable(object):
                  in order to refresh the routing Table.
         @rtype: list of guid.GUIDMixin
         """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def removeContact(self, node_id):
         """
         Remove the node with the specified ID from the routing table.
@@ -179,8 +188,9 @@ class RoutingTable(object):
         @param node_id: The ID of the node to remove.
         @type node_id: guid.GUIDMixin or str or unicode
         """
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def touchKBucket(self, node_id, timestamp=None):
         """
         Update the "last accessed" timestamp of the KBucket which covers
@@ -193,7 +203,7 @@ class RoutingTable(object):
                           If None, it will be set to int(time.time()).
         @type timestamp: int
         """
-        raise NotImplementedError
+        pass
 
 
 class TreeRoutingTable(RoutingTable):
@@ -340,6 +350,10 @@ class TreeRoutingTable(RoutingTable):
             timestamp = int(time.time())
         bucket_index = self.kbucketIndex(node_id)
         self.buckets[bucket_index].lastAccessed = timestamp
+
+    def addContact(self, contact):
+        #FIXME why not have implementation?
+        raise NotImplementedError
 
     def kbucketIndex(self, node_id):
         """
