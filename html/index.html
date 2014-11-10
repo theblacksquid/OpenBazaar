@@ -43,49 +43,51 @@
 
 <div class="container" style="min-height: 100%;">
 
-    <!-- Header -->
-    <div class="col-sm-12 clearfix headerContainer">
-        <div id="header">
+    <div class="pageContent">
+        <!-- Header -->
+        <div class="col-sm-12 clearfix headerContainer">
+            <div id="header">
 
-            <!-- Logo -->
-            <div class="col-sm-4 col-xs-12" >
-                <a href="#/dashboard"><img src="img/logo_header.png" class="img-responsive" style="max-height:100px;" /></a>
-            </div>
-
-            <!-- Search and Navigation -->
-            <div class="col-sm-8 col-xs-12 search-area">
-
-                <div class="" style="padding-right:0">
-                        <form class="search-form2 form-inline" name="search" action="#/search">
-                            <div class="text-right" style="padding-right:0">
-                                <input class="form-control" size="60" name="searchterm" ng-model="searchterm" type="text" placeholder="Search for markets or products...">
-                                <input class="btn btn-primary" type="submit" value="Search">
-                            </div>
-                        </form>
+                <!-- Logo -->
+                <div class="col-sm-4 col-xs-12" >
+                    <a href="#/dashboard"><img src="img/logo_header.png" class="img-responsive" style="max-height:100px;" /></a>
                 </div>
 
-                <div class="row col-sm-12" style="padding-right:0">
-                    <div id="header-navigation">
-                        <ul class="nav nav-pills">
-                            <li><a data-ng-href="#/dashboard">Home</a></li>
-                            <li class="dropdown"><a data-ng-href="#orders" data-toggle="dropdown" class="dropdown-toggle">Orders <b class="caret"></b></a>
-                                <ul class="dropdown-menu" role="menu">
-                                    <li role="presentation"><a role="menuitem" tabindex="-1" data-ng-href="#/orders/sales">My Sales</a></li>
-                                    <li role="presentation"><a role="menuitem" tabindex="-1" data-ng-href="#/orders/purchases">My Purchases</a></li>
-                                    <li role="presentation"><a role="menuitem" tabindex="-1" data-ng-href="#/orders/notarizations">Notarizations</a></li>
-                                </ul>
-                            </li>
-                            <li><a data-ng-href="#/contracts">Contracts</a></li>
-                            <li class="dropdown"><a data-ng-="#arbitration" data-toggle="dropdown" class="dropdown-toggle">Arbitration <b class="caret"></b></a>
-                                <ul class="dropdown-menu">
-                                    <li><a data-ng-href="#" data-ng-click="showDashboardPanel('arbitration', $event)">My Cases</a></li>
-                                    <li><a data-ng-href="#" data-ng-click="$event.preventDefault()">Find Arbiters/Notaries</a></li>
-                                </ul>
-                            </li>
-                            <li><a data-ng-href="#/messages" data-ng-click="showDashboardPanel('messages')">Messages <span data-ng-show="BMMessages" class="badge pull-right">1</span></a></li>
-                            <li><a data-ng-href="#/settings">Settings</a></li>
-                            <li><identicon icon-size="30" hash="myself.guid" title="{{myself.guid}}" ></identicon></li>
-                        </ul>
+                <!-- Search and Navigation -->
+                <div class="col-sm-8 col-xs-12 search-area">
+
+                    <div class="" style="padding-right:0">
+                            <form class="search-form2 form-inline" name="search" action="#/search">
+                                <div class="text-right" style="padding-right:0">
+                                    <input class="form-control" size="60" name="searchterm" ng-model="searchterm" type="text" placeholder="Search for markets or products...">
+                                    <input class="btn btn-primary" type="submit" value="Search">
+                                </div>
+                            </form>
+                    </div>
+
+                    <div class="row col-sm-12" style="padding-right:0">
+                        <div id="header-navigation">
+                            <ul class="nav nav-pills">
+                                <li><a data-ng-href="#/dashboard">Home</a></li>
+                                <li class="dropdown"><a data-ng-href="#orders" data-toggle="dropdown" class="dropdown-toggle">Orders <b class="caret"></b></a>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li role="presentation"><a role="menuitem" tabindex="-1" data-ng-href="#/orders/sales">My Sales</a></li>
+                                        <li role="presentation"><a role="menuitem" tabindex="-1" data-ng-href="#/orders/purchases">My Purchases</a></li>
+                                        <li role="presentation"><a role="menuitem" tabindex="-1" data-ng-href="#/orders/notarizations">Notarizations</a></li>
+                                    </ul>
+                                </li>
+                                <li><a data-ng-href="#/contracts">Contracts</a></li>
+                                <li class="dropdown"><a data-ng-="#arbitration" data-toggle="dropdown" class="dropdown-toggle">Arbitration <b class="caret"></b></a>
+                                    <ul class="dropdown-menu">
+                                        <li><a data-ng-href="#" data-ng-click="showDashboardPanel('arbitration', $event)">My Cases</a></li>
+                                        <li><a data-ng-href="#" data-ng-click="$event.preventDefault()">Find Arbiters/Notaries</a></li>
+                                    </ul>
+                                </li>
+                                <li><a data-ng-href="#/messages" data-ng-click="showDashboardPanel('messages')">Messages <span data-ng-show="BMMessages" class="badge pull-right">1</span></a></li>
+                                <li><a data-ng-href="#/settings">Settings</a></li>
+                                <li><identicon icon-size="30" hash="myself.guid" title="{{myself.guid}}" ></identicon></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>

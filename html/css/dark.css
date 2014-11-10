@@ -199,6 +199,12 @@ hr { border-top:#bbb; }
 
 #page-content { word-break:normal; }
 
+.pageContent {
+  overflow-y:auto;
+  overflow-x: hidden;
+  padding-bottom:100px
+}
+
 .fileinput .fileinput-preview {
   border:none;
   background-image:url('img/no-photo.png');
