@@ -45,8 +45,16 @@ angular.module('app')
 
         var message = JSON.stringify(request);
         //console.log('Connection.send ->')
-        //console.log(message)
-        self.websocket.send(message);
+
+        if(self.websocket.readyState == 1){
+            self.websocket.send(message);
+          }
+        else{
+            self.websocket.onopen = function(e){
+                self.websocket.send(message);
+            }
+        }
+
       };
     };
 
