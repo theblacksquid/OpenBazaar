@@ -259,6 +259,10 @@ class MarketApplication(tornado.web.Application):
             if not result:
                 print "Warning: UPnP was not setup correctly. ",
                 print "Ports could not be automatically mapped."
+                print "If you only see two or three stores, here are some tips:"
+                print "1. If you are using VPN, configure port forwarding or disable your VPN temporarily"
+                print "2. Configure your router to forward traffic from port",
+                print "%s for both TCP and UDP to your local port %s" % (p2p_port, p2p_port)
 
         return result
 

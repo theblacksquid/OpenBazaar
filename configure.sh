@@ -63,28 +63,32 @@ function installMac {
     brew prune
   fi
 
-  # install gpg/sqlite3/python/wget/openssl/zmq if they aren't installed
-  for dep in gpg sqlite3 python wget openssl zmq
+  # Use brew's python 2.7, even if user has a system python. The brew version comes with pip and setuptools.
+  # If user already has brew installed python, then this won't do anything. 
+  # Note we get pip for free by doing this, and can avoid future calls to sudo. brew convention abhors all things 'sudo' anyway.
+  brew install python
+
+  for dep in gpg sqlite3 wget openssl zmq autoenv
   do
     if ! command_exists $dep ; then
       brew install $dep
     fi
   done
 
-  # install pip if it is not installed
-  if ! command_exists pip ; then
-    easy_install pip
-  fi
-
   # install python's virtualenv if it is not installed
   if ! command_exists virtualenv ; then
     pip install virtualenv
   fi
 
-  # create a virtualenv for OpenBazaar
+  # create a virtualenv for OpenBazaar. note we get env/bin/pip by doing this. We also needed pip earlier to install virtualenv.
   if [ ! -d "./env" ]; then
-    virtualenv env
+    virtualenv --python=python2.7 env
   fi
+
+  # "To begin using the virtual environment, it needs to be activated:"
+  # http://docs.python-guide.org/en/latest/dev/virtualenvs/
+  # We have autoenv and an appropriate .env in our OB home dir, but we should activate the env just in case (e.g. for first time users).
+  source env/bin/activate
 
   # set compile flags for brew's openssl instead of using brew link --force
   export CFLAGS="-I$(brew --prefix openssl)/include"
@@ -93,13 +97,14 @@ function installMac {
   # install python deps inside our virtualenv
   ./env/bin/pip install -r requirements.txt
 
-  doneMessage
+  # There are still pysqlcipher issues on OS X. Temporarily disable sqlite-crypt until that is resolved.
+  doneMessage "--disable-sqlite-crypt "
 }
 
 function doneMessage {
   echo ""
   echo "OpenBazaar configuration finished."
-  echo "type './openbazaar start; tail -f logs/production.log' to start your OpenBazaar servent instance and monitor logging output."
+  echo "type './openbazaar $1start; tail -f logs/production.log' to start your OpenBazaar servent instance and monitor logging output."
   echo ""
   echo ""
   echo ""
