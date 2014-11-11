@@ -93,38 +93,6 @@ Here are some screenshots of the *alpha* UI so far:
 ![Screen 7](http://s30.postimg.org/fkr8ioo3l/Screen_7.png)
 ![Screen 8](http://s30.postimg.org/fw8ovg4jl/Screen_8.png)
 
-## Press
-
-- **Wired**
-  - [Inside the ‘DarkMarket’ Prototype, a Silk Road the FBI Can Never Seize](http://www.wired.com/2014/04/darkmarket/)
-  - [Creators of New Fed-Proof Bitcoin Marketplace Swear It’s Not for Drugs](http://www.wired.com/2014/08/openbazaar-not-for-drugs/)
-  - [How Online Black Markets Have Evolved Since Silk Road’s Downfall](http://www.wired.com/2014/09/internet-black-market/)
-- **The Guardian**
-  - [Silk Road successor DarkMarket rebrands as OpenBazaar](http://www.theguardian.com/technology/2014/apr/30/silk-road-darkmarket-openbazaar-online-drugs-marketplace)
-- **Medium**
-  - [Wired Misses the Point of OpenBazaar](https://medium.com/theprotocol-tv/wired-misses-the-point-of-openbazaar-c1adf8752cff)
-- **DeepDotWeb**
-  - [OpenBazaar: A Decentralized Alternative](https://www.deepdotweb.com/2014/06/23/openbazaar-a-decentralized-alternative/)
-- **CoinTelegraph**
-  - [What’s in a Word? DarkMarket Becomes OpenBazaar](https://cointelegraph.com/news/111332/what_s_in_a_word_darkmarket_becomes_openbazaar#.U2IWgfl_tqU)
-  - [OpenBazaar Auctions: A decentralized eBay alternative](http://cointelegraph.com/news/111685/openbazaar_auctions_a_decentralized_ebay_alternative)
-  - [OpenBazaar Explains Proof Of Burn As It Nears Beta Release](http://cointelegraph.com/news/112388/openbazaar-explains-proof-of-burn-as-it-nears-beta-release)
-  - [OpenBazaar, the untouchable online market, inches closer to game time](http://cointelegraph.com/news/112430/openbazaar-the-untouchable-online-market-inches-closer-to-game-time)
-- **Coindesk**
-  - [How OpenBazaar is Using Bitcoin to Build a Decentralized eBay](https://www.coindesk.com/openbazaar-bitcoin-build-decentralised-ebay/)
-- **Let's Talk Bitcoin: Beyond Bitcoin**
-  - [Exploring The Open Bazaar - Beyond Bitcoin Episode 10](https://www.youtube.com/watch?v=E_iZvKw0IZU)
-- **IBTimes**
-  - [Silk Road Successor DarkMarket is Untouchable by Feds, Claim Creators](https://www.ibtimes.co.uk/silk-road-successor-darkmarket-untouchable-by-feds-claim-creators-1446241)
-- **CryptoCoinsNews**
-  - [OpenBazaar: Blazing The Trail For Bitcoin Commerce Without Barriers](http://www.cryptocoinsnews.com/news/openbazaar-blazing-trail-bitcoin-commerce-without-barriers/2014/07/22)
-- **DailyDot**
-  - [New decentralized Deep Web market said to be 'untouchable' by police](http://www.dailydot.com/crime/dark-market-deep-web/)
-  - [OpenBazaar launches DarkMarket successor with a 'more positive image'](http://www.dailydot.com/news/openbazaar-darkmarket-silk-road-bitcoin/)
-- **CoinBuzz**
-  - [DarkMarket fork ‘OpenBazaar’ to be launched](http://www.coinbuzz.com/2014/05/01/darkmarket-fork-openbazaar/)
-  - [Decentralized marketplace, OpenBazaar, to release first beta Sunday](http://www.coinbuzz.com/2014/09/01/decentralized-marketplace-openbazaar-release-first-beta-sunday/)
-
 ## License
 
 OpenBazaar is licensed under the MIT license. See [LICENSE.md](LICENSE.md) for more information.
