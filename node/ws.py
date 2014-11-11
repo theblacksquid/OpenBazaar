@@ -830,7 +830,7 @@ class ProtocolHandler(object):
         self.log.info('Found Contracts: %s', type(results))
         self.log.info(results)
 
-        if len(results) > 0 and isinstance(results['data'], unicode):
+        if results and isinstance(results['data'], unicode):
             results = json.loads(results[0])
 
         self.log.info(results)
@@ -840,7 +840,7 @@ class ProtocolHandler(object):
         else:
             self.log.debug('Results: %s', results['contracts'])
 
-        if len(results) > 0 and 'data' in results:
+        if results and 'data' in results:
 
             data = results['data']
             contracts = data['contracts']
@@ -861,7 +861,7 @@ class ProtocolHandler(object):
         self.log.info('Found Contracts: %s', type(results))
         self.log.info(results)
 
-        if len(results):
+        if results:
             if 'listings' in results:
                 # TODO: Validate signature of listings matches data
 

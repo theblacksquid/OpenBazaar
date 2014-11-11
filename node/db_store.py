@@ -73,7 +73,7 @@ class Obdb(object):
             data_dict = where_dict
 
         entries = self.selectEntries(table, where_dict)
-        if len(entries) == 0:
+        if not entries:
             self.insertEntry(table, data_dict)
         return self.selectEntries(table, where_dict)[0]
 
