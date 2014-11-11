@@ -398,9 +398,21 @@ class CryptoTransportLayer(TransportLayer):
             guid, uri, pubkey, nickname
         )
 
-        return connection.CryptoPeerConnection(
-            self, uri, pubkey, guid=guid, nickname=nickname
-        )
+        if uri not in self.peers:
+            self.peers[uri] = connection.CryptoPeerConnection(
+                self, uri, pubkey, guid=guid, nickname=nickname
+            )
+        else:
+            # FIXME this is wrong to do here, but it keeps this as close as
+            # possible to the original pre-connection-reuse behavior
+            if guid:
+                self.peers[uri].guid = guid
+            if pubkey:
+                self.peers[uri].pub = pubkey
+            if nickname:
+                self.peers[uri].nickname = nickname
+
+        return self.peers[uri]
 
     def respond_pubkey_if_mine(self, nickname, ident_pubkey):
 
