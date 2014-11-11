@@ -49,10 +49,10 @@ angular.module('app')
         if(self.websocket.readyState == 1){
             self.websocket.send(message);
           }
-        else{
+        else {
             self.websocket.onopen = function(e){
                 self.websocket.send(message);
-            }
+            };
         }
 
       };
