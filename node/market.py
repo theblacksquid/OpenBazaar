@@ -66,9 +66,7 @@ class Market(object):
             'query_myorders',
             'peer',
             'query_page',
-            'query_listings',
-            'negotiate_pubkey',
-            'response_pubkey'
+            'query_listings'
         )
 
         # Register callbacks for incoming events
@@ -763,44 +761,6 @@ class Market(object):
 
     def on_peer(self, peer):
         pass
-
-    def validate_on_negotiate_pubkey(self, *data):
-        self.log.debug('Validating on negotiate pubkey message.')
-        keys = ("nickname", "ident_pubkey")
-        return all(k in data[0] for k in keys)
-
-    def on_negotiate_pubkey(self, ident_pubkey):
-        """Run if someone is asking for your real pubKey"""
-        self.log.info("Someone is asking for your real pubKey")
-        nickname = ident_pubkey['nickname']
-        ident_pubkey = ident_pubkey['ident_pubkey'].decode("hex")
-        self.transport.respond_pubkey_if_mine(nickname, ident_pubkey)
-
-    def validate_on_response_pubkey(self, *data):
-        self.log.debug('Validating on response pubkey message.')
-        keys = ("pubkey", "nickname", "signature")
-        return all(k in data[0] for k in keys)
-
-    def on_response_pubkey(self, response):
-        """Deprecated. This is a DarkMarket holdover.
-           Run to verify signature if someone send you the pubKey.
-        """
-        pubkey = response["pubkey"].decode("hex")
-        # signature = response["signature"].decode("hex")
-        nickname = response["nickname"]
-        # Cache mapping for later.
-        if nickname not in self.transport.nick_mapping:
-            self.transport.nick_mapping[nickname] = [None, pubkey]
-        # Verify signature here...
-        # Add to our dict.
-        self.transport.nick_mapping[nickname][1] = pubkey
-        self.log.info("[market] mappings: ###############")
-        for key, value in self.transport.nick_mapping.iteritems():
-            self.log.info(
-                "'%s' -> '%s' (%s)",
-                key, value[1].encode("hex") if value[1] is not None else value[1],
-                value[0].encode("hex") if value[0] is not None else value[0])
-        self.log.info("##################################")
 
     def release_funds_to_merchant(self, buyer_order_id, tx, script, signatures, guid):
         """Send TX to merchant"""

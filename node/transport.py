@@ -21,7 +21,6 @@ import connection
 from crypto_util import Cryptor
 from dht import DHT
 import network_util
-from protocol import proto_response_pubkey
 
 
 class TransportLayer(object):
@@ -413,22 +412,6 @@ class CryptoTransportLayer(TransportLayer):
                 self.peers[uri].nickname = nickname
 
         return self.peers[uri]
-
-    def respond_pubkey_if_mine(self, nickname, ident_pubkey):
-
-        if ident_pubkey != self.pubkey:
-            self.log.info("Public key does not match your identity")
-            return
-
-        # Return signed pubkey
-        pubkey = self.cryptor.pubkey  # XXX: A Cryptor does not have such a field.
-        ec_key = obelisk.EllipticCurveKey()
-        ec_key.set_secret(self.secret)
-        digest = obelisk.Hash(pubkey)
-        signature = ec_key.sign(digest)
-
-        # Send array of nickname, pubkey, signature to transport layer
-        self.send(proto_response_pubkey(nickname, pubkey, signature))
 
     def send(self, data, send_to=None, callback=None):
 
