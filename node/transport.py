@@ -233,7 +233,7 @@ class CryptoTransportLayer(TransportLayer):
         return True
 
     def on_findNodeResponse(self, msg):
-        self.dht.on_findNodeResponse(self, msg)
+        self.dht.on_findNodeResponse(msg)
 
     def _setup_settings(self):
         try:
@@ -358,7 +358,7 @@ class CryptoTransportLayer(TransportLayer):
         known_peers = list(set(seeds).union(db_peers))
 
         for known_peer in known_peers:
-            self.dht.add_peer(self, known_peer)
+            self.dht.add_peer(known_peer)
 
         # Populate routing table by searching for self
         if known_peers:
@@ -497,7 +497,7 @@ class CryptoTransportLayer(TransportLayer):
         self.log.info('Received message type "%s" from "%s" %s %s',
                       msgType, nickname, uri, guid)
         self.log.datadump('Raw message: %s', json.dumps(msg, ensure_ascii=False))
-        self.dht.add_peer(self, uri, pubkey, guid, nickname)
+        self.dht.add_peer(uri, pubkey, guid, nickname)
         t = Thread(target=self.trigger_callbacks, args=(msg['type'], msg,))
         t.start()
 

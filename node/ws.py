@@ -768,7 +768,6 @@ class ProtocolHandler(object):
         self.log.info("Querying for Contracts %s", msg)
 
         self.transport.dht.find_listings_by_keyword(
-            self.transport,
             msg['key'].upper(),
             callback=self.on_find_products
         )
@@ -777,7 +776,6 @@ class ProtocolHandler(object):
         self.log.info("Searching network for contracts")
 
         self.transport.dht.find_listings(
-            self.transport,
             msg['key'],
             callback=self.on_find_products_by_store
         )

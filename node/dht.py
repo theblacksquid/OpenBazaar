@@ -49,8 +49,7 @@ class DHT(object):
         self._add_known_node(('tcp://%s:%s' % (ip, port), seed_peer.guid, seed_peer.nickname))
 
         self.log.debug('Starting Seed Peer: %s', seed_peer.nickname)
-        self.add_peer(self.transport,
-                      seed_peer.address,
+        self.add_peer(seed_peer.address,
                       seed_peer.pub,
                       seed_peer.guid,
                       seed_peer.nickname)
@@ -71,7 +70,7 @@ class DHT(object):
                 self.activePeers[idx].close_socket()
                 del self.activePeers[idx]
 
-    def add_seed(self, transport, uri):
+    def add_seed(self, uri):
 
         new_peer = self.transport.get_crypto_peer(uri=uri)
         self.log.debug(new_peer)
@@ -84,11 +83,9 @@ class DHT(object):
 
         Thread(target=new_peer.start_handshake, args=(start_handshake_cb,)).start()
 
-    def add_peer(self, transport, uri, pubkey=None, guid=None, nickname=None):
+    def add_peer(self, uri, pubkey=None, guid=None, nickname=None):
         """ This takes a tuple (pubkey, URI, guid) and adds it to the active
         peers list if it doesn't already reside there.
-
-        :param transport: (CryptoTransportLayer) so we can get a new CryptoPeer
 
         TODO: Refactor to just pass a peer object. evil tuples.
         """
@@ -231,7 +228,7 @@ class DHT(object):
 
         return self.dedupe(contactTriples)
 
-    def on_findNodeResponse(self, transport, msg):
+    def on_findNodeResponse(self, msg):
 
         # Update existing peer's pubkey if active peer
         for idx, peer in enumerate(self.activePeers):
@@ -262,7 +259,7 @@ class DHT(object):
                     self.log.debug('Found a tuple %s', foundNode)
                     if len(foundNode) == 3:
                         foundNode.append('')
-                    self.add_peer(self.transport, foundNode[1], foundNode[2], foundNode[0], foundNode[3])
+                    self.add_peer(foundNode[1], foundNode[2], foundNode[0], foundNode[3])
 
                 for idx, search in enumerate(self.searches):
                     if search.findID == msg['findID']:
@@ -302,7 +299,7 @@ class DHT(object):
                             self.log.info('Found it %s %s', node[0], self.transport.guid)
                             nodes_to_extend.append(node)
 
-                    self.extendShortlist(transport, msg['findID'], nodes_to_extend)
+                    self.extendShortlist(msg['findID'], nodes_to_extend)
 
                     # Remove active probe to this node for this findID
                     search_ip = urlparse(msg['uri']).hostname
@@ -402,7 +399,7 @@ class DHT(object):
         for key in expiredKeys:
             del self.dataStore[key]
 
-    def extendShortlist(self, transport, findID, foundNodes):
+    def extendShortlist(self, findID, foundNodes):
 
         self.log.datadump('foundNodes: %s', foundNodes)
 
@@ -439,11 +436,11 @@ class DHT(object):
 
             if node_guid != self.settings['guid']:
                 self.log.debug('Adding new peer to active peers list: %s', node)
-                self.add_peer(self.transport, node_uri, node_pubkey, node_guid, node_nick)
+                self.add_peer(node_uri, node_pubkey, node_guid, node_nick)
 
         self.log.datadump('Short list after: %s', search.shortlist)
 
-    def find_listings(self, transport, key, listingFilter=None, callback=None):
+    def find_listings(self, key, listingFilter=None, callback=None):
         """
         Send a get product listings call to the node in question and
         then cache those listings locally.
@@ -469,7 +466,7 @@ class DHT(object):
 
         self.iterativeFindValue(listing_index_key, callback)
 
-    def find_listings_by_keyword(self, transport, keyword, listingFilter=None, callback=None):
+    def find_listings_by_keyword(self, keyword, listingFilter=None, callback=None):
 
         hashvalue = hashlib.new('ripemd160')
         keyword_key = 'keyword-%s' % keyword
