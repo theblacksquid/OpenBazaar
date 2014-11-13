@@ -63,9 +63,6 @@ angular.module('app')
             if(!listeners.hasOwnProperty('reputation')) {
                 Connection.$on('reputation', function(e, msg){ $scope.parse_reputation(msg); });
             }
-            if(!listeners.hasOwnProperty('proto_response_pubkey')) {
-                Connection.$on('proto_response_pubkey', function(e, msg){ $scope.parse_response_pubkey(msg); });
-            }
             if(!listeners.hasOwnProperty('burn_info_available')) {
                 Connection.$on('burn_info_available', function(e, msg){ $scope.parse_burn_info(msg); });
             }
@@ -265,24 +262,6 @@ angular.module('app')
                     if (!$scope.$$phase) {
                         $scope.$apply();
                     }
-                }
-            };
-
-            $scope.parse_response_pubkey = function(msg) {
-                var pubkey = msg.pubkey;
-                var nickname = msg.nickname;
-                $scope.peers.forEach(function(peer) {
-                    if (peer.pubkey == pubkey) {
-                        // this peer!!
-                        peer.nickname = msg.nickname;
-                        if ($scope.searching == msg.nickname) {
-                            $scope.queryShop(peer);
-                        }
-                    }
-                });
-                if (!$scope.$$phase) {
-
-                    $scope.$apply();
                 }
             };
 
