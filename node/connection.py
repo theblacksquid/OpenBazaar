@@ -120,7 +120,6 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
                 if peer.guid == self.guid or peer.address == self.address:
                     self.transport.dht.activePeers[idx] = self
                     self.transport.dht.add_peer(
-                        self.transport,
                         self.address,
                         self.pub,
                         self.guid,
