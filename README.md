@@ -23,7 +23,7 @@ OpenBazaar is a decentralized marketplace proof of concept. It is based off of t
 ## Support
 You can financially support the project by either:
 
-1. A direct donation: [16uniUFpbhrAxAWMZ9qEkcT9Wf34ETB4Tt](https://blockchain.info/address/16uniUFpbhrAxAWMZ9qEkcT9Wf34ETB4Tt)
+1. A direct donation: [3MXYUBLWNETa5HTewZp1xMTt7AW9kbFNqs](https://blockchain.info/address/3MXYUBLWNETa5HTewZp1xMTt7AW9kbFNqs)
 2. Tip4Commit: https://tip4commit.com/projects/728
   - Code committed to the project is rewarded with bitcoin
 
