@@ -18,7 +18,6 @@ from zmq.eventloop import ioloop
 from zmq.eventloop.ioloop import PeriodicCallback
 
 import connection
-from crypto_util import Cryptor
 from dht import DHT
 import network_util
 
@@ -293,8 +292,6 @@ class CryptoTransportLayer(TransportLayer):
             # Generate Bitmessage address
             if self.bitmessage_api is not None:
                 self._generate_new_bitmessage_address()
-
-        self.cryptor = Cryptor(pubkey_hex=self.pubkey, privkey_hex=self.secret)
 
         # In case user wants to override with command line passed bitmessage values
         if self.ob_ctx.bm_user is not None and \
