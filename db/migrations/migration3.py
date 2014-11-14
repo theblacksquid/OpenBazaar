@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 
-from pysqlcipher import dbapi2 as sqlite
-import sys
+from pysqlcipher import dbapi2
 
+import migrations_util
 from node import constants
-
-DB_PATH = constants.DB_PATH
 
 
 def upgrade(db_path):
-
-    con = sqlite.connect(db_path)
-    with con:
+    with dbapi2.connect(db_path) as con:
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
@@ -26,14 +22,12 @@ def upgrade(db_path):
                         "ADD COLUMN refund_address TEXT")
             print 'Upgraded'
             con.commit()
-        except sqlite.Error as e:
+        except dbapi2.Error as e:
             print 'Exception: %s' % e
 
 
 def downgrade(db_path):
-
-    con = sqlite.connect(db_path)
-    with con:
+    with dbapi2.connect(db_path) as con:
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
@@ -46,11 +40,14 @@ def downgrade(db_path):
         print 'Downgraded'
         con.commit()
 
-if __name__ == "__main__":
 
-    if sys.argv[1:] is not None:
-        DB_PATH = sys.argv[1:][0]
-        if sys.argv[2:] is "downgrade":
-            downgrade(DB_PATH)
-        else:
-            upgrade(DB_PATH)
+def main():
+    parser = migrations_util.make_argument_parser(constants.DB_PATH)
+    args = parser.parse_args()
+    if args.action == "upgrade":
+        upgrade(args.path)
+    else:
+        downgrade(args.path)
+
+if __name__ == "__main__":
+    main()
