@@ -20,36 +20,6 @@ class Obdb(object):
         dbapi2.register_adapter(bool, int)
         dbapi2.register_converter("bool", lambda v: bool(int(v)))
 
-    def _connectToDb(self):
-        """ Opens a db connection
-        """
-        self._lock.acquire()
-        self.con = dbapi2.connect(
-            self.db_path,
-            detect_types=dbapi2.PARSE_DECLTYPES,
-            timeout=10
-        )
-        dbapi2.register_adapter(bool, int)
-        dbapi2.register_converter("bool", lambda v: bool(int(v)))
-        self.con.row_factory = self._dictFactory
-
-        if not self.disable_sqlite_crypt:
-            # Use PRAGMA key to encrypt / decrypt database.
-            with self.con:
-                cur = self.con.cursor()
-                cur.execute("PRAGMA key = 'passphrase';")
-
-    def _disconnectFromDb(self):
-        """ Close the db connection
-        """
-        if self.con:
-            try:
-                self.con.close()
-            except Exception:
-                pass
-        self.con = False
-        self._lock.release()
-
     def _login(self, passphrase='passphrase'):
         """Enable access to an encrypted database."""
         cursor = self.con.cursor()
