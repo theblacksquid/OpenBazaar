@@ -1,6 +1,7 @@
 import logging
-from pysqlcipher import dbapi2 as sqlite
-from threading import Lock
+import threading
+
+from pysqlcipher import dbapi2
 
 
 class Obdb(object):
@@ -10,21 +11,22 @@ class Obdb(object):
     def __init__(self, db_path, disable_sqlite_crypt=False):
         self.db_path = db_path
         self.con = False
-        self.log = logging.getLogger('DB')
         self.disable_sqlite_crypt = disable_sqlite_crypt
-        self.lock = Lock()
+
+        self._log = logging.getLogger('DB')
+        self._lock = threading.Lock()
 
     def _connectToDb(self):
         """ Opens a db connection
         """
-        self.lock.acquire()
-        self.con = sqlite.connect(
+        self._lock.acquire()
+        self.con = dbapi2.connect(
             self.db_path,
-            detect_types=sqlite.PARSE_DECLTYPES,
+            detect_types=dbapi2.PARSE_DECLTYPES,
             timeout=10
         )
-        sqlite.register_adapter(bool, int)
-        sqlite.register_converter("bool", lambda v: bool(int(v)))
+        dbapi2.register_adapter(bool, int)
+        dbapi2.register_converter("bool", lambda v: bool(int(v)))
         self.con.row_factory = self._dictFactory
 
         if not self.disable_sqlite_crypt:
@@ -42,7 +44,7 @@ class Obdb(object):
             except Exception:
                 pass
         self.con = False
-        self.lock.release()
+        self._lock.release()
 
     @staticmethod
     def _dictFactory(cursor, row):
@@ -115,7 +117,7 @@ class Obdb(object):
             query = "UPDATE %s SET %s WHERE %s" % (
                 table, set_part, where_part
             )
-            self.log.debug('query: %s', query)
+            self._log.debug('query: %s', query)
             cur.execute(query, tuple(sets + wheres))
         self._disconnectFromDb()
 
@@ -145,7 +147,7 @@ class Obdb(object):
             )
             cur.execute(query, tuple(sets))
             lastrowid = cur.lastrowid
-            self.log.debug("query: %s", query)
+            self._log.debug("query: %s", query)
         self._disconnectFromDb()
         if lastrowid:
             return lastrowid
@@ -186,7 +188,7 @@ class Obdb(object):
             query = "SELECT * FROM %s WHERE %s ORDER BY %s %s %s" % (
                 table, where_part, order_field, order, limit_clause
             )
-            self.log.debug("query: %s", query)
+            self._log.debug("query: %s", query)
             cur.execute(query, tuple(wheres))
             rows = cur.fetchall()
         self._disconnectFromDb()
@@ -222,6 +224,6 @@ class Obdb(object):
             query = "DELETE FROM %s WHERE %s" % (
                 table, where_part
             )
-            self.log.debug('Query: %s', query)
+            self._log.debug('Query: %s', query)
             cur.execute(query, dels)
         self._disconnectFromDb()
