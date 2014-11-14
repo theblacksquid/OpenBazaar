@@ -111,6 +111,7 @@ class Obdb(object):
             self.insertEntry(table, data_dict)
         return self.selectEntries(table, where_dict)[0]
 
+    @_manage
     def updateEntries(self, table, set_dict, where_dict=None, operator="AND"):
         """ A wrapper for the SQL UPDATE operation
         @param table: The table to search to
@@ -120,70 +121,66 @@ class Obdb(object):
         if where_dict is None:
             where_dict = {'"1"': '1'}
 
-        self._connectToDb()
-        with self.con:
-            cur = self.con.cursor()
-            sets = []
-            wheres = []
-            where_part = []
-            set_part = []
-            for key, value in set_dict.iteritems():
-                if type(value) == bool:
-                    value = bool(value)
-                key = self._beforeStoring(key)
-                value = self._beforeStoring(value)
-                sets.append(value)
-                set_part.append("%s = ?" % key)
-            set_part = ",".join(set_part)
-            for key, value in where_dict.iteritems():
-                sign = "="
-                if isinstance(value, dict):
-                    sign = value["sign"]
-                    value = value["value"]
-                key = self._beforeStoring(key)
-                value = self._beforeStoring(value)
-                wheres.append(value)
-                where_part.append("%s %s ?" % (key, sign))
-            operator = " " + operator + " "
-            where_part = operator.join(where_part)
-            query = "UPDATE %s SET %s WHERE %s" % (
-                table, set_part, where_part
-            )
-            self._log.debug('query: %s', query)
-            cur.execute(query, tuple(sets + wheres))
-        self._disconnectFromDb()
+        cur = self.con.cursor()
+        sets = []
+        wheres = []
+        where_part = []
+        set_part = []
+        for key, value in set_dict.iteritems():
+            if type(value) == bool:
+                value = bool(value)
+            key = self._beforeStoring(key)
+            value = self._beforeStoring(value)
+            sets.append(value)
+            set_part.append("%s = ?" % key)
+        set_part = ",".join(set_part)
+        for key, value in where_dict.iteritems():
+            sign = "="
+            if isinstance(value, dict):
+                sign = value["sign"]
+                value = value["value"]
+            key = self._beforeStoring(key)
+            value = self._beforeStoring(value)
+            wheres.append(value)
+            where_part.append("%s %s ?" % (key, sign))
+        operator = " " + operator + " "
+        where_part = operator.join(where_part)
+        query = "UPDATE %s SET %s WHERE %s" % (
+            table, set_part, where_part
+        )
+        self._log.debug('query: %s', query)
+        cur.execute(query, tuple(sets + wheres))
 
+    @_manage
     def insertEntry(self, table, update_dict):
         """ A wrapper for the SQL INSERT operation
         @param table: The table to search to
         @param update_dict: A dictionary with the values to set
         """
-        self._connectToDb()
-        with self.con:
-            cur = self.con.cursor()
-            sets = []
-            updatefield_part = []
-            setfield_part = []
-            for key, value in update_dict.iteritems():
-                if type(value) == bool:
-                    value = bool(value)
-                key = self._beforeStoring(key)
-                value = self._beforeStoring(value)
-                sets.append(value)
-                updatefield_part.append(key)
-                setfield_part.append("?")
-            updatefield_part = ",".join(updatefield_part)
-            setfield_part = ",".join(setfield_part)
-            query = "INSERT INTO %s(%s) VALUES(%s)" % (
-                table, updatefield_part, setfield_part
-            )
-            cur.execute(query, tuple(sets))
-            lastrowid = cur.lastrowid
-            self._log.debug("query: %s", query)
-        self._disconnectFromDb()
+        cur = self.con.cursor()
+        sets = []
+        updatefield_part = []
+        setfield_part = []
+        for key, value in update_dict.iteritems():
+            if type(value) == bool:
+                value = bool(value)
+            key = self._beforeStoring(key)
+            value = self._beforeStoring(value)
+            sets.append(value)
+            updatefield_part.append(key)
+            setfield_part.append("?")
+        updatefield_part = ",".join(updatefield_part)
+        setfield_part = ",".join(setfield_part)
+        query = "INSERT INTO %s(%s) VALUES(%s)" % (
+            table, updatefield_part, setfield_part
+        )
+        cur.execute(query, tuple(sets))
+        lastrowid = cur.lastrowid
+        self._log.debug("query: %s", query)
         if lastrowid:
             return lastrowid
 
+    @_manage
     def selectEntries(self, table, where_dict=None, operator="AND", order_field="id",
                       order="ASC", limit=None, limit_offset=None, select_fields="*"):
         """
@@ -195,37 +192,36 @@ class Obdb(object):
         """
         if where_dict is None:
             where_dict = {'"1"': '1'}
-        self._connectToDb()
-        with self.con:
-            cur = self.con.cursor()
-            wheres = []
-            where_part = []
-            for key, value in where_dict.iteritems():
-                sign = "="
-                if isinstance(value, dict):
-                    sign = value["sign"]
-                    value = value["value"]
-                key = self._beforeStoring(key)
-                value = self._beforeStoring(value)
-                wheres.append(value)
-                where_part.append("%s %s ?" % (key, sign))
-                if limit is not None and limit_offset is None:
-                    limit_clause = "LIMIT %s" % limit
-                elif limit is not None and limit_offset is not None:
-                    limit_clause = "LIMIT %s, %s" % (limit_offset, limit)
-                else:
-                    limit_clause = ""
-            operator = " " + operator + " "
-            where_part = operator.join(where_part)
-            query = "SELECT * FROM %s WHERE %s ORDER BY %s %s %s" % (
-                table, where_part, order_field, order, limit_clause
-            )
-            self._log.debug("query: %s", query)
-            cur.execute(query, tuple(wheres))
-            rows = cur.fetchall()
-        self._disconnectFromDb()
+
+        cur = self.con.cursor()
+        wheres = []
+        where_part = []
+        for key, value in where_dict.iteritems():
+            sign = "="
+            if isinstance(value, dict):
+                sign = value["sign"]
+                value = value["value"]
+            key = self._beforeStoring(key)
+            value = self._beforeStoring(value)
+            wheres.append(value)
+            where_part.append("%s %s ?" % (key, sign))
+            if limit is not None and limit_offset is None:
+                limit_clause = "LIMIT %s" % limit
+            elif limit is not None and limit_offset is not None:
+                limit_clause = "LIMIT %s, %s" % (limit_offset, limit)
+            else:
+                limit_clause = ""
+        operator = " " + operator + " "
+        where_part = operator.join(where_part)
+        query = "SELECT * FROM %s WHERE %s ORDER BY %s %s %s" % (
+            table, where_part, order_field, order, limit_clause
+        )
+        self._log.debug("query: %s", query)
+        cur.execute(query, tuple(wheres))
+        rows = cur.fetchall()
         return rows
 
+    @_manage
     def deleteEntries(self, table, where_dict=None, operator="AND"):
         """
         A wrapper for the SQL DELETE operation. It will always return all the
@@ -236,26 +232,22 @@ class Obdb(object):
         """
         if where_dict is None:
             where_dict = {'"1"': '1'}
-
-        self._connectToDb()
-        with self.con:
-            cur = self.con.cursor()
-            dels = []
-            where_part = []
-            for key, value in where_dict.iteritems():
-                sign = "="
-                if isinstance(value, dict):
-                    sign = value["sign"]
-                    value = value["value"]
-                key = self._beforeStoring(key)
-                value = self._beforeStoring(value)
-                dels.append(value)
-                where_part.append("%s %s ?" % (key, sign))
-            operator = " " + operator + " "
-            where_part = operator.join(where_part)
-            query = "DELETE FROM %s WHERE %s" % (
-                table, where_part
-            )
-            self._log.debug('Query: %s', query)
-            cur.execute(query, dels)
-        self._disconnectFromDb()
+        cur = self.con.cursor()
+        dels = []
+        where_part = []
+        for key, value in where_dict.iteritems():
+            sign = "="
+            if isinstance(value, dict):
+                sign = value["sign"]
+                value = value["value"]
+            key = self._beforeStoring(key)
+            value = self._beforeStoring(value)
+            dels.append(value)
+            where_part.append("%s %s ?" % (key, sign))
+        operator = " " + operator + " "
+        where_part = operator.join(where_part)
+        query = "DELETE FROM %s WHERE %s" % (
+            table, where_part
+        )
+        self._log.debug('Query: %s', query)
+        cur.execute(query, dels)
