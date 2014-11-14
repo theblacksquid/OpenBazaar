@@ -1,3 +1,4 @@
+import functools
 import logging
 import threading
 
@@ -10,11 +11,14 @@ class Obdb(object):
     """
     def __init__(self, db_path, disable_sqlite_crypt=False):
         self.db_path = db_path
-        self.con = False
+        self.con = None
         self.disable_sqlite_crypt = disable_sqlite_crypt
 
         self._log = logging.getLogger('DB')
         self._lock = threading.Lock()
+
+        dbapi2.register_adapter(bool, int)
+        dbapi2.register_converter("bool", lambda v: bool(int(v)))
 
     def _connectToDb(self):
         """ Opens a db connection
@@ -45,6 +49,34 @@ class Obdb(object):
                 pass
         self.con = False
         self._lock.release()
+
+    def _login(self, passphrase='passphrase'):
+        """Enable access to an encrypted database."""
+        cursor = self.con.cursor()
+        cursor.execute("PRAGMA key = '%s';" % passphrase)
+
+    def _make_db_connection(self):
+        """Create a DB connection."""
+        return dbapi2.connect(
+            self.db_path,
+            detect_types=dbapi2.PARSE_DECLTYPES,
+            timeout=10
+        )
+
+
+    # pylint: disable=no-self-argument
+    # pylint: disable=not-callable
+    def _manage(func):
+        """Manage the context of a statement execution."""
+        @functools.wraps(func)
+        def managed_func(self, *args, **kwargs):
+            with self._lock, self._make_db_connection() as self.con:
+                self.con.row_factory = self._dictFactory
+                if not self.disable_sqlite_crypt:
+                    self._login()
+                return func(self, *args, **kwargs)
+
+        return managed_func
 
     @staticmethod
     def _dictFactory(cursor, row):
