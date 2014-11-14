@@ -13,7 +13,6 @@ OpenBazaar is a decentralized marketplace proof of concept. It is based off of t
 
 - **Official Site:** http://openbazaar.org
 - **Forums:**
-  - *OpenBazaar*: http://forum.openbazaar.org
   - *unSYSTEM*: https://forum.unsystem.net/category/projects/openbazaar
   - *Bitcoin Talk*: https://bitcointalk.org/index.php?topic=768081.0
 - **IRC Chat:** #OpenBazaar on [Freenode](http://webchat.freenode.net/)
