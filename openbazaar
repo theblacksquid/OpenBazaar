@@ -1,15 +1,20 @@
 #!/bin/sh
 
-if [ `uname` == Darwin ] ; then
-  export DYLD_LIBRARY_PATH=`brew --prefix openssl`/lib:$DYLD_LIBRARY_PATH
+if [ "$(uname)" = Darwin ] ; then
+  export DYLD_LIBRARY_PATH=$(brew --prefix openssl)/lib:$DYLD_LIBRARY_PATH
 fi
 
 # if being executed from installation into some base directory,
 # we make sure we are running standing at this location
-if expr "$0" : '.*\/bin\/openbazaar$' > /dev/null ; then
-  BASE=${0%/bin/openbazaar}/share/openbazaar
-  (cd $BASE && /usr/bin/env python -m node.openbazaar "$@") &
+if expr "$0" : '.*/bin/openbazaar$' > /dev/null ; then
+  PYBASE=${0%/bin/openbazaar}/share/openbazaar
+  (cd "$PYBASE" && /usr/bin/env python -m node.openbazaar "$@") &
 else
-  ./env/bin/python -m node.openbazaar "$@" &
-  #/usr/bin/env python -m node.openbazaar "$@" &
+  # openbazaar not installed in the system, trying local install
+  # with virtual environment first
+  if [ -f ./env/bin/python -a -r ./env/bin/python -a -x ./env/bin/python ] ; then
+    ./env/bin/python -m node.openbazaar "$@" &
+  else
+    /usr/bin/env python -m node.openbazaar "$@" &
+  fi
 fi
