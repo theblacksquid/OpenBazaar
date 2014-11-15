@@ -1,5 +1,5 @@
 SCRIPTS=./scripts
-TESTPATH=./test
+TESTPATH=./tests
 
 .PHONY: all check execcheck jscheck nlcheck pycheck test unittest
 
