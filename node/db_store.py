@@ -6,8 +6,9 @@ from pysqlcipher import dbapi2
 
 
 class Obdb(object):
-    """ Interface for db storage. Serves as segregation of the persistence layer
-    and the application logic
+    """
+    API for DB storage. Serves as segregation of the persistence
+    layer and the application logic.
     """
     def __init__(self, db_path, disable_sqlite_crypt=False):
         self.db_path = db_path
@@ -26,7 +27,7 @@ class Obdb(object):
         cursor.execute("PRAGMA key = '%s';" % passphrase)
 
     def _make_db_connection(self):
-        """Create a DB connection."""
+        """Create and return a DB connection."""
         return dbapi2.connect(
             self.db_path,
             detect_types=dbapi2.PARSE_DECLTYPES,
@@ -36,21 +37,36 @@ class Obdb(object):
 
     # pylint: disable=no-self-argument
     # pylint: disable=not-callable
-    def _manage(func):
-        """Manage the context of a statement execution."""
+    def _managedmethod(func):
+        """
+        Decorator for abstracting the setting up and tearing down of a
+        DB operation. It handles:
+            * Syncrhonizing multiple DB accesses.
+            * Opening and closing DB connections.
+            * Authenitcating the user if the database is encrypted.
+
+        A function wrapped by this decorator may use the database
+        connection (via self.con) in order to operate on the DB
+        but shouldn't close the connection or manage it in any other way.
+        """
         @functools.wraps(func)
         def managed_func(self, *args, **kwargs):
             with self._lock, self._make_db_connection() as self.con:
                 self.con.row_factory = self._dictFactory
                 if not self.disable_sqlite_crypt:
                     self._login()
-                return func(self, *args, **kwargs)
+
+                ret_val = func(self, *args, **kwargs)
+
+                self.con.commit()
+                return ret_val
 
         return managed_func
 
     @staticmethod
     def _dictFactory(cursor, row):
-        """ A factory that allows sqlite to return a dictionary instead of a tuple
+        """
+        A factory that allows sqlite to return a dictionary instead of a tuple.
         """
         d = {}
         for idx, col in enumerate(cursor.description):
@@ -62,13 +78,14 @@ class Obdb(object):
 
     @staticmethod
     def _beforeStoring(value):
-        """ Method called before executing SQL identifiers.
-        """
+        """Method called before executing SQL identifiers."""
         return unicode(value)
 
     def getOrCreate(self, table, where_dict, data_dict=False):
-        """ This method attempts to grab the record first. If it fails to find it,
-        it will create it.
+        """
+        This method attempts to grab the record first. If it fails to
+        find it, it will create it.
+
         @param table: The table to search to
         @param where_dict: A dictionary with the WHERE/SET clauses
         @param data_dict: A dictionary with the SET clauses
@@ -81,9 +98,11 @@ class Obdb(object):
             self.insertEntry(table, data_dict)
         return self.selectEntries(table, where_dict)[0]
 
-    @_manage
+    @_managedmethod
     def updateEntries(self, table, set_dict, where_dict=None, operator="AND"):
-        """ A wrapper for the SQL UPDATE operation
+        """
+        A wrapper for the SQL UPDATE operation.
+
         @param table: The table to search to
         @param set_dict: A dictionary with the SET clauses
         @param where_dict: A dictionary with the WHERE clauses
@@ -121,9 +140,11 @@ class Obdb(object):
         self._log.debug('query: %s', query)
         cur.execute(query, tuple(sets + wheres))
 
-    @_manage
+    @_managedmethod
     def insertEntry(self, table, update_dict):
-        """ A wrapper for the SQL INSERT operation
+        """
+        A wrapper for the SQL INSERT operation.
+
         @param table: The table to search to
         @param update_dict: A dictionary with the values to set
         """
@@ -150,15 +171,16 @@ class Obdb(object):
         if lastrowid:
             return lastrowid
 
-    @_manage
+    @_managedmethod
     def selectEntries(self, table, where_dict=None, operator="AND", order_field="id",
                       order="ASC", limit=None, limit_offset=None, select_fields="*"):
         """
-        A wrapper for the SQL SELECT operation. It will always return all the
-        attributes for the selected rows.
+        A wrapper for the SQL SELECT operation. It will always return
+        all the attributes for the selected rows.
+
         @param table: The table to search
-        @param where_dict: A dictionary with the WHERE clauses.
-                           If ommited it will return all the rows of the table.
+        @param where_dict: A dictionary with the WHERE clauses. If ommited,
+                           it will return all the rows of the table.
         """
         if where_dict is None:
             where_dict = {'"1"': '1'}
@@ -191,14 +213,14 @@ class Obdb(object):
         rows = cur.fetchall()
         return rows
 
-    @_manage
+    @_managedmethod
     def deleteEntries(self, table, where_dict=None, operator="AND"):
         """
-        A wrapper for the SQL DELETE operation. It will always return all the
-        attributes for the selected rows.
+        A wrapper for the SQL DELETE operation.
+
         @param table: The table to search
-        @param where_dict: A dictionary with the WHERE clauses.
-                           If ommited it will delete all the rows of the table.
+        @param where_dict: A dictionary with the WHERE clauses. If ommited,
+                           it will delete all the rows of the table.
         """
         if where_dict is None:
             where_dict = {'"1"': '1'}
