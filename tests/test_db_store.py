@@ -2,12 +2,13 @@ import os
 import tempfile
 import unittest
 
-from node.db_store import Obdb
-from node import setup_db
+from node import db_store, setup_db
 
 
 class TestDbOperations(unittest.TestCase):
     """Test DB operations in an unencrypted DB."""
+
+    disable_sqlite_crypt = True
 
     @classmethod
     def setup_path(cls):
@@ -16,7 +17,10 @@ class TestDbOperations(unittest.TestCase):
 
     @classmethod
     def setup_db(cls):
-        setup_db.setup_db(cls.db_path)
+        setup_db.setup_db(
+            cls.db_path,
+            disable_sqlite_crypt=cls.disable_sqlite_crypt
+        )
 
     @classmethod
     def setUpClass(cls):
@@ -29,7 +33,10 @@ class TestDbOperations(unittest.TestCase):
         os.rmdir(cls.db_dir)
 
     def setUp(self):
-        self.db = Obdb(self.db_path)
+        self.db = db_store.Obdb(
+            self.db_path,
+            disable_sqlite_crypt=self.disable_sqlite_crypt
+        )
 
     def test_insert_select_operations(self):
         # Create a dictionary of a random review
@@ -160,6 +167,12 @@ class TestDbOperations(unittest.TestCase):
         # Looking for this record with will bring nothing
         retrieved_review = self.db.selectEntries("reviews", {"pubkey": "123"})
         self.assertEqual(len(retrieved_review), 0)
+
+
+class TestCryptDbOperations(TestDbOperations):
+    """Test DB operations in an encrypted DB."""
+
+    disable_sqlite_crypt = False
 
 if __name__ == '__main__':
     unittest.main()
