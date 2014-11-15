@@ -1,52 +1,72 @@
+import functools
 import logging
-from pysqlcipher import dbapi2 as sqlite
-from threading import Lock
+import threading
+
+from pysqlcipher import dbapi2
 
 
 class Obdb(object):
-    """ Interface for db storage. Serves as segregation of the persistence layer
-    and the application logic
+    """
+    API for DB storage. Serves as segregation of the persistence
+    layer and the application logic.
     """
     def __init__(self, db_path, disable_sqlite_crypt=False):
         self.db_path = db_path
-        self.con = False
-        self.log = logging.getLogger('DB')
+        self.con = None
         self.disable_sqlite_crypt = disable_sqlite_crypt
-        self.lock = Lock()
 
-    def _connectToDb(self):
-        """ Opens a db connection
-        """
-        self.lock.acquire()
-        self.con = sqlite.connect(
+        self._log = logging.getLogger('DB')
+        self._lock = threading.Lock()
+
+        dbapi2.register_adapter(bool, int)
+        dbapi2.register_converter("bool", lambda v: bool(int(v)))
+
+    def _login(self, passphrase='passphrase'):
+        """Enable access to an encrypted database."""
+        cursor = self.con.cursor()
+        cursor.execute("PRAGMA key = '%s';" % passphrase)
+
+    def _make_db_connection(self):
+        """Create and return a DB connection."""
+        return dbapi2.connect(
             self.db_path,
-            detect_types=sqlite.PARSE_DECLTYPES,
+            detect_types=dbapi2.PARSE_DECLTYPES,
             timeout=10
         )
-        sqlite.register_adapter(bool, int)
-        sqlite.register_converter("bool", lambda v: bool(int(v)))
-        self.con.row_factory = self._dictFactory
 
-        if not self.disable_sqlite_crypt:
-            # Use PRAGMA key to encrypt / decrypt database.
-            with self.con:
-                cur = self.con.cursor()
-                cur.execute("PRAGMA key = 'passphrase';")
 
-    def _disconnectFromDb(self):
-        """ Close the db connection
+    # pylint: disable=no-self-argument
+    # pylint: disable=not-callable
+    def _managedmethod(func):
         """
-        if self.con:
-            try:
-                self.con.close()
-            except Exception:
-                pass
-        self.con = False
-        self.lock.release()
+        Decorator for abstracting the setting up and tearing down of a
+        DB operation. It handles:
+            * Syncrhonizing multiple DB accesses.
+            * Opening and closing DB connections.
+            * Authenitcating the user if the database is encrypted.
+
+        A function wrapped by this decorator may use the database
+        connection (via self.con) in order to operate on the DB
+        but shouldn't close the connection or manage it in any other way.
+        """
+        @functools.wraps(func)
+        def managed_func(self, *args, **kwargs):
+            with self._lock, self._make_db_connection() as self.con:
+                self.con.row_factory = self._dictFactory
+                if not self.disable_sqlite_crypt:
+                    self._login()
+
+                ret_val = func(self, *args, **kwargs)
+
+                self.con.commit()
+                return ret_val
+
+        return managed_func
 
     @staticmethod
     def _dictFactory(cursor, row):
-        """ A factory that allows sqlite to return a dictionary instead of a tuple
+        """
+        A factory that allows sqlite to return a dictionary instead of a tuple.
         """
         d = {}
         for idx, col in enumerate(cursor.description):
@@ -58,13 +78,14 @@ class Obdb(object):
 
     @staticmethod
     def _beforeStoring(value):
-        """ Method called before executing SQL identifiers.
-        """
+        """Method called before executing SQL identifiers."""
         return unicode(value)
 
     def getOrCreate(self, table, where_dict, data_dict=False):
-        """ This method attempts to grab the record first. If it fails to find it,
-        it will create it.
+        """
+        This method attempts to grab the record first. If it fails to
+        find it, it will create it.
+
         @param table: The table to search to
         @param where_dict: A dictionary with the WHERE/SET clauses
         @param data_dict: A dictionary with the SET clauses
@@ -77,8 +98,11 @@ class Obdb(object):
             self.insertEntry(table, data_dict)
         return self.selectEntries(table, where_dict)[0]
 
+    @_managedmethod
     def updateEntries(self, table, set_dict, where_dict=None, operator="AND"):
-        """ A wrapper for the SQL UPDATE operation
+        """
+        A wrapper for the SQL UPDATE operation.
+
         @param table: The table to search to
         @param set_dict: A dictionary with the SET clauses
         @param where_dict: A dictionary with the WHERE clauses
@@ -86,142 +110,136 @@ class Obdb(object):
         if where_dict is None:
             where_dict = {'"1"': '1'}
 
-        self._connectToDb()
-        with self.con:
-            cur = self.con.cursor()
-            sets = []
-            wheres = []
-            where_part = []
-            set_part = []
-            for key, value in set_dict.iteritems():
-                if type(value) == bool:
-                    value = bool(value)
-                key = self._beforeStoring(key)
-                value = self._beforeStoring(value)
-                sets.append(value)
-                set_part.append("%s = ?" % key)
-            set_part = ",".join(set_part)
-            for key, value in where_dict.iteritems():
-                sign = "="
-                if isinstance(value, dict):
-                    sign = value["sign"]
-                    value = value["value"]
-                key = self._beforeStoring(key)
-                value = self._beforeStoring(value)
-                wheres.append(value)
-                where_part.append("%s %s ?" % (key, sign))
-            operator = " " + operator + " "
-            where_part = operator.join(where_part)
-            query = "UPDATE %s SET %s WHERE %s" % (
-                table, set_part, where_part
-            )
-            self.log.debug('query: %s', query)
-            cur.execute(query, tuple(sets + wheres))
-        self._disconnectFromDb()
+        cur = self.con.cursor()
+        sets = []
+        wheres = []
+        where_part = []
+        set_part = []
+        for key, value in set_dict.iteritems():
+            if type(value) == bool:
+                value = bool(value)
+            key = self._beforeStoring(key)
+            value = self._beforeStoring(value)
+            sets.append(value)
+            set_part.append("%s = ?" % key)
+        set_part = ",".join(set_part)
+        for key, value in where_dict.iteritems():
+            sign = "="
+            if isinstance(value, dict):
+                sign = value["sign"]
+                value = value["value"]
+            key = self._beforeStoring(key)
+            value = self._beforeStoring(value)
+            wheres.append(value)
+            where_part.append("%s %s ?" % (key, sign))
+        operator = " " + operator + " "
+        where_part = operator.join(where_part)
+        query = "UPDATE %s SET %s WHERE %s" % (
+            table, set_part, where_part
+        )
+        self._log.debug('query: %s', query)
+        cur.execute(query, tuple(sets + wheres))
 
+    @_managedmethod
     def insertEntry(self, table, update_dict):
-        """ A wrapper for the SQL INSERT operation
+        """
+        A wrapper for the SQL INSERT operation.
+
         @param table: The table to search to
         @param update_dict: A dictionary with the values to set
         """
-        self._connectToDb()
-        with self.con:
-            cur = self.con.cursor()
-            sets = []
-            updatefield_part = []
-            setfield_part = []
-            for key, value in update_dict.iteritems():
-                if type(value) == bool:
-                    value = bool(value)
-                key = self._beforeStoring(key)
-                value = self._beforeStoring(value)
-                sets.append(value)
-                updatefield_part.append(key)
-                setfield_part.append("?")
-            updatefield_part = ",".join(updatefield_part)
-            setfield_part = ",".join(setfield_part)
-            query = "INSERT INTO %s(%s) VALUES(%s)" % (
-                table, updatefield_part, setfield_part
-            )
-            cur.execute(query, tuple(sets))
-            lastrowid = cur.lastrowid
-            self.log.debug("query: %s", query)
-        self._disconnectFromDb()
+        cur = self.con.cursor()
+        sets = []
+        updatefield_part = []
+        setfield_part = []
+        for key, value in update_dict.iteritems():
+            if type(value) == bool:
+                value = bool(value)
+            key = self._beforeStoring(key)
+            value = self._beforeStoring(value)
+            sets.append(value)
+            updatefield_part.append(key)
+            setfield_part.append("?")
+        updatefield_part = ",".join(updatefield_part)
+        setfield_part = ",".join(setfield_part)
+        query = "INSERT INTO %s(%s) VALUES(%s)" % (
+            table, updatefield_part, setfield_part
+        )
+        cur.execute(query, tuple(sets))
+        lastrowid = cur.lastrowid
+        self._log.debug("query: %s", query)
         if lastrowid:
             return lastrowid
 
+    @_managedmethod
     def selectEntries(self, table, where_dict=None, operator="AND", order_field="id",
                       order="ASC", limit=None, limit_offset=None, select_fields="*"):
         """
-        A wrapper for the SQL SELECT operation. It will always return all the
-        attributes for the selected rows.
+        A wrapper for the SQL SELECT operation. It will always return
+        all the attributes for the selected rows.
+
         @param table: The table to search
-        @param where_dict: A dictionary with the WHERE clauses.
-                           If ommited it will return all the rows of the table.
+        @param where_dict: A dictionary with the WHERE clauses. If ommited,
+                           it will return all the rows of the table.
         """
         if where_dict is None:
             where_dict = {'"1"': '1'}
-        self._connectToDb()
-        with self.con:
-            cur = self.con.cursor()
-            wheres = []
-            where_part = []
-            for key, value in where_dict.iteritems():
-                sign = "="
-                if isinstance(value, dict):
-                    sign = value["sign"]
-                    value = value["value"]
-                key = self._beforeStoring(key)
-                value = self._beforeStoring(value)
-                wheres.append(value)
-                where_part.append("%s %s ?" % (key, sign))
-                if limit is not None and limit_offset is None:
-                    limit_clause = "LIMIT %s" % limit
-                elif limit is not None and limit_offset is not None:
-                    limit_clause = "LIMIT %s, %s" % (limit_offset, limit)
-                else:
-                    limit_clause = ""
-            operator = " " + operator + " "
-            where_part = operator.join(where_part)
-            query = "SELECT * FROM %s WHERE %s ORDER BY %s %s %s" % (
-                table, where_part, order_field, order, limit_clause
-            )
-            self.log.debug("query: %s", query)
-            cur.execute(query, tuple(wheres))
-            rows = cur.fetchall()
-        self._disconnectFromDb()
+
+        cur = self.con.cursor()
+        wheres = []
+        where_part = []
+        for key, value in where_dict.iteritems():
+            sign = "="
+            if isinstance(value, dict):
+                sign = value["sign"]
+                value = value["value"]
+            key = self._beforeStoring(key)
+            value = self._beforeStoring(value)
+            wheres.append(value)
+            where_part.append("%s %s ?" % (key, sign))
+            if limit is not None and limit_offset is None:
+                limit_clause = "LIMIT %s" % limit
+            elif limit is not None and limit_offset is not None:
+                limit_clause = "LIMIT %s, %s" % (limit_offset, limit)
+            else:
+                limit_clause = ""
+        operator = " " + operator + " "
+        where_part = operator.join(where_part)
+        query = "SELECT * FROM %s WHERE %s ORDER BY %s %s %s" % (
+            table, where_part, order_field, order, limit_clause
+        )
+        self._log.debug("query: %s", query)
+        cur.execute(query, tuple(wheres))
+        rows = cur.fetchall()
         return rows
 
+    @_managedmethod
     def deleteEntries(self, table, where_dict=None, operator="AND"):
         """
-        A wrapper for the SQL DELETE operation. It will always return all the
-        attributes for the selected rows.
+        A wrapper for the SQL DELETE operation.
+
         @param table: The table to search
-        @param where_dict: A dictionary with the WHERE clauses.
-                           If ommited it will delete all the rows of the table.
+        @param where_dict: A dictionary with the WHERE clauses. If ommited,
+                           it will delete all the rows of the table.
         """
         if where_dict is None:
             where_dict = {'"1"': '1'}
-
-        self._connectToDb()
-        with self.con:
-            cur = self.con.cursor()
-            dels = []
-            where_part = []
-            for key, value in where_dict.iteritems():
-                sign = "="
-                if isinstance(value, dict):
-                    sign = value["sign"]
-                    value = value["value"]
-                key = self._beforeStoring(key)
-                value = self._beforeStoring(value)
-                dels.append(value)
-                where_part.append("%s %s ?" % (key, sign))
-            operator = " " + operator + " "
-            where_part = operator.join(where_part)
-            query = "DELETE FROM %s WHERE %s" % (
-                table, where_part
-            )
-            self.log.debug('Query: %s', query)
-            cur.execute(query, dels)
-        self._disconnectFromDb()
+        cur = self.con.cursor()
+        dels = []
+        where_part = []
+        for key, value in where_dict.iteritems():
+            sign = "="
+            if isinstance(value, dict):
+                sign = value["sign"]
+                value = value["value"]
+            key = self._beforeStoring(key)
+            value = self._beforeStoring(value)
+            dels.append(value)
+            where_part.append("%s %s ?" % (key, sign))
+        operator = " " + operator + " "
+        where_part = operator.join(where_part)
+        query = "DELETE FROM %s WHERE %s" % (
+            table, where_part
+        )
+        self._log.debug('Query: %s', query)
+        cur.execute(query, dels)
