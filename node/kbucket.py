@@ -1,7 +1,6 @@
 import logging
 
-import constants
-import guid
+from node import constants, guid
 
 
 class BucketFull(Exception):

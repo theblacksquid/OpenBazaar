@@ -10,10 +10,9 @@ import zmq
 from zmq.error import ZMQError
 from zmq.eventloop import ioloop, zmqstream
 
-import constants
-from crypto_util import Cryptor
-from guid import GUIDMixin
-import network_util
+from node import constants, network_util
+from node.crypto_util import Cryptor
+from node.guid import GUIDMixin
 
 
 class PeerConnection(object):

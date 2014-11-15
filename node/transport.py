@@ -17,9 +17,8 @@ import zmq
 from zmq.eventloop import ioloop
 from zmq.eventloop.ioloop import PeriodicCallback
 
-import connection
-from dht import DHT
-import network_util
+from node import connection, network_util
+from node.dht import DHT
 
 
 class TransportLayer(object):

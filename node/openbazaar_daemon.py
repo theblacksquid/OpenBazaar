@@ -13,15 +13,15 @@ from zmq.eventloop import ioloop
 from threading import Thread
 from twisted.internet import reactor
 
-from db_store import Obdb
-from market import Market
-from transport import CryptoTransportLayer
-import upnp
-from util import open_default_webbrowser, is_mac
-from ws import WebSocketHandler
+from node import upnp
+from node.db_store import Obdb
+from node.market import Market
+from node.transport import CryptoTransportLayer
+from node.util import open_default_webbrowser, is_mac
+from node.ws import WebSocketHandler
 
 if is_mac():
-    from util import osx_check_dyld_library_path
+    from node.util import osx_check_dyld_library_path
     osx_check_dyld_library_path()
 
 ioloop.install()

@@ -2,7 +2,7 @@
 
 from pysqlcipher import dbapi2
 
-import migrations_util
+from db.migrations import migrations_util
 from node import constants
 
 

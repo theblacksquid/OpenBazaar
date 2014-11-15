@@ -2,10 +2,7 @@ from abc import ABCMeta, abstractmethod
 import logging
 import time
 
-import constants
-import guid
-import kbucket
-
+from node import constants, guid, kbucket
 
 
 class RoutingTable(object):
