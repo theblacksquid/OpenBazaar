@@ -20,7 +20,6 @@ class TestPeerConnection(unittest.TestCase):
         cls.address = cls._mk_address(cls.protocol, cls.hostname, cls.port)
         cls.nickname = "OpenBazaar LightYear"
         cls.pub = "YELLOW SUBMARINE"
-        cls.timeout = 10
         cls.transport = mock.Mock()
 
         cls.default_nickname = ""
@@ -34,7 +33,6 @@ class TestPeerConnection(unittest.TestCase):
         )
 
     def test_init(self):
-        self.assertEqual(self.pc1.timeout, self.timeout)
         self.assertEqual(self.pc1.transport, self.transport)
         self.assertEqual(self.pc1.address, self.address)
         self.assertEqual(self.pc1.nickname, self.default_nickname)

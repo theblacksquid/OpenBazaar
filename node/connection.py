@@ -19,7 +19,6 @@ import network_util
 class PeerConnection(object):
     def __init__(self, transport, address, nickname=""):
 
-        self.timeout = 10  # [seconds]
         self.transport = transport
         self.address = address
         self.nickname = nickname
@@ -47,13 +46,6 @@ class PeerConnection(object):
                 raise
             self.socket.ipv6 = True
             self.socket.connect(self.address)
-
-    def cleanup_context(self):
-        self.ctx.destroy()
-
-    def close_socket(self):
-        self.stream.close(0)
-        self.socket.close(0)
 
     def send(self, data, callback):
         self.send_raw(json.dumps(data), callback)
@@ -202,12 +194,6 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             self.send_raw(data, callback)
         except Exception as e:
             self.log.error("Was not able to send raw data: %s", e)
-
-    def peer_to_tuple(self):
-        return self.ip, self.port, self.guid
-
-    def get_guid(self):
-        return self.guid
 
 
 class PeerListener(GUIDMixin):

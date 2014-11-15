@@ -20,19 +20,6 @@ import obelisk
 # You will need 3 keys for buyer, seller and arbitrer
 
 
-def build_output_info_list(unspent_rows):
-    unspent_infos = []
-    for row in unspent_rows:
-        assert len(row) == 4
-        outpoint = obelisk.OutPoint()
-        outpoint.hash = row[0]
-        outpoint.index = row[1]
-        value = row[3]
-        unspent_infos.append(
-            obelisk.OutputInfo(outpoint, value))
-    return unspent_infos
-
-
 class Multisig(object):
     def __init__(self, client, number_required, pubkeys):
         if number_required > len(pubkeys):
