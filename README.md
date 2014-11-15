@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/OpenBazaar/OpenBazaar.svg?branch=master)](https://travis-ci.org/OpenBazaar/OpenBazaar)
 [![Coverage Status](https://coveralls.io/repos/OpenBazaar/OpenBazaar/badge.png)](https://coveralls.io/r/OpenBazaar/OpenBazaar)
+[![Stories in Ready](https://badge.waffle.io/OpenBazaar/OpenBazaar.svg?label=ready&title=Ready)](http://waffle.io/OpenBazaar/OpenBazaar)
 
 Seed Uptime Status: (http://status.openbazaar.org/)
 
