@@ -146,3 +146,13 @@ app.directive("validateOnBlur", [function() {
     };
     return ddo;
 }]);
+
+/**
+ * Site-wide jQuery event handlers.
+ */
+$(document).ready(function() {
+  // Ensure merchant store details are immediately visible when selected, even if scrolled far down the page.
+  $(".peers-table").on("click", function() {
+    $("html, body").animate({scrollTop: 0}, 300);
+  });
+});
