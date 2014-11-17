@@ -64,7 +64,7 @@ function installMac {
   fi
 
   # Use brew's python 2.7, even if user has a system python. The brew version comes with pip and setuptools.
-  # If user already has brew installed python, then this won't do anything. 
+  # If user already has brew installed python, then this won't do anything.
   # Note we get pip for free by doing this, and can avoid future calls to sudo. brew convention abhors all things 'sudo' anyway.
   brew install python
 
@@ -116,9 +116,9 @@ function installUbuntu {
   set -x
 
   sudo apt-get update
-  sudo apt-get install python-pip build-essential python-zmq rng-tools
-  sudo apt-get install python-dev g++ libjpeg-dev sqlite3 openssl
-  sudo apt-get install alien libssl-dev python-virtualenv lintian libjs-jquery
+  sudo apt-get -y install python-pip build-essential python-zmq rng-tools
+  sudo apt-get -y install python-dev g++ libjpeg-dev sqlite3 openssl
+  sudo apt-get -y install alien libssl-dev python-virtualenv lintian libjs-jquery
 
   if [ ! -d "./env" ]; then
     virtualenv --python=python2.7 env
@@ -226,15 +226,15 @@ function installSlack {
   set -x
 
   sudo /usr/sbin/slackpkg update
-  if ! command_exists python; then 
-    sudo /usr/sbin/slackpkg install python  
+  if ! command_exists python; then
+    sudo /usr/sbin/slackpkg install python
   fi
-   
+
   if [ ! -f /usr/sbin/sbopkg ];  then
       echo "Please install sbopkg for ease of dependency installation from sbopkgs. "
            "Be sure to run sbopkg and sync before retrying this install."
       exit 1
-  else	  
+  else
       if ! command_exists pip; then
         sudo /usr/sbin/sbopkg -i pysetuptools # Required for pip
         sudo /usr/sbin/sbopkg -i pip
@@ -242,21 +242,21 @@ function installSlack {
 
       PYZVAR=$(grep "pyzmq" requirements.txt) # Get pip version.
       /usr/bin/pip install --user $PYZVAR
-      sudo pip install virtualenv  
+      sudo pip install virtualenv
       wget http://sourceforge.net/projects/gkernel/files/rng-tools/5/rng-tools-5.tar.gz
-      tar -xvf rng-tools-5.tar.gz 
-      pushd rng-tools-5 
-      ./configure 
-      make 
-      sudo make install 
+      tar -xvf rng-tools-5.tar.gz
+      pushd rng-tools-5
+      ./configure
+      make
+      sudo make install
       popd
-      sudo /usr/sbin/slackpkg install libjpeg sqlite openssl 
-   fi 
-  
+      sudo /usr/sbin/slackpkg install libjpeg sqlite openssl
+   fi
+
   if [ ! -d "./env" ]; then
         virtualenv env
   fi
-  
+
   ./env/bin/pip install -r requirements.txt
   doneMessage
 }
@@ -288,4 +288,3 @@ elif [[ $OSTYPE == linux-gnu || $OSTYPE == linux-gnueabihf ]]; then
     installUbuntu
   fi
 fi
-
