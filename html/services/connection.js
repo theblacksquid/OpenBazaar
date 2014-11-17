@@ -1,5 +1,4 @@
-angular.module('app')
-  .service('Connection', ['$rootScope', function($rootScope){
+angular.module('app').service('Connection', ['$rootScope', function($rootScope){
 
     var Connection = function(onMessage) {
       var socket_uri = document.URL.replace(/https?:(.*)\/html\/.*/, "ws:$1/ws");
@@ -36,7 +35,7 @@ angular.module('app')
         if (msg === undefined) {
          msg = {};
         }
-       
+
          var request = {
             "id": 42,
             "command": command,
@@ -48,7 +47,7 @@ angular.module('app')
 
         if(self.websocket.readyState == 1){
             self.websocket.send(message);
-          }
+        }
         else {
             self.websocket.onopen = function(e){
                 self.websocket.send(message);
