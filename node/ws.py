@@ -1,7 +1,6 @@
 import threading
 import logging
 import subprocess
-import protocol
 import pycountry
 import gnupg
 import obelisk
@@ -17,8 +16,8 @@ from bitcoin import (
 )
 import tornado.websocket
 from twisted.internet import reactor
-from backuptool import BackupTool, Backup, BackupJSONEncoder
-import trust
+from node import protocol, trust
+from node.backuptool import BackupTool, Backup, BackupJSONEncoder
 
 
 class ProtocolHandler(object):

@@ -1,4 +1,3 @@
-from multisig import Multisig
 import StringIO
 import gnupg
 import hashlib
@@ -11,7 +10,8 @@ import urllib
 from bitcoin import mk_multisig_script, privkey_to_pubkey, scriptaddr
 
 from decimal import Decimal
-import trust
+from node import trust
+from node.multisig import Multisig
 
 
 class Orders(object):

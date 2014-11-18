@@ -1,16 +1,13 @@
-from protocol import proto_store
 from urlparse import urlparse
-import constants
-import datastore
 import hashlib
 import json
 import logging
 import os
-import routingtable
 import time
 from threading import Thread
 
-import network_util
+from node import constants, datastore, network_util, routingtable
+from node.protocol import proto_store
 
 
 class DHT(object):
