@@ -180,8 +180,6 @@ angular.module('app')
                 }
             };
 
-
-
             $scope.parse_welcome = function(msg) {
 
                 console.log(msg);
