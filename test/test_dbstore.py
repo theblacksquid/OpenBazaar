@@ -123,6 +123,15 @@ class TestDbOperations(unittest.TestCase):
             "123"
         )
 
+    def test_get_or_create_record_when_not_exists(self):
+        db = Obdb(TEST_DB_PATH)
+        record = {"city": "Zurich"}
+        table = "settings"
+        retrieved_record = db.getOrCreate(table, record)
+        self.assertEqual(retrieved_record["city"], record["city"])
+        # check that the missing fields were created as empty
+        self.assertEqual(retrieved_record["countryCode"], "")
+
     def test_update_operation(self):
 
         # Initialize our db instance

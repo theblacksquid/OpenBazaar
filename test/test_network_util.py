@@ -1,4 +1,3 @@
-import collections
 import mock
 import unittest
 
@@ -10,25 +9,13 @@ from node import network_util
 
 class TestNodeNetworkUtil(unittest.TestCase):
 
-    def test_init_additional_stun_servers(self):
-        stun_servers_pre = stun.stun_servers_list
+    def test_set_stun_servers(self):
         new_stun_servers = (
             'stun.openbazaar1.com',
             'stun.openbazaar2.com'
         )
-        network_util.init_additional_STUN_servers(servers=new_stun_servers)
-
-        counter = collections.Counter(stun.stun_servers_list)
-
-        # Check all new STUN servers are in.
-        for server in new_stun_servers:
-            self.assertEqual(counter[server], 1)
-
-        network_util.init_additional_STUN_servers(servers=new_stun_servers)
-
-        # Check no STUN server was removed or added twice.
-        for server in stun_servers_pre:
-            self.assertEqual(counter[server], 1)
+        network_util.set_stun_servers(servers=new_stun_servers)
+        self.assertItemsEqual(new_stun_servers, stun.stun_servers_list)
 
     @mock.patch.object(stun, 'get_ip_info')
     def test_get_NAT_status(self, method_mock):
@@ -39,7 +26,7 @@ class TestNodeNetworkUtil(unittest.TestCase):
         dict_response = {key: value for key, value in zip(keys, stun_response)}
 
         self.assertEqual(dict_response, network_util.get_NAT_status())
-        method_mock.assert_called_once_with(source_port=0)
+        method_mock.assert_called_once_with(source_port=0, stun_host=None)
 
     def test_is_loopback_addr(self):
         self.assertTrue(network_util.is_loopback_addr("127.0.0.1"))
@@ -47,19 +34,6 @@ class TestNodeNetworkUtil(unittest.TestCase):
 
         self.assertFalse(network_util.is_loopback_addr("10.0.0.1"))
         self.assertFalse(network_util.is_loopback_addr("192.168.0.1"))
-
-    def test_is_valid_port(self):
-        self.assertTrue(network_util.is_valid_port(1))
-        self.assertTrue(network_util.is_valid_port(2**16 - 1))
-
-        self.assertFalse(network_util.is_valid_port(0))
-        self.assertFalse(network_util.is_valid_port(2**16))
-
-    def test_is_valid_protocol(self):
-        self.assertTrue(network_util.is_valid_protocol('tcp'))
-
-        self.assertFalse(network_util.is_valid_protocol('udp'))
-        self.assertFalse(network_util.is_valid_protocol('baz'))
 
     def test_is_private_ip_address(self):
         self.assertTrue(network_util.is_private_ip_address('localhost'))

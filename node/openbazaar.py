@@ -12,9 +12,9 @@ import threading
 
 import psutil
 
-import network_util
-from openbazaar_daemon import node_starter, OpenBazaarContext, start_node
-import setup_db
+import node.network_util as network_util
+from node.openbazaar_daemon import node_starter, OpenBazaarContext, start_node
+import node.setup_db as setup_db
 
 
 def arg_to_key(arg):
@@ -138,6 +138,7 @@ openbazaar [options] <command>
         Expected <level> values are:
            0 - NOT SET
            5 - DATADUMP
+           9 - DEBUGV
           10 - DEBUG
           20 - INFO
           30 - WARNING
@@ -225,15 +226,15 @@ def create_openbazaar_contexts(arguments, nat_status):
 
     # log path (requires log_dir to exist)
     if not os.path.exists(defaults['log_dir']):
-        os.makedirs(defaults['log_dir'], 0755)
+        os.makedirs(defaults['log_dir'], 0o755)
 
     # log path (requires LOG_DIR to exist)
     if not os.path.exists(defaults['log_dir']):
-        os.makedirs(defaults['log_dir'], 0755)
+        os.makedirs(defaults['log_dir'], 0o755)
 
     # db path
     if not os.path.exists(defaults['db_dir']):
-        os.makedirs(defaults['db_dir'], 0755)
+        os.makedirs(defaults['db_dir'], 0o755)
 
     db_path = os.path.join(defaults['db_dir'], defaults['db_file'])
     if arguments.db_path != db_path:
@@ -328,7 +329,7 @@ def ensure_database_setup(ob_ctx, defaults):
     # make sure the folder exists wherever it is
     db_dirname = os.path.dirname(db_path)
     if not os.path.exists(db_dirname):
-        os.makedirs(db_dirname, 0755)
+        os.makedirs(db_dirname, 0o755)
 
     if not os.path.exists(db_path):
         # setup the database if file not there.
@@ -339,7 +340,7 @@ def ensure_database_setup(ob_ctx, defaults):
 
 def start(arguments):
     defaults = OpenBazaarContext.get_defaults()
-    network_util.init_additional_STUN_servers()
+    network_util.set_stun_servers()
 
     # Turn off checks that don't make sense in development mode
     if arguments.dev_mode:
@@ -376,9 +377,13 @@ def terminate_or_kill_process(process):
         process.terminate()  # in POSIX, sends SIGTERM.
         process.wait(5)
     except psutil.TimeoutExpired:
-        _, alive = psutil.wait_procs([process], None, None)
-        if process in alive:
+        try:
+            print "process {0} didn't terminate - sending sigkill".format(process.pid)
             process.kill()  # sends KILL signal.
+            process.wait(5)
+        except psutil.TimeoutExpired:
+            print 'timeout waiting for process {0} to end'.format(process.pid)
+            return
 
 
 def stop():

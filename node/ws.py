@@ -1,7 +1,6 @@
 import threading
 import logging
 import subprocess
-import protocol
 import pycountry
 import gnupg
 import obelisk
@@ -16,9 +15,9 @@ from bitcoin import (
     scriptaddr
 )
 import tornado.websocket
-from threading import Thread
-from backuptool import BackupTool, Backup, BackupJSONEncoder
-import trust
+from twisted.internet import reactor
+from node import protocol, trust
+from node.backuptool import BackupTool, Backup, BackupJSONEncoder
 
 
 class ProtocolHandler(object):
@@ -194,7 +193,7 @@ class ProtocolHandler(object):
         return "contracts" in data
 
     def on_listing_results(self, msg):
-        self.log.debug('Found results %s', msg)
+        self.log.datadump('Found results %s', msg)
         self.send_to_client(None, {
             "type": "store_contracts",
             "products": msg['contracts']
@@ -215,7 +214,7 @@ class ProtocolHandler(object):
         return True
 
     def on_listing_result(self, msg):
-        self.log.debug('Found result %s', msg)
+        self.log.datadump('Found result %s', msg)
         self.send_to_client(None, {
             "type": "store_contract",
             "contract": msg
@@ -390,7 +389,7 @@ class ProtocolHandler(object):
         self.market.save_settings(msg['settings'])
 
     def client_create_contract(self, socket_handler, contract):
-        self.log.info("New Contract: %s", contract)
+        self.log.datadump('New Contract: %s', contract)
         self.market.save_contract(contract)
 
     def client_remove_contract(self, socket_handler, msg):
@@ -459,7 +458,7 @@ class ProtocolHandler(object):
 
         try:
             client = obelisk.ObeliskOfLightClient(
-                'tcp://obelisk2.airbitz.co:9091'
+                'tcp://obelisk.coinkite.com:9091'
             )
 
             seller = offer_data_json['Seller']
@@ -518,7 +517,8 @@ class ProtocolHandler(object):
                     multi_address,
                     lambda ec, history, order=order: cb(ec, history, order))
 
-            Thread(target=get_history).start()
+            reactor.callFromThread(get_history)
+
         except Exception as e:
             self.log.error('%s', e)
 
@@ -562,7 +562,7 @@ class ProtocolHandler(object):
 
         try:
             client = obelisk.ObeliskOfLightClient(
-                'tcp://obelisk2.airbitz.co:9091'
+                'tcp://obelisk.coinkite.com:9091'
             )
 
             seller = offer_data_json['Seller']
@@ -630,7 +630,7 @@ class ProtocolHandler(object):
                     lambda ec, history, order=order: cb(ec, history, order)
                 )
 
-            Thread(target=get_history).start()
+            reactor.callFromThread(get_history)
 
         except Exception as e:
             self.log.error('%s', e)
@@ -681,7 +681,7 @@ class ProtocolHandler(object):
 
         try:
             client = obelisk.ObeliskOfLightClient(
-                'tcp://obelisk2.airbitz.co:9091'
+                'tcp://obelisk.coinkite.com:9091'
             )
 
             script = msg['script']
@@ -735,7 +735,7 @@ class ProtocolHandler(object):
                     lambda ec, history, order=order: cb(ec, history, order)
                 )
 
-            Thread(target=get_history).start()
+            reactor.callFromThread(get_history)
 
         except Exception as e:
             self.log.error('%s', e)
@@ -767,7 +767,6 @@ class ProtocolHandler(object):
         self.log.info("Querying for Contracts %s", msg)
 
         self.transport.dht.find_listings_by_keyword(
-            self.transport,
             msg['key'].upper(),
             callback=self.on_find_products
         )
@@ -776,7 +775,6 @@ class ProtocolHandler(object):
         self.log.info("Searching network for contracts")
 
         self.transport.dht.find_listings(
-            self.transport,
             msg['key'],
             callback=self.on_find_products_by_store
         )
@@ -829,7 +827,7 @@ class ProtocolHandler(object):
         self.log.info('Found Contracts: %s', type(results))
         self.log.info(results)
 
-        if len(results) > 0 and type(results['data']) == unicode:
+        if results and isinstance(results['data'], unicode):
             results = json.loads(results[0])
 
         self.log.info(results)
@@ -839,7 +837,7 @@ class ProtocolHandler(object):
         else:
             self.log.debug('Results: %s', results['contracts'])
 
-        if len(results) > 0 and 'data' in results:
+        if results and 'data' in results:
 
             data = results['data']
             contracts = data['contracts']
@@ -860,7 +858,7 @@ class ProtocolHandler(object):
         self.log.info('Found Contracts: %s', type(results))
         self.log.info(results)
 
-        if len(results):
+        if results:
             if 'listings' in results:
                 # TODO: Validate signature of listings matches data
 
@@ -923,7 +921,7 @@ class ProtocolHandler(object):
     def on_global_search_value(self, results, key):
 
         self.log.info('global search: %s %s', results, key)
-        if results and type(results) is not list:
+        if results and not isinstance(results, list):
             self.log.debug('Listing Data: %s %s', results, key)
 
             # Import gpg pubkey
@@ -1033,7 +1031,7 @@ class ProtocolHandler(object):
 
     # send a message
     def send_to_client(self, error, result):
-        assert error is None or type(error) == str
+        assert error is None or isinstance(error, str)
         response = {
             "id": random.randint(0, 1000000),
             "result": result
@@ -1054,7 +1052,7 @@ class ProtocolHandler(object):
             return False
         params = request["params"]
         # Create callback handler to write response to the socket.
-        self.log.debug('found a handler!')
+        self.log.debugv('found a handler!')
         self._handlers[command](socket_handler, params)
         return True
 
@@ -1131,10 +1129,10 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     @staticmethod
     def _check_request(request):
         return "command" in request and "id" in request and \
-               "params" in request and type(request["params"]) == dict
+               "params" in request and isinstance(request["params"], dict)
 
     def on_message(self, message):
-        self.log.info('[On Message]: %s', message)
+        self.log.datadump('Received message: %s', message)
         try:
             request = json.loads(message)
         except Exception:

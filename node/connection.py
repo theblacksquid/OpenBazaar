@@ -10,16 +10,14 @@ import zmq
 from zmq.error import ZMQError
 from zmq.eventloop import ioloop, zmqstream
 
-import constants
-from crypto_util import Cryptor
-from guid import GUIDMixin
-import network_util
+from node import constants, network_util
+from node.crypto_util import Cryptor
+from node.guid import GUIDMixin
 
 
 class PeerConnection(object):
     def __init__(self, transport, address, nickname=""):
 
-        self.timeout = 10  # [seconds]
         self.transport = transport
         self.address = address
         self.nickname = nickname
@@ -48,13 +46,6 @@ class PeerConnection(object):
             self.socket.ipv6 = True
             self.socket.connect(self.address)
 
-    def cleanup_context(self):
-        self.ctx.destroy()
-
-    def close_socket(self):
-        self.stream.close(0)
-        self.socket.close(0)
-
     def send(self, data, callback):
         self.send_raw(json.dumps(data), callback)
 
@@ -67,7 +58,7 @@ class PeerConnection(object):
             except ValueError:
                 self.log.error('[send_raw] Bad JSON response: %s', msg[0])
                 return
-            self.log.debug('[send_raw] %s', pformat(response))
+            self.log.datadump('[send_raw] response: %s', pformat(response))
 
             # Update active peer info
             self.nickname = response.get('senderNick', self.nickname)
@@ -101,7 +92,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             if not msg:
                 return
 
-            self.log.debug('ALIVE PEER %s', msg[0])
+            self.log.debugv('ALIVE PEER %s', msg[0])
             msg = msg[0]
             try:
                 msg = json.loads(msg)
@@ -120,7 +111,6 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
                 if peer.guid == self.guid or peer.address == self.address:
                     self.transport.dht.activePeers[idx] = self
                     self.transport.dht.add_peer(
-                        self.transport,
                         self.address,
                         self.pub,
                         self.guid,
@@ -140,7 +130,8 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
                 'pubkey': self.transport.pubkey,
                 'uri': self.transport.uri,
                 'senderGUID': self.transport.guid,
-                'senderNick': self.transport.nickname
+                'senderNick': self.transport.nickname,
+                'v': constants.VERSION
             }),
             cb
         )
@@ -186,6 +177,8 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         sig_data = json.dumps(data).encode('hex')
         signature = self.sign(sig_data).encode('hex')
 
+        self.log.datadump('Sending to peer: %s %s', self.address, pformat(data))
+
         try:
             # Encrypt signature and data
             data = self.encrypt(json.dumps({
@@ -200,12 +193,6 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             self.send_raw(data, callback)
         except Exception as e:
             self.log.error("Was not able to send raw data: %s", e)
-
-    def peer_to_tuple(self):
-        return self.ip, self.port, self.guid
-
-    def get_guid(self):
-        return self.guid
 
 
 class PeerListener(GUIDMixin):
@@ -364,7 +351,8 @@ class CryptoPeerListener(PeerListener):
         else:
             message = json.loads(serialized)
 
-        self.log.info('Message [%s]', message.get('type'))
+        self.log.debugv('Received message of type "%s"',
+                       message.get('type', 'unknown'))
         self._data_cb(message)
 
     @staticmethod

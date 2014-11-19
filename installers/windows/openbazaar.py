@@ -7,6 +7,8 @@
 # that our exe file can locate its depedencies without problems.
 #
 
+import ctypes
+import ctypes.util
 import os
 import sys
 
@@ -29,6 +31,20 @@ sys.path.append(os.path.join(path, "pycountry-1.8-py2.7.egg"))
 from node import openbazaar
 
 def main():
+
+    # Try to locate gpg.exe
+    if not ctypes.util.find_library('gpg.exe'):
+        MessageBox = ctypes.windll.user32.MessageBoxA
+        MessageBox(
+            None,
+            'Gpg4win could not be detected.\n'
+            'Please download and install gpg4win from http://gpg4win.org/ before continuing.',
+            'Open Bazaar',
+            0
+        )
+
+        return
+
     # Workaround to make it possible to double click on the exe file
     sys.argv.append('start')
 

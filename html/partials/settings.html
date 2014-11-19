@@ -57,7 +57,7 @@
 
         <h4>Reputation Pledge</h4>
 
-        <div class="alert alert-warning">Buyers trust stores with reputation pledges more than stores without. <a href="https://blog.openbazaar.org/proof-of-burn-and-reputation-pledges/">Learn more</a>.</div>
+        <div class="alert alert-warning">Buyers trust stores with reputation pledges more than stores without. <a target="_blank" href="https://blog.openbazaar.org/proof-of-burn-and-reputation-pledges/">Learn more.</a></div>
 
         <div class="form-group">
             <label for="burnAmount" class="col-sm-3 control-label">Your pledge</label>
@@ -72,23 +72,6 @@
             <label for="burnAddr" class="col-sm-3 control-label">Proof-of-burn address</label>
             <div class="col-sm-9">
                 <div class="form-control"><span id="burnAddr" ng-bind="settings.burnAddr">Loading...</span></div>
-            </div>
-        </div>
-
-        <h4>Password</h4>
-        <div class="alert alert-warning">This password will protect your keys and prevent others from accessing your store.</div>
-
-        <div class="form-group">
-            <label for="inputPassword" class="col-sm-3 control-label">Password</label>
-            <div class="col-sm-9">
-                <input class="form-control" id="inputPassword" type="password">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="inputConfirmPassword" class="col-sm-3 control-label">Confirm Password</label>
-            <div class="col-sm-9">
-                <input class="form-control" id="inputConfirmPassword" type="password">
             </div>
         </div>
 
@@ -281,9 +264,7 @@
         <div >
 
             <h4>Trusted Notaries</h4>
-            <p>The addresses below are notaries used during transactions. <button type="button" class="btn btn-primary btn-sm" data-ng-click="">
-                            <span class="glyphicon glyphicon-search"></span> Find Notary
-                        </button></p>
+            <p>The addresses below are notaries used during transactions.</p>
 
             <div class="form-group">
 
@@ -364,7 +345,7 @@
         <div id="log_output" style="white-space:pre;height:600px;overflow:scroll;" class="col-sm-12 well">{{log_output}}</div>
         </div>
     </form>
-    
+
     <form id="backup-form" role="form" class="form-horizontal">
         <h4>Backup Management</h4>
 
@@ -382,7 +363,7 @@
 	        	<div ng-hide="backups.length">No backup</div>
 	        </div>
         </div>
-    </form>    
+    </form>
 
 </div>
 

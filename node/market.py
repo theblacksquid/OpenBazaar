@@ -16,11 +16,11 @@ import traceback
 from bitcoin.main import privkey_to_pubkey
 import tornado
 
-import constants
-from crypto_util import Cryptor
-from data_uri import DataURI
-from orders import Orders
-from protocol import proto_page, query_page
+from node import constants
+from node.crypto_util import Cryptor
+from node.data_uri import DataURI
+from node.orders import Orders
+from node.protocol import proto_page, query_page
 
 
 class Market(object):
@@ -66,9 +66,7 @@ class Market(object):
             'query_myorders',
             'peer',
             'query_page',
-            'query_listings',
-            'negotiate_pubkey',
-            'response_pubkey'
+            'query_listings'
         )
 
         # Register callbacks for incoming events
@@ -265,10 +263,11 @@ class Market(object):
         self.log.debug("%s %s", guid, nickname)
         notaries = self.settings.get('notaries')
 
-        self.log.debug("notaries: %s", notaries)
-        if notaries == "" or notaries == []:
+        self.log.debug("Notaries: %s", notaries)
+
+        if not notaries:
             notaries = []
-        else:
+        elif not isinstance(notaries, list):
             notaries = json.loads(notaries)
 
         for notary in notaries:
@@ -291,43 +290,6 @@ class Market(object):
             self.settings,
             {'market_id': self.transport.market_id}
         )
-
-    def _decode_list(self, data):
-        """Receives data and decode to list"""
-        rv = []
-        for item in data:
-            if isinstance(item, unicode):
-                item = item.encode('utf-8')
-            elif isinstance(item, list):
-                item = self._decode_list(item)
-            elif isinstance(item, dict):
-                item = self._decode_dict(item)
-            rv.append(item)
-        return rv
-
-    def _decode_dict(self, data):
-        """so this receives a dictionary:
-
-        iterates over the key,value pairs...
-        if the key is unicode, it re-encodes the key in utf.
-        if the value is unicode, it re-encodes it utf-8
-        else if the value is a list, it calls a decode_list method
-        if the value is a dict, it does a recursive call
-        then updates the dictionary as it iterates
-
-        """
-        rv = {}
-        for key, value in data.iteritems():
-            if isinstance(key, unicode):
-                key = key.encode('utf-8')
-            if isinstance(value, unicode):
-                value = value.encode('utf-8')
-            elif isinstance(value, list):
-                value = self._decode_list(value)
-            elif isinstance(value, dict):
-                value = self._decode_dict(value)
-            rv[key] = value
-        return rv
 
     def remove_trusted_notary(self, guid):
         """Not trusted to selected notary. Dlete notary from the local list"""
@@ -625,7 +587,7 @@ class Market(object):
             hash_value.update('notary-index')
             key = hash_value.hexdigest()
 
-            if msg['notary'] is True:
+            if msg['notary']:
                 self.log.info('Letting the network know you are now a notary')
                 data = json.dumps({'notary_index_add': self.transport.guid})
                 self.transport.store(key, data, self.transport.guid)
@@ -762,44 +724,6 @@ class Market(object):
 
     def on_peer(self, peer):
         pass
-
-    def validate_on_negotiate_pubkey(self, *data):
-        self.log.debug('Validating on negotiate pubkey message.')
-        keys = ("nickname", "ident_pubkey")
-        return all(k in data[0] for k in keys)
-
-    def on_negotiate_pubkey(self, ident_pubkey):
-        """Run if someone is asking for your real pubKey"""
-        self.log.info("Someone is asking for your real pubKey")
-        nickname = ident_pubkey['nickname']
-        ident_pubkey = ident_pubkey['ident_pubkey'].decode("hex")
-        self.transport.respond_pubkey_if_mine(nickname, ident_pubkey)
-
-    def validate_on_response_pubkey(self, *data):
-        self.log.debug('Validating on response pubkey message.')
-        keys = ("pubkey", "nickname", "signature")
-        return all(k in data[0] for k in keys)
-
-    def on_response_pubkey(self, response):
-        """Deprecated. This is a DarkMarket holdover.
-           Run to verify signature if someone send you the pubKey.
-        """
-        pubkey = response["pubkey"].decode("hex")
-        # signature = response["signature"].decode("hex")
-        nickname = response["nickname"]
-        # Cache mapping for later.
-        if nickname not in self.transport.nick_mapping:
-            self.transport.nick_mapping[nickname] = [None, pubkey]
-        # Verify signature here...
-        # Add to our dict.
-        self.transport.nick_mapping[nickname][1] = pubkey
-        self.log.info("[market] mappings: ###############")
-        for key, value in self.transport.nick_mapping.iteritems():
-            self.log.info(
-                "'%s' -> '%s' (%s)",
-                key, value[1].encode("hex") if value[1] is not None else value[1],
-                value[0].encode("hex") if value[0] is not None else value[0])
-        self.log.info("##################################")
 
     def release_funds_to_merchant(self, buyer_order_id, tx, script, signatures, guid):
         """Send TX to merchant"""

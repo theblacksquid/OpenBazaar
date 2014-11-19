@@ -9,12 +9,12 @@ alpha = 3
 
 # Maximum number of contacts stored in a bucket
 # NOTE: Should be an even number.
-k = 80
+k = 8
 
 # Maximum number of contacts stored in the
 # replacement cache of a bucket
 # NOTE: Should be an even number.
-cache_k = 80
+cache_k = 32
 
 # Timeout for network operations
 # [seconds]
@@ -53,4 +53,4 @@ checkRefreshInterval = refreshTimeout / 5
 udpDatagramMaxSize = 8192  # 8 KB
 
 DB_PATH = "db/ob.db"
-VERSION = "0.2.3"
+VERSION = "0.3.1.dev0"

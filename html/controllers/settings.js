@@ -141,6 +141,7 @@ angular.module('app')
             $scope.parse_notaries = function(msg) {
                 console.log('Parsing notaries');
                 $scope.settings.notaries = msg.notaries;
+                $scope.trusted_notaries = msg.notaries;
                 console.log(msg.notaries);
                 if (!$scope.$$phase) {
                     $scope.$apply();

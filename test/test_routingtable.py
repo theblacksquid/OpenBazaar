@@ -5,7 +5,7 @@ from node import constants, guid, kbucket, routingtable
 
 
 class TestRoutingTable(unittest.TestCase):
-    """Test interface of abstract class RoutingTable."""
+    """Test the static methods of abstract class RoutingTable."""
 
     @classmethod
     def setUpClass(cls):
@@ -17,23 +17,6 @@ class TestRoutingTable(unittest.TestCase):
         cls.market_id = 42
         cls.guid = guid.GUIDMixin(cls.id1)
 
-    def setUp(self):
-        self.rt = routingtable.RoutingTable(
-            self.parent_node_id,
-            self.market_id
-        )
-
-    def test_init(self):
-        self.assertEqual(self.rt.parent_node_id, self.parent_node_id)
-        self.assertEqual(self.rt.market_id, self.market_id)
-        self.assertTrue(hasattr(self.rt, 'log'))
-
-    def test_addContact(self):
-        self.assertRaises(
-            NotImplementedError,
-            self.rt.addContact,
-            self.id1
-        )
 
     @staticmethod
     def _lpad_node_id_len(node_id):
@@ -41,7 +24,7 @@ class TestRoutingTable(unittest.TestCase):
 
     def test_distance(self):
         def dist(node_id1, node_id2):
-            return self.rt.distance(
+            return routingtable.RoutingTable.distance(
                 self._lpad_node_id_len(node_id1),
                 self._lpad_node_id_len(node_id2)
             )
@@ -60,14 +43,14 @@ class TestRoutingTable(unittest.TestCase):
 
         self.assertEqual(
             d_ab,
-            self.rt.distance(
+            routingtable.RoutingTable.distance(
                 guid.GUIDMixin(self._lpad_node_id_len("a")),
                 self._lpad_node_id_len("b")
             )
         )
         self.assertEqual(
             d_ab,
-            self.rt.distance(
+            routingtable.RoutingTable.distance(
                 self._lpad_node_id_len("a"),
                 guid.GUIDMixin(self._lpad_node_id_len("b"))
             )
@@ -75,73 +58,34 @@ class TestRoutingTable(unittest.TestCase):
 
         self.assertRaises(
             ValueError,
-            self.rt.distance,
+            routingtable.RoutingTable.distance,
             "a" * 4,
             "a" * constants.HEX_NODE_ID_LEN
         )
 
         self.assertRaises(
             ValueError,
-            self.rt.distance,
+            routingtable.RoutingTable.distance,
             "a" * constants.HEX_NODE_ID_LEN,
             "a" * 4
         )
 
     def test_num_to_id(self):
         self.assertEqual(
-            self.rt.numToId(0),
+            routingtable.RoutingTable.numToId(0),
             '0000000000000000000000000000000000000000'
         )
         self.assertEqual(
-            self.rt.numToId(42),
+            routingtable.RoutingTable.numToId(42),
             '000000000000000000000000000000000000002a'
         )
         self.assertEqual(
-            self.rt.numToId(2**100),
+            routingtable.RoutingTable.numToId(2**100),
             '0000000000000010000000000000000000000000'
         )
         self.assertEqual(
-            self.rt.numToId(2**160 - 1),
+            routingtable.RoutingTable.numToId(2**160 - 1),
             'ffffffffffffffffffffffffffffffffffffffff'
-        )
-
-    def test_findCloseNodes(self):
-        self.assertRaises(
-            NotImplementedError,
-            self.rt.findCloseNodes,
-            self.id1,
-            constants.k,
-            rpc_node_id=self.id2
-        )
-
-    def test_getContact(self):
-        self.assertRaises(
-            NotImplementedError,
-            self.rt.getContact,
-            self.id1
-        )
-
-    def test_getRefreshList(self):
-        self.assertRaises(
-            NotImplementedError,
-            self.rt.getRefreshList,
-            start_index=1,
-            force=True
-        )
-
-    def test_removeContact(self):
-        self.assertRaises(
-            NotImplementedError,
-            self.rt.removeContact,
-            self.id1
-        )
-
-    def test_touchKBucket(self):
-        self.assertRaises(
-            NotImplementedError,
-            self.rt.touchKBucket,
-            self.id1,
-            timestamp=42
         )
 
 
@@ -180,7 +124,9 @@ class TestTreeRoutingTable(TestRoutingTable):
         self.assertIsInstance(self.rt, routingtable.RoutingTable)
 
     def test_init(self):
-        super(TestTreeRoutingTable, self).test_init()
+        self.assertEqual(self.rt.parent_node_id, self.parent_node_id)
+        self.assertEqual(self.rt.market_id, self.market_id)
+        self.assertTrue(hasattr(self.rt, 'log'))
         self.assertTrue(hasattr(self.rt, 'buckets'))
         self.addTypeEqualityFunc(kbucket.KBucket, self._ad_hoc_KBucket_eq)
         # The following check cannot be simplified due to this bug
@@ -236,7 +182,7 @@ class TestTreeRoutingTable(TestRoutingTable):
     def test_getRefreshList_noforce(self):
         bucket_count = 7
         self._init_N_buckets(bucket_count)
-        stale_idxs = set((0, 3, 6))
+        stale_idxs = {0, 3, 6}
         for i in range(bucket_count):
             bucket = self.rt.buckets[i]
             self.assertEqual(0, bucket.lastAccessed)

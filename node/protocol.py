@@ -37,22 +37,3 @@ def proto_store(key, value, originalPublisherID, age):
         'age': age
     }
     return data
-
-
-def negotiate_pubkey(nickname, ident_pubkey):
-    data = {
-        'type': 'negotiate_pubkey',
-        'nickname': nickname,
-        'ident_pubkey': ident_pubkey.encode("hex")
-    }
-    return data
-
-
-def proto_response_pubkey(nickname, pubkey, signature):
-    data = {
-        'type': "proto_response_pubkey",
-        'nickname': nickname,
-        'pubkey': pubkey.encode("hex"),
-        'signature': signature.encode("hex")
-    }
-    return data

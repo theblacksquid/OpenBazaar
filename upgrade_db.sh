@@ -13,8 +13,15 @@ if [ ! -x $PYTHON ]; then
   fi
 fi
 
-# Execute from root dir as: bash upgrade_db.sh <db_path>
-for file in db/migrations/*
-do
-  $PYTHON $file $1 upgrade
-done
+# Execute from root dir as: bash upgrade_db.sh [--path <db_path>]
+if [ -z "$1" ]; then
+    $PYTHON -m db.migrations.migration1 upgrade
+    $PYTHON -m db.migrations.migration2 upgrade
+    $PYTHON -m db.migrations.migration3 upgrade
+    $PYTHON -m db.migrations.migration4 upgrade
+else
+    $PYTHON -m db.migrations.migration1 upgrade --path $1
+    $PYTHON -m db.migrations.migration2 upgrade --path $1
+    $PYTHON -m db.migrations.migration3 upgrade --path $1
+    $PYTHON -m db.migrations.migration4 upgrade --path $1
+fi

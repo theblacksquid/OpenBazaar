@@ -17,11 +17,8 @@ import zmq
 from zmq.eventloop import ioloop
 from zmq.eventloop.ioloop import PeriodicCallback
 
-import connection
-from crypto_util import Cryptor
-from dht import DHT
-import network_util
-from protocol import proto_response_pubkey
+from node import connection, network_util
+from node.dht import DHT
 
 
 class TransportLayer(object):
@@ -208,32 +205,32 @@ class CryptoTransportLayer(TransportLayer):
         return result
 
     def validate_on_hello(self, msg):
-        self.log.debug('Validating ping message.')
+        self.log.debugv('Validating ping message.')
         return True
 
     def on_hello(self, msg):
         self.log.info('Pinged %s', json.dumps(msg, ensure_ascii=False))
 
     def validate_on_store(self, msg):
-        self.log.debug('Validating store value message.')
+        self.log.debugv('Validating store value message.')
         return True
 
     def on_store(self, msg):
         self.dht._on_storeValue(msg)
 
     def validate_on_findNode(self, msg):
-        self.log.debug('Validating find node message.')
+        self.log.debugv('Validating find node message.')
         return True
 
     def on_findNode(self, msg):
         self.dht.on_find_node(msg)
 
     def validate_on_findNodeResponse(self, msg):
-        self.log.debug('Validating find node response message.')
+        self.log.debugv('Validating find node response message.')
         return True
 
     def on_findNodeResponse(self, msg):
-        self.dht.on_findNodeResponse(self, msg)
+        self.dht.on_findNodeResponse(msg)
 
     def _setup_settings(self):
         try:
@@ -294,8 +291,6 @@ class CryptoTransportLayer(TransportLayer):
             # Generate Bitmessage address
             if self.bitmessage_api is not None:
                 self._generate_new_bitmessage_address()
-
-        self.cryptor = Cryptor(pubkey_hex=self.pubkey, privkey_hex=self.secret)
 
         # In case user wants to override with command line passed bitmessage values
         if self.ob_ctx.bm_user is not None and \
@@ -358,7 +353,7 @@ class CryptoTransportLayer(TransportLayer):
         known_peers = list(set(seeds).union(db_peers))
 
         for known_peer in known_peers:
-            self.dht.add_peer(self, known_peer)
+            self.dht.add_peer(known_peer)
 
         # Populate routing table by searching for self
         if known_peers:
@@ -398,29 +393,23 @@ class CryptoTransportLayer(TransportLayer):
             guid, uri, pubkey, nickname
         )
 
-        return connection.CryptoPeerConnection(
-            self, uri, pubkey, guid=guid, nickname=nickname
-        )
+        if uri not in self.peers:
+            self.peers[uri] = connection.CryptoPeerConnection(
+                self, uri, pubkey, guid=guid, nickname=nickname
+            )
+        else:
+            # FIXME this is wrong to do here, but it keeps this as close as
+            # possible to the original pre-connection-reuse behavior
+            if guid:
+                self.peers[uri].guid = guid
+            if pubkey:
+                self.peers[uri].pub = pubkey
+            if nickname:
+                self.peers[uri].nickname = nickname
 
-    def respond_pubkey_if_mine(self, nickname, ident_pubkey):
-
-        if ident_pubkey != self.pubkey:
-            self.log.info("Public key does not match your identity")
-            return
-
-        # Return signed pubkey
-        pubkey = self.cryptor.pubkey  # XXX: A Cryptor does not have such a field.
-        ec_key = obelisk.EllipticCurveKey()
-        ec_key.set_secret(self.secret)
-        digest = obelisk.Hash(pubkey)
-        signature = ec_key.sign(digest)
-
-        # Send array of nickname, pubkey, signature to transport layer
-        self.send(proto_response_pubkey(nickname, pubkey, signature))
+        return self.peers[uri]
 
     def send(self, data, send_to=None, callback=None):
-
-        self.log.debug("Outgoing Data: %s %s", data, send_to)
 
         # Directed message
         if send_to is not None:
@@ -433,13 +422,22 @@ class CryptoTransportLayer(TransportLayer):
                         break
 
             if peer:
-                self.log.debug('Directed Data (%s): %s', send_to, data)
+                msgType = data.get('type', 'unknown')
+                nickname = peer.nickname
+                uri = peer.address
+
+                self.log.info('Sending message type "%s" to "%s" %s %s',
+                              msgType, nickname, uri, send_to)
+                self.log.datadump('Raw message: %s', data)
+
                 try:
                     peer.send(data, callback=callback)
                 except Exception as e:
-                    self.log.error('Not sending message directly to peer %s', e)
+                    self.log.error('Failed to send message directly to peer %s', e)
+
             else:
-                self.log.error('No peer found')
+                self.log.warning("Couldn't find peer %s to send message type %s",
+                               send_to, data.get('type'))
 
         else:
             # FindKey and then send
@@ -473,9 +471,12 @@ class CryptoTransportLayer(TransportLayer):
         uri = msg.get('uri')
         guid = msg.get('senderGUID')
         nickname = msg.get('senderNick')[:120]
+        msgType = msg.get('type')
 
-        self.log.info('On Message: %s', json.dumps(msg, ensure_ascii=False))
-        self.dht.add_peer(self, uri, pubkey, guid, nickname)
+        self.log.info('Received message type "%s" from "%s" %s %s',
+                      msgType, nickname, uri, guid)
+        self.log.datadump('Raw message: %s', json.dumps(msg, ensure_ascii=False))
+        self.dht.add_peer(uri, pubkey, guid, nickname)
         t = Thread(target=self.trigger_callbacks, args=(msg['type'], msg,))
         t.start()
 

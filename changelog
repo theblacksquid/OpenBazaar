@@ -1,3 +1,44 @@
+openbazaar (0.3.0) unstable; urgency=low
+  OS/Install:
+  * Windows: Scripts to configure and run OpenBazaar on Windows 7 and up.
+  * Mac OS X: brew upgrade is now opt-in.
+  * Linux: Minor updates to debian packaging.
+
+  Documentation/Legal:
+  * Added instructions for using OpenBazaar over Tor. [Experimental]
+  * Added new articles: Risk and Insurance, Notary Selection.
+  * Removed residual LGPL headers.
+
+  UI/UX:
+  * Peers are now added dynamically on the sidebar.
+  * Automated connecting to other peers upon node startup.
+  * Replaced bash scripts for starting and stopping with a brand-new
+    all-python launcher.
+
+  Network:
+  * Added support for NAT punching via STUN.
+  * Changed connectivity scheme to use persistent ZMQ sockets. A node under
+    normal use shouldn't crash from too many open sockets any more.
+
+  Security:
+  * Replaced sign-and-encrypt scheme with sign-then-encrypt, ensuring better
+    sender anonymity.
+  * Installed infrastructure for input sanitization.
+
+  Code Quality:
+  * Installed test coverage reporting via coveralls.io.
+  * Added thorough unit tests for a few modules.
+  * Removed a number of unused files and a lot of dead code.
+  * Enforced stricter pylint checking.
+  * Updated dependencies.
+  * Installed support for more fine-grained logging.
+
+  Bug fixes:
+  * Ensure logs rotate properly.
+  * Many minor bug fixes and stability improvements.
+
+ -- OpenBazaar Team <project@openbazaar.org>  Sun, 09 Nov 2014 12:00:00 +0000
+
 openbazaar (0.2.3) unstable; urgency=low
   * Messages between peers are no longer compressed.
 
