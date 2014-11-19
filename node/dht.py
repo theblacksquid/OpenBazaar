@@ -235,9 +235,8 @@ class DHT(object):
                         del self.searches[idx]
 
             else:
-
                 foundSearch = False
-                search = ""
+                search = None
                 findID = msg['findID']
                 for s in self.searches:
                     if s.findID == findID:
