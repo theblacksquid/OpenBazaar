@@ -89,8 +89,8 @@ class TestRoutingTable(unittest.TestCase):
         )
 
 
-class TestTreeRoutingTable(TestRoutingTable):
-    """Test TreeRoutingTable implementation of RoutingTable."""
+class TestOptimizedTreeRoutingTable(TestRoutingTable):
+    """Test OptimizedTreeRoutingTable implementation of RoutingTable."""
 
     def _ad_hoc_KBucket_eq(self, kbucket1, kbucket2, msg=None):
         self.assertEqual(kbucket1.rangeMin, kbucket2.rangeMin, msg)
@@ -107,7 +107,7 @@ class TestTreeRoutingTable(TestRoutingTable):
 
     @classmethod
     def setUpClass(cls):
-        super(TestTreeRoutingTable, cls).setUpClass()
+        super(TestOptimizedTreeRoutingTable, cls).setUpClass()
         cls.range_min = 0
         cls.range_max = 2**constants.BIT_NODE_ID_LEN
         cls.init_kbuckets = [
@@ -115,7 +115,7 @@ class TestTreeRoutingTable(TestRoutingTable):
         ]
 
     def setUp(self):
-        self.rt = routingtable.TreeRoutingTable(
+        self.rt = routingtable.OptimizedTreeRoutingTable(
             self.parent_node_id,
             self.market_id
         )
@@ -128,6 +128,9 @@ class TestTreeRoutingTable(TestRoutingTable):
         self.assertEqual(self.rt.market_id, self.market_id)
         self.assertTrue(hasattr(self.rt, 'log'))
         self.assertTrue(hasattr(self.rt, 'buckets'))
+        self.assertTrue(hasattr(self.rt, 'replacement_cache'))
+        self.assertEqual(self.rt.replacement_cache, dict())
+
         self.addTypeEqualityFunc(kbucket.KBucket, self._ad_hoc_KBucket_eq)
         # The following check cannot be simplified due to this bug
         # http://www.gossamer-threads.com/lists/python/bugs/1159468
@@ -270,33 +273,6 @@ class TestTreeRoutingTable(TestRoutingTable):
         self.assertEqual(1, self.rt.kbucketIndex(hex_key))
         self.assertEqual(1, self.rt.kbucketIndex(unicode(hex_key)))
         self.assertEqual(1, self.rt.kbucketIndex(guid.GUIDMixin(hex_key)))
-
-
-
-class TestOptimizedTreeRoutingTable(TestTreeRoutingTable):
-    """Test OptimizedTreeRoutingTable implementation of RoutingTable."""
-
-    @classmethod
-    def setUpClass(cls):
-        super(TestOptimizedTreeRoutingTable, cls).setUpClass()
-
-    def setUp(self):
-        self.rt = routingtable.OptimizedTreeRoutingTable(
-            self.parent_node_id,
-            self.market_id
-        )
-
-    def test_subclassing(self):
-        self.assertIsInstance(self.rt, routingtable.TreeRoutingTable)
-
-    def test_init(self):
-        super(TestOptimizedTreeRoutingTable, self).test_init()
-        self.assertTrue(hasattr(self.rt, 'replacement_cache'))
-        self.assertEqual(self.rt.replacement_cache, dict())
-
-    def test_addContact(self):
-        pass
-
 
 if __name__ == "__main__":
     unittest.main()
