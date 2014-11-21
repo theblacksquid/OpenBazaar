@@ -41,7 +41,11 @@ def is_loopback_addr(addr):
 
 
 def is_private_ip_address(addr):
-    return is_loopback_addr(addr) or IPy.IP(addr).iptype() != 'PUBLIC'
+    try:
+        ip = IPy.IP(addr)
+        return is_loopback_addr(addr) or ip.iptype() != 'PUBLIC'
+    except ValueError as e:
+        return False
 
 
 def get_my_ip(ip_site=IP_DETECT_SITE):
