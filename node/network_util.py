@@ -2,6 +2,7 @@ import sys
 
 import IPy
 import requests
+import rfc3986
 import stun
 
 
@@ -94,6 +95,10 @@ def test_stun_servers(servers=_STUN_SERVERS):
             print 'FAIL'
         else:
             print 'OK'
+
+
+def valid_uri(uri):
+    return rfc3986.is_valid_uri(uri)
 
 
 def main():

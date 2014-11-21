@@ -473,6 +473,11 @@ class CryptoTransportLayer(TransportLayer):
         nickname = msg.get('senderNick')[:120]
         msgType = msg.get('type')
 
+        # Checking for malformed URIs
+        if not network_util.valid_uri(uri):
+            self.log.error('Malformed URI')
+            return
+
         self.log.info('Received message type "%s" from "%s" %s %s',
                       msgType, nickname, uri, guid)
         self.log.datadump('Raw message: %s', json.dumps(msg, ensure_ascii=False))
