@@ -479,13 +479,13 @@ angular.module('app')
 
             };
             $scope.payOrder = function(order) {
-                order.state = 'paid';
+                order.state = 'Paid';
                 order.tx = $scope.newOrder.tx;
                 $scope.newOrder.tx = '';
                 Connection.send('order', order);
             };
             $scope.receiveOrder = function(order) {
-                order.state = 'received';
+                order.state = 'Received';
                 Connection.send('order', order);
             };
             $scope.sendOrder = function(order) {
