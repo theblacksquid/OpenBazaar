@@ -2,12 +2,15 @@ import os
 import sys
 import webbrowser
 import platform
+import rfc3986
 
 
 def is_mac():
     os_name = platform.uname()[0]
     return os_name == 'Darwin'
 
+def valid_uri(uri):
+    return rfc3986.is_valid_uri(uri)
 
 def open_default_webbrowser(url, protocol="http"):
     """
