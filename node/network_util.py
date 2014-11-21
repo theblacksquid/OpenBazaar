@@ -45,6 +45,7 @@ def is_private_ip_address(addr):
         ip = IPy.IP(addr)
         return is_loopback_addr(addr) or ip.iptype() != 'PUBLIC'
     except ValueError as e:
+        print 'Not IP address: ', e
         return False
 
 

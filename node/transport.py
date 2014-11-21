@@ -475,7 +475,7 @@ class CryptoTransportLayer(TransportLayer):
 
         # Checking for malformed URIs
         if not network_util.valid_uri(uri):
-            self.log.error('Malformed URI')
+            self.log.error('Malformed URI: %s', uri)
             return
 
         self.log.info('Received message type "%s" from "%s" %s %s',
