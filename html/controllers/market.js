@@ -456,7 +456,7 @@ angular.module('app')
 
                 var newOrder = {
                     'text': $scope.newOrder.message,
-                    'state': 'new',
+                    'state': 'New',
                     'buyer': $scope.myself.pubkey,
                     'seller': $scope.page.pubkey,
                     'listingKey': $scope.newOrder.pubkey
