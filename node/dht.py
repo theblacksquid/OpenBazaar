@@ -108,8 +108,9 @@ class DHT(object):
             self.log.debug('Back from handshake %s', new_peer)
             self.transport.save_peer_to_db(peer_tuple)
 
-        t = Thread(target=new_peer.start_handshake, args=(cb,))
-        t.start()
+        if new_peer:
+            t = Thread(target=new_peer.start_handshake, args=(cb,))
+            t.start()
 
     def _add_known_node(self, node):
         """ Accept a peer tuple and add it to known nodes list
