@@ -98,7 +98,10 @@ def test_stun_servers(servers=_STUN_SERVERS):
 
 
 def valid_uri(uri):
-    return rfc3986.is_valid_uri(uri)
+    return rfc3986.is_valid_uri(uri,
+                                'utf-8',
+                                require_scheme=True,
+                                require_authority=True)
 
 
 def main():
