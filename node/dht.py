@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+import functools
 from threading import Thread, RLock
 
 from node import constants, datastore, network_util, routingtable
@@ -32,12 +33,12 @@ class DHT(object):
     # pylint: disable=no-self-argument
     # pylint: disable=not-callable
     def _synchronized(f):
-        """ Synchronization decorator """
-        def wrap(*args, **kwargs):
-            _lock = args[0]._lock
-            with _lock:
-                return f(*args, **kwargs)
-        return wrap
+        """Decorator for synchronizing access to DHT attributes."""
+        @functools.wraps(f)
+        def synced_f(self, *args, **kwargs):
+            with self._lock:
+                return f(self, *args, **kwargs)
+        return synced_f
 
     @_synchronized
     def get_active_peers(self):
