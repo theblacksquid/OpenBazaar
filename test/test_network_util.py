@@ -100,6 +100,26 @@ class TestNodeNetworkUtil(unittest.TestCase):
             'tcp://www.openbazaar.com:1234'
         )
 
+    def test_valid_uri(self):
+        self.assertTrue(
+            network_util.valid_uri('tcp://localhost:12345')
+        )
+        self.assertTrue(
+            network_util.valid_uri('udp://localhost:12345')
+        )
+        self.assertTrue(
+            network_util.valid_uri('inproc://localhost:12345')
+        )
+        self.assertFalse(
+            network_util.valid_uri('localhost:12345')
+        )
+        self.assertFalse(
+            network_util.valid_uri('localhost')
+        )
+        self.assertFalse(
+            network_util.valid_uri('@#FADSFJSK@#RKFSAJASDJKF@#lkdafj')
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
