@@ -10,11 +10,11 @@ angular.module('app')
     .controller('Market', ['$scope', '$route', '$interval', '$routeParams', '$location', 'Connection',
         function($scope, $route, $interval, $routeParams, $location, Connection) {
 
-            $scope.newuser = true;                   // Should show welcome screen?
-            $scope.page = false;                     // Market page has been loaded
-            $scope.dashboard = true;                 // Show dashboard
-            $scope.myInfoPanel = true;               // Show information panel
-            $scope.shouts = [];                      // Shout messages
+            $scope.newuser = true; // Should show welcome screen?
+            $scope.page = false; // Market page has been loaded
+            $scope.dashboard = true; // Show dashboard
+            $scope.myInfoPanel = true; // Show information panel
+            $scope.shouts = []; // Shout messages
             $scope.newShout = "";
             $scope.searching = "";
             $scope.currentReviews = [];
@@ -33,47 +33,69 @@ angular.module('app')
              * @msg - message from websocket to pass on to handler
              */
             var listeners = Connection.$$listeners;
-            if(!listeners.hasOwnProperty('peer')) {
-                Connection.$on('peer', function(e, msg){ $scope.add_peer(msg); });
+            if (!listeners.hasOwnProperty('peer')) {
+                Connection.$on('peer', function(e, msg) {
+                    $scope.add_peer(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('order_notify')) {
-                Connection.$on('order_notify', function(e, msg){ $scope.order_notify(msg); });
+            if (!listeners.hasOwnProperty('order_notify')) {
+                Connection.$on('order_notify', function(e, msg) {
+                    $scope.order_notify(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('peers')) {
-                Connection.$on('peers', function(e, msg){ $scope.update_peers(msg); });
+            if (!listeners.hasOwnProperty('peers')) {
+                Connection.$on('peers', function(e, msg) {
+                    $scope.update_peers(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('peer_remove')) {
-                Connection.$on('peer_remove', function(e, msg){ $scope.remove_peer(msg); });
+            if (!listeners.hasOwnProperty('peer_remove')) {
+                Connection.$on('peer_remove', function(e, msg) {
+                    $scope.remove_peer(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('myself')) {
-                Connection.$on('myself', function(e, msg){ $scope.parse_myself(msg); });
+            if (!listeners.hasOwnProperty('myself')) {
+                Connection.$on('myself', function(e, msg) {
+                    $scope.parse_myself(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('shout')) {
-                Connection.$on('shout', function(e, msg){ $scope.parse_shout(msg); });
+            if (!listeners.hasOwnProperty('shout')) {
+                Connection.$on('shout', function(e, msg) {
+                    $scope.parse_shout(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('log_output')) {
-                Connection.$on('log_output', function(e, msg){ $scope.parse_log_output(msg); });
+            if (!listeners.hasOwnProperty('log_output')) {
+                Connection.$on('log_output', function(e, msg) {
+                    $scope.parse_log_output(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('messages')) {
-                Connection.$on('messages', function(e, msg){ $scope.parse_messages(msg); });
+            if (!listeners.hasOwnProperty('messages')) {
+                Connection.$on('messages', function(e, msg) {
+                    $scope.parse_messages(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('notaries')) {
-                Connection.$on('notaries', function(e, msg){ $scope.parse_notaries(msg); });
+            if (!listeners.hasOwnProperty('notaries')) {
+                Connection.$on('notaries', function(e, msg) {
+                    $scope.parse_notaries(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('reputation')) {
-                Connection.$on('reputation', function(e, msg){ $scope.parse_reputation(msg); });
+            if (!listeners.hasOwnProperty('reputation')) {
+                Connection.$on('reputation', function(e, msg) {
+                    $scope.parse_reputation(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('burn_info_available')) {
-                Connection.$on('burn_info_available', function(e, msg){ $scope.parse_burn_info(msg); });
+            if (!listeners.hasOwnProperty('burn_info_available')) {
+                Connection.$on('burn_info_available', function(e, msg) {
+                    $scope.parse_burn_info(msg);
+                });
             }
-            if(!listeners.hasOwnProperty('hello')) {
-                Connection.$on('hello', function(e, msg){
+            if (!listeners.hasOwnProperty('hello')) {
+                Connection.$on('hello', function(e, msg) {
                     console.log('Received a hello', msg);
                     $scope.add_peer({
-                       'guid': msg.senderGUID,
-                       'uri': msg.uri,
-                       'pubkey': msg.pubkey,
-                       'nick': msg.senderNick
+                        'guid': msg.senderGUID,
+                        'uri': msg.uri,
+                        'pubkey': msg.pubkey,
+                        'nick': msg.senderNick
                     });
                 });
             }
@@ -306,7 +328,7 @@ angular.module('app')
                 if (index == -1) {
                     /* it is a new peer */
                     $scope.peers.push(msg);
-                } 
+                }
                 if (!$scope.$$phase) {
                     $scope.$apply();
                 }
@@ -419,7 +441,7 @@ angular.module('app')
                 console.log(msg);
                 Notifier.info('Order Update', msg.msg);
             };
-            
+
             // Create a new order and send to the network
             $scope.newOrder = {
                 message: '',
@@ -609,9 +631,9 @@ angular.module('app')
                 Connection.send('get_notaries', {});
             };
 
-            $scope.go = function (url, guid) {
-              $location.path(url);
-              if (!$scope.$$phase) {
+            $scope.go = function(url, guid) {
+                $location.path(url);
+                if (!$scope.$$phase) {
                     $scope.$apply();
                 }
             };
@@ -654,10 +676,10 @@ angular.module('app')
             $scope.WelcomeModalCtrl = function($scope, $modal, $log, $rootScope) {
 
                 // Listen for changes to settings and if welcome is empty then show the welcome modal
-                $scope.$watch('settings', function () {
-                    console.log('settings',$scope.settings);
+                $scope.$watch('settings', function() {
+                    console.log('settings', $scope.settings);
                     if ($scope.settings.welcome == "enable") {
-                        $scope.open('lg','static');
+                        $scope.open('lg', 'static');
                     } else {
                         return;
                     }
@@ -891,8 +913,7 @@ angular.module('app')
                         controller: AddNodeModalInstance,
                         size: size,
                         backdrop: backdrop,
-                        resolve: {
-                        }
+                        resolve: {}
                     });
 
                     modalInstance.result.then(function(selectedItem) {
@@ -909,8 +930,11 @@ angular.module('app')
 
                 $scope.addGUID = function(newGUID) {
 
-                    if(newGUID.length == 40 && newGUID.match(/^[A-Za-z0-9]+$/)) {
-                        Connection.send('add_node', { 'type': 'add_guid', 'guid': newGUID });
+                    if (newGUID.length == 40 && newGUID.match(/^[A-Za-z0-9]+$/)) {
+                        Connection.send('add_node', {
+                            'type': 'add_guid',
+                            'guid': newGUID
+                        });
                         console.log('Added node by GUID');
                         Notifier.success('Success', 'GUID is valid');
                     } else {
