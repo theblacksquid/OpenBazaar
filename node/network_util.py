@@ -106,10 +106,17 @@ def valid_uri(uri):
     if not uri:
         return False
 
-    return rfc3986.is_valid_uri(uri,
-                                'utf-8',
-                                require_scheme=True,
-                                require_authority=True)
+    is_valid_uri = rfc3986.is_valid_uri(uri,
+                                        'utf-8',
+                                        require_scheme=True,
+                                        require_authority=True)
+
+    if is_valid_uri:
+        uri_parts = rfc3986.uri_reference(uri)
+        if uri_parts.scheme == u'tcp':
+            return True
+
+    return False
 
 
 def main():
