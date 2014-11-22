@@ -34,6 +34,7 @@ openbazaar (0.3.1) unstable; urgency=low
   * Fixed a bug that could hang the stopping script.
   * Fixed argument processing in migration scripts.
   * Notaries are now properly added/removed; multiple notaries are supported.
+  * Now sanitize bad URIs from other nodes that crash ZeroMQ
 
   Miscellaneous:
   * Restructured Makefile and test scripts to better expose the build process.
