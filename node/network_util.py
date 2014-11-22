@@ -41,17 +41,24 @@ def is_loopback_addr(addr):
     return addr.startswith("127.0.0.") or addr == 'localhost'
 
 
+def str_to_ipy(addr):
+    """Convert an address to an IPy.IP object or None if unsuccessful."""
+    try:
+        return IPy.IP(addr)
+    except ValueError as e:
+        print 'Not IP address:', e
+    return None
+
+
 def is_private_ip_address(addr):
 
     if is_loopback_addr(addr):
         return True
 
-    try:
-        ip = IPy.IP(addr)
-        if ip.iptype() != 'PUBLIC':
-            return True
-    except ValueError as e:
-        print 'Not IP address: ', e
+    ip = str_to_ipy(addr)
+
+    if ip.iptype() == 'PRIVATE':
+        return True
 
     return False
 
