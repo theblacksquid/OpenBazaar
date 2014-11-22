@@ -18,8 +18,6 @@ from node.guid import GUIDMixin
 class PeerConnection(object):
     def __init__(self, transport, address, nickname=""):
 
-        assert network_util.valid_uri(address), 'Bad URI'
-
         self.transport = transport
         self.address = address
         self.nickname = nickname

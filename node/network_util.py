@@ -57,7 +57,7 @@ def is_private_ip_address(addr):
 
     ip = str_to_ipy(addr)
 
-    if ip.iptype() == 'PRIVATE':
+    if ip and ip.iptype() == 'PRIVATE':
         return True
 
     return False
@@ -131,8 +131,7 @@ def valid_uri(uri):
         if uri_parts.scheme == u'tcp':
             try:
                 url = urlparse(uri)
-                if is_private_ip_address(url.hostname) or IPy.IP(url.hostname):
-                    return True
+                return is_private_ip_address(url.hostname) or IPy.IP(url.hostname)
             except ValueError as e:
                 print 'Hostname is not correct in this URI: ', e
     return False
