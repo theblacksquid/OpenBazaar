@@ -104,10 +104,10 @@ class TestNodeNetworkUtil(unittest.TestCase):
         self.assertTrue(
             network_util.valid_uri('tcp://localhost:12345')
         )
-        self.assertTrue(
+        self.assertFalse(
             network_util.valid_uri('udp://localhost:12345')
         )
-        self.assertTrue(
+        self.assertFalse(
             network_util.valid_uri('inproc://localhost:12345')
         )
         self.assertFalse(
@@ -118,6 +118,12 @@ class TestNodeNetworkUtil(unittest.TestCase):
         )
         self.assertFalse(
             network_util.valid_uri('@#FADSFJSK@#RKFSAJASDJKF@#lkdafj')
+        )
+        self.assertFalse(
+            network_util.valid_uri('tcp://192.33..23.1:12345')
+        )
+        self.assertFalse(
+            network_util.valid_uri('tcp://sub.domain.com:12345')
         )
 
 

@@ -470,7 +470,7 @@ class CryptoTransportLayer(TransportLayer):
         pubkey = msg.get('pubkey')
         uri = msg.get('uri')
         guid = msg.get('senderGUID')
-        nickname = msg.get('senderNick')[:120]
+        nickname = msg.get('senderNick', '')[:120]
         msgType = msg.get('type')
 
         # Checking for malformed URIs

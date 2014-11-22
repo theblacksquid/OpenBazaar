@@ -4,6 +4,7 @@ import IPy
 import requests
 import rfc3986
 import stun
+from urlparse import urlparse
 
 
 # List taken from natvpn project and tested manually.
@@ -41,12 +42,18 @@ def is_loopback_addr(addr):
 
 
 def is_private_ip_address(addr):
+
+    if is_loopback_addr(addr):
+        return True
+
     try:
         ip = IPy.IP(addr)
-        return is_loopback_addr(addr) or ip.iptype() != 'PUBLIC'
+        if ip.iptype() != 'PUBLIC':
+            return True
     except ValueError as e:
         print 'Not IP address: ', e
-        return False
+
+    return False
 
 
 def get_my_ip(ip_site=IP_DETECT_SITE):
@@ -103,6 +110,7 @@ def test_stun_servers(servers=_STUN_SERVERS):
 
 
 def valid_uri(uri):
+
     if not uri:
         return False
 
@@ -114,8 +122,12 @@ def valid_uri(uri):
     if is_valid_uri:
         uri_parts = rfc3986.uri_reference(uri)
         if uri_parts.scheme == u'tcp':
-            return True
-
+            try:
+                url = urlparse(uri)
+                if is_private_ip_address(url.hostname) or IPy.IP(url.hostname):
+                    return True
+            except ValueError as e:
+                print 'Hostname is not correct in this URI: ', e
     return False
 
 
