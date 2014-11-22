@@ -18,6 +18,8 @@ from node.guid import GUIDMixin
 class PeerConnection(object):
     def __init__(self, transport, address, nickname=""):
 
+        assert(network_util.valid_uri(address), 'Bad URI')
+
         self.transport = transport
         self.address = address
         self.nickname = nickname
@@ -44,7 +46,10 @@ class PeerConnection(object):
             if e.errno != errno.EINVAL:
                 raise
             self.socket.ipv6 = True
-            self.socket.connect(self.address)
+            try:
+                self.socket.connect(self.address)
+            except zmq.ZMQError as e:
+                self.log.error('Bad URI', e)
 
     def send(self, data, callback):
         self.send_raw(json.dumps(data), callback)
