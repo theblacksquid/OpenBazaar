@@ -474,7 +474,7 @@ class CryptoTransportLayer(TransportLayer):
         msgType = msg.get('type')
 
         # Checking for malformed URIs
-        if not network_util.valid_uri(uri):
+        if not network_util.is_valid_uri(uri):
             self.log.error('Malformed URI: %s', uri)
             return
 

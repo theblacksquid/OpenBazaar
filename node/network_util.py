@@ -116,25 +116,29 @@ def test_stun_servers(servers=_STUN_SERVERS):
             print 'OK'
 
 
-def valid_uri(uri):
+def is_valid_openbazaar_scheme(uri):
+    """Check for OpenBazaar appropriate scheme"""
+    return rfc3986.uri_reference(uri).scheme == u'tcp'
 
-    if not uri:
-        return False
 
-    is_valid_uri = rfc3986.is_valid_uri(uri,
-                                        'utf-8',
-                                        require_scheme=True,
-                                        require_authority=True)
-
-    if is_valid_uri:
-        uri_parts = rfc3986.uri_reference(uri)
-        if uri_parts.scheme == u'tcp':
-            try:
-                url = urlparse(uri)
-                return is_private_ip_address(url.hostname) or IPy.IP(url.hostname)
-            except ValueError as e:
-                print 'Hostname is not correct in this URI: ', e
+def is_valid_hostname(uri):
+    try:
+        hostname = urlparse(uri).hostname
+        return is_private_ip_address(hostname) or IPy.IP(hostname)
+    except ValueError as e:
+        print 'Hostname is not correct in this URI:', e
     return False
+
+
+def is_valid_uri(uri):
+    return (
+        uri
+        and rfc3986.is_valid_uri(
+            uri, 'utf-8', require_scheme=True, require_authority=True
+        )
+        and is_valid_openbazaar_scheme(uri)
+        and is_valid_hostname(uri)
+    )
 
 
 def main():
