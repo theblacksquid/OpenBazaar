@@ -5,7 +5,6 @@ import logging
 from pprint import pformat
 import random
 import sys
-from threading import Thread
 import traceback
 import xmlrpclib
 
@@ -477,8 +476,7 @@ class CryptoTransportLayer(TransportLayer):
                       msgType, nickname, uri, guid)
         self.log.datadump('Raw message: %s', json.dumps(msg, ensure_ascii=False))
         self.dht.add_peer(uri, pubkey, guid, nickname)
-        t = Thread(target=self.trigger_callbacks, args=(msg['type'], msg,))
-        t.start()
+        self.trigger_callbacks(msg['type'], msg)
 
     def store(self, *args, **kwargs):
         """
