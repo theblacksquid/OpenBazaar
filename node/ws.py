@@ -827,6 +827,10 @@ class ProtocolHandler(object):
         self.log.info('Found Contracts: %s', type(results))
         self.log.info(results)
 
+        if type(results) is list:
+            self.log.error('Legacy node returned list of close nodes.')
+            return
+
         if results.get('data') and isinstance(results['data'], unicode):
             results = json.loads(results[0])
 
