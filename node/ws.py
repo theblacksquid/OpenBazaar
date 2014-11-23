@@ -827,10 +827,8 @@ class ProtocolHandler(object):
         self.log.info('Found Contracts: %s', type(results))
         self.log.info(results)
 
-        if results and isinstance(results['data'], unicode):
+        if results.get('data') and isinstance(results['data'], unicode):
             results = json.loads(results[0])
-
-        self.log.info(results)
 
         if 'type' not in results:
             return

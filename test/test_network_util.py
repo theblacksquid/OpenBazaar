@@ -122,9 +122,27 @@ class TestNodeNetworkUtil(unittest.TestCase):
         self.assertFalse(
             network_util.is_valid_uri('tcp://192.33..23.1:12345')
         )
-        self.assertFalse(
+        self.assertTrue(
             network_util.is_valid_uri('tcp://sub.domain.com:12345')
         )
+
+    def test_is_valid_hostname(self):
+        self.assertTrue(
+            network_util.is_valid_hostname('192.168.1.1')
+        )
+        self.assertTrue(
+            network_util.is_valid_hostname('sub.domain.com')
+        )
+        self.assertTrue(
+            network_util.is_valid_hostname('domain.com')
+        )
+        self.assertTrue(
+            network_util.is_valid_hostname('domain')
+        )
+        self.assertFalse(
+            network_util.is_valid_hostname('@#FADSFJSK@#RKFSAJASDJKF@#lkdafj')
+        )
+
 
 
 if __name__ == '__main__':
