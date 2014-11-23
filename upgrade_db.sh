@@ -18,8 +18,10 @@ if [ -z "$1" ]; then
     $PYTHON -m db.migrations.migration1 upgrade
     $PYTHON -m db.migrations.migration2 upgrade
     $PYTHON -m db.migrations.migration3 upgrade
+    $PYTHON -m db.migrations.migration4 upgrade
 else
     $PYTHON -m db.migrations.migration1 upgrade --path $1
     $PYTHON -m db.migrations.migration2 upgrade --path $1
     $PYTHON -m db.migrations.migration3 upgrade --path $1
+    $PYTHON -m db.migrations.migration4 upgrade --path $1
 fi
