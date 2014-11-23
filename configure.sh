@@ -133,7 +133,13 @@ function installArch {
   #print commands
   set -x
 
-  sudo pacman -Sy
+  echo "Some packages and dependencies may fail to install if your package list is out of date."
+  echo "Would you like to upgrade your system now? "
+  if confirm ; then
+    sudo pacman -Syu
+  else
+    echo "Continuing."
+  fi 
   # sudo pacman -S --needed base-devel
   # Can conflict with multilib packages. Uncomment this line if you don't already have base-devel installed
   sudo pacman -S --needed python2 python2-pip python2-virtualenv python2-pyzmq rng-tools libjpeg sqlite3 openssl
