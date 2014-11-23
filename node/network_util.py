@@ -5,6 +5,7 @@ import requests
 import rfc3986
 import stun
 from urlparse import urlparse
+import re
 
 
 # List taken from natvpn project and tested manually.
@@ -121,23 +122,25 @@ def is_valid_openbazaar_scheme(uri):
     return rfc3986.uri_reference(uri).scheme == u'tcp'
 
 
-def is_valid_hostname(uri):
-    try:
-        hostname = urlparse(uri).hostname
-        return is_private_ip_address(hostname) or IPy.IP(hostname)
-    except ValueError as e:
-        print 'Hostname is not correct in this URI:', e
-    return False
+def is_valid_hostname(hostname):
+    if len(hostname) > 255:
+        return False
+    if hostname[-1] == ".":
+        hostname = hostname[:-1]
+    allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+    return all(allowed.match(x) for x in hostname.split("."))
 
 
 def is_valid_uri(uri):
+    hostname = urlparse(uri).hostname
+
     return (
         uri
         and rfc3986.is_valid_uri(
             uri, 'utf-8', require_scheme=True, require_authority=True
         )
         and is_valid_openbazaar_scheme(uri)
-        and is_valid_hostname(uri)
+        and is_valid_hostname(hostname)
     )
 
 
