@@ -150,10 +150,10 @@ function installArch {
 function confirm {
     # call with a prompt string or use a default Y
     read -r -p "Are you sure? [Y/n] " response
-    if [[ $response =~ [nN](o)* ]]; then
-      return 1
-    else
+    if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]; then
       return 0
+    else
+      return 1
     fi
 }
 
