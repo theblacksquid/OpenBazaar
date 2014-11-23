@@ -166,10 +166,6 @@ class DHT(object):
                     # Found key in local data store
                     response_msg["foundKey"] = self.dataStore[key]
                     self.log.info('Found a key: %s', key)
-                else:
-                    self.log.info('Did not find a key: %s', key)
-                    response_msg["foundNodes"] = self.close_nodes(key, guid)
-                    self.log.info('Sending found close nodes to: %s', guid)
 
                 new_peer.send(response_msg)
             else:
