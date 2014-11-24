@@ -823,11 +823,17 @@ class ProtocolHandler(object):
                                            'result': 'failure'})
 
     def on_find_products_by_store(self, results):
+        """Results should come in as a dictionary like:
+        { u'listings': [{
+            u'guid': u'18b3a8bc360fa4dd3350559c4f278fb183375d16',
+            u'key': u'381ee35104d10f6249d225114f38152685d43798'
+        }]}"""
 
-        self.log.info('Found Contracts: %s', type(results))
-        self.log.info(results)
+        # TODO: Needs investigation but don't think this is currently used
+        self.log.debug('Found Contracts: %s', type(results))
+        self.log.debug(results)
 
-        if type(results) is list:
+        if type(results) is not 'dict':
             self.log.error('Legacy node returned list of close nodes.')
             return
 
