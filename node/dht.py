@@ -414,17 +414,19 @@ class DHT(object):
 
         if peer:
             peer.send({'type': 'query_listings', 'key': key})
-            return
+        else:
+            self.log.error('Peer is not available for listings.')
 
+        # TODO: Fix DHT listings search
         # Check cache in DHT if peer not available
-        listing_index_key = hashlib.sha1('contracts-%s' % key).hexdigest()
-        hashvalue = hashlib.new('ripemd160')
-        hashvalue.update(listing_index_key)
-        listing_index_key = hashvalue.hexdigest()
-
-        self.log.info('Finding contracts for store: %s', listing_index_key)
-
-        self.iterativeFindValue(listing_index_key, callback)
+        # listing_index_key = hashlib.sha1('contracts-%s' % key).hexdigest()
+        # hashvalue = hashlib.new('ripemd160')
+        # hashvalue.update(listing_index_key)
+        # listing_index_key = hashvalue.hexdigest()
+        #
+        # self.log.info('Finding contracts for store: %s', listing_index_key)
+        #
+        # self.iterativeFindValue(listing_index_key, callback)
 
     def find_listings_by_keyword(self, keyword, listingFilter=None, callback=None):
 
