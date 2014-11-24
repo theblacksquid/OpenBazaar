@@ -470,8 +470,13 @@ class CryptoTransportLayer(TransportLayer):
         pubkey = msg.get('pubkey')
         uri = msg.get('uri')
         guid = msg.get('senderGUID')
-        nickname = msg.get('senderNick')[:120]
+        nickname = msg.get('senderNick', '')[:120]
         msgType = msg.get('type')
+
+        # Checking for malformed URIs
+        if not network_util.is_valid_uri(uri):
+            self.log.error('Malformed URI: %s', uri)
+            return
 
         self.log.info('Received message type "%s" from "%s" %s %s',
                       msgType, nickname, uri, guid)

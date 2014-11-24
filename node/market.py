@@ -418,8 +418,8 @@ class Market(object):
                 contract_index_key,
                 value,
                 self.transport.guid,
-                )
             )
+        )
         t.start()
 
     def remove_contract(self, msg):
@@ -515,7 +515,9 @@ class Market(object):
             limit=10,
             limit_offset=(page * 10)
         )
+
         my_contracts = []
+
         for contract in contracts:
             try:
                 contract_body = json.loads(u"%s" % contract['contract_body'])
