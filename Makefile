@@ -10,7 +10,10 @@ test: check unittest
 unittest:
 	nosetests --with-coverage --cover-package=node --cover-package=db --cover-inclusive $(TESTPATH)
 
-check: execcheck nlcheck jscheck pycheck
+check: execcheck nlcheck jscheck pycheck banditcheck
+
+banditcheck: $(SCRIPTS)/banditcheck.sh
+	$(SCRIPTS)/banditcheck.sh
 
 execcheck: $(SCRIPTS)/execcheck.sh
 	$(SCRIPTS)/execcheck.sh
