@@ -434,7 +434,7 @@ angular.module('app')
 
                     var newOrder = {
                         'message': $scope.order.message,
-                        'state': 'new',
+                        'state': 'New',
                         'buyer': $scope.myself.pubkey,
                         'seller': $scope.merchantPubkey,
                         'sellerGUID': $scope.guid,

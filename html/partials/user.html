@@ -170,7 +170,7 @@
 
                 <br/>
 
-                <form data-ng-show="order && (order.state == 'accepted' || order.state == 'new') && order.buyer == myself.pubkey">
+                <form data-ng-show="order && (order.state == 'Accepted' || order.state == 'New') && order.buyer == myself.pubkey">
                     Pay to: {{order.address}}<BR>Tx: <input class="form-control" type="text" data-ng-model="newOrder.tx" placeholder="Transaction with the spend"> <a class="btn btn-primary navbar-btn" data-ng-click="payOrder(order)" type="submit">Payed</a> <a class="btn btn-warning navbar-btn" data-ng-click="cancelOrder(order)" type="cancel">Cancel</a>
                 </form><!-- Sent -->
 
