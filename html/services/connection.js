@@ -1,6 +1,7 @@
-angular.module('app').service('Connection', ['$rootScope', function($rootScope){
+angular.module('app').service('Connection', ['$rootScope', '$timeout', function($rootScope, $timeout){
 
     var Connection = function(onMessage) {
+
       var socket_uri = document.URL.replace(/https?:(.*)\/html\/.*/, "ws:$1/ws");
       console.log('Started websocket:', socket_uri);
       var websocket = new WebSocket(socket_uri);
@@ -24,8 +25,13 @@ angular.module('app').service('Connection', ['$rootScope', function($rootScope){
       websocket.onmessage = function(evt) {
         var data = JSON.parse(evt.data);
         //console.log("Websocket.onMessage!");
-        console.log('On Message: ',data);
-        onMessage(data.result);
+        console.log('On Message [', data.result.type, ']: ',data);
+        $timeout(function(){
+            $rootScope.$apply(function(){
+                onMessage(data.result);
+            });
+        });
+
       };
 
       this.websocket = websocket;
@@ -61,6 +67,7 @@ angular.module('app').service('Connection', ['$rootScope', function($rootScope){
 
     var socket = new Connection(function(data){
       scope.$emit('message', data);
+
       if (typeof data == 'object' && typeof data.type == 'string') {
         scope.$emit(data.type, data);
       }
