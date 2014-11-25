@@ -6,7 +6,7 @@
                 <div class="modal-body" style="text-align:left;">
 
 
-                    <div data-ng-show="Market.modalOrder.state == 'Need to Pay'" class="alert alert-warning" role="alert">
+                    <div data-ng-show="Market.modalOrder.state == 'Need to Pay' || Market.modalOrder.state == 'Paid'" class="alert alert-warning" role="alert">
                         <div class="row">
 
                             <div style="float:left;margin:10px;"><img ng-src="{{Market.modalOrder.qrcode}}" width="150" height="150"/></div>
@@ -14,7 +14,7 @@
 
                                  <p style="margin:10px 0">So far there is <strong>&#3647;{{Market.modalOrder.payment_amount}}</strong> in the address</p>
 
-                                <div data-ng-show="Market.modalOrder.state == 'Need to Pay'" id="payment_buttons2" style="margin-top:10px;">
+                                <div id="payment_buttons2" style="margin-top:10px;">
                                     <a href="bitcoin:{{Market.modalOrder.address}}?amount={{Market.modalOrder.total_price}}&message={{Market.modalOrder.item_title}}"><button type="button" class="btn btn-warning"><span class="glyphicon glyphicon-share-alt"></span> Pay in your Wallet</button></a>
                                     <button data-ng-click="markOrderPaid(orderId)" class="btn btn-info"><span class="glyphicon glyphicon-ok"></span> Mark as Paid</button>
                                     <button data-ng-click="" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span> Cancel Order</button>
@@ -49,7 +49,7 @@
                         </form>
                     </div>
 
-                    <div data-ng-show="Market.modalOrder.state == 'Shipped' && Market.modalOrder.merchant != settings.guid" class="alert alert-warning" role="alert">
+                    <div data-ng-show="(Market.modalOrder.state == 'Paid' || Market.modalOrder.state == 'Shipped') && Market.modalOrder.merchant != settings.guid" class="alert alert-warning" role="alert">
                         <p style="margin:5px 0">Once you've received your order and are satisfied please release your payment to the seller.</p>
                         <button id="send-order-button" data-ng-click="markOrderReceived(orderId)" class="btn btn-sm btn-info"><span class="glyphicon glyphicon-share"></span> Release Payment to Merchant</button>
                     </div>

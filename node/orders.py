@@ -18,14 +18,14 @@ class Orders(object):
     class State(object):
         """Enum inner class. Python introduces enums in Python 3.0, but this should be good enough"""
         SENT = 'Sent'
-        ACCEPTED = 'accepted'
-        BID = 'bid'
+        ACCEPTED = 'Accepted'
+        BID = 'Bid'
         BUYER_PAID = 'Buyer Paid'
         NEED_TO_PAY = 'Need to Pay'
-        NEW = 'new'
+        NEW = 'New'
         NOTARIZED = 'Notarized'
         PAID = 'Paid'
-        RECEIVED = 'received'
+        RECEIVED = 'Received'
         SHIPPED = 'Shipped'
         WAITING_FOR_PAYMENT = 'Waiting for Payment'
 

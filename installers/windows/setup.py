@@ -10,7 +10,6 @@ import py2exe
 # pylint: enable=unused-import
 # pylint: enable=import-error
 import zmq
-import zmq.libzmq
 
 
 def tree(root_dir, dest):

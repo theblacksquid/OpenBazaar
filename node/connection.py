@@ -44,7 +44,10 @@ class PeerConnection(object):
             if e.errno != errno.EINVAL:
                 raise
             self.socket.ipv6 = True
-            self.socket.connect(self.address)
+            try:
+                self.socket.connect(self.address)
+            except zmq.ZMQError as e:
+                self.log.error('Bad URI %s', e)
 
     def send(self, data, callback):
         self.send_raw(json.dumps(data), callback)
