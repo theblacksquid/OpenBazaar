@@ -23,8 +23,6 @@ angular.module('app')
 
             $scope.peers = [];
             $scope.reviews = {};
-            $scope.awaitingShop = null;
-            $scope.page_loading = null;
 
             $scope.$emit('sidebar', true);
 
@@ -32,64 +30,21 @@ angular.module('app')
              * Establish message handlers
              * @msg - message from websocket to pass on to handler
              */
-            var listeners = Connection.$$listeners;
-            if (!listeners.hasOwnProperty('peer')) {
-                Connection.$on('peer', function(e, msg) {
-                    $scope.add_peer(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('order_notify')) {
-                Connection.$on('order_notify', function(e, msg) {
-                    $scope.order_notify(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('peers')) {
-                Connection.$on('peers', function(e, msg) {
-                    $scope.update_peers(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('peer_remove')) {
-                Connection.$on('peer_remove', function(e, msg) {
-                    $scope.remove_peer(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('myself')) {
-                Connection.$on('myself', function(e, msg) {
-                    $scope.parse_myself(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('shout')) {
-                Connection.$on('shout', function(e, msg) {
-                    $scope.parse_shout(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('log_output')) {
-                Connection.$on('log_output', function(e, msg) {
-                    $scope.parse_log_output(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('messages')) {
-                Connection.$on('messages', function(e, msg) {
-                    $scope.parse_messages(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('notaries')) {
-                Connection.$on('notaries', function(e, msg) {
-                    $scope.parse_notaries(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('reputation')) {
-                Connection.$on('reputation', function(e, msg) {
-                    $scope.parse_reputation(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('burn_info_available')) {
-                Connection.$on('burn_info_available', function(e, msg) {
-                    $scope.parse_burn_info(msg);
-                });
-            }
-            if (!listeners.hasOwnProperty('hello')) {
-                Connection.$on('hello', function(e, msg) {
+            $scope.$evalAsync( function( $scope ) {
+
+                Connection.$on('peer', function(e, msg){ $scope.add_peer(msg); });
+                Connection.$on('order_notify', function(e, msg){ $scope.order_notify(msg); });
+                Connection.$on('peers', function(e, msg){ $scope.update_peers(msg); });
+                Connection.$on('peer_remove', function(e, msg){ $scope.remove_peer(msg); });
+                Connection.$on('myself', function(e, msg){ $scope.parse_myself(msg); });
+                Connection.$on('shout', function(e, msg){ $scope.parse_shout(msg); });
+                Connection.$on('log_output', function(e, msg){ $scope.parse_log_output(msg); });
+                Connection.$on('messages', function(e, msg){ $scope.parse_messages(msg); });
+                Connection.$on('notaries', function(e, msg){ $scope.parse_notaries(msg); });
+                Connection.$on('reputation', function(e, msg){ $scope.parse_reputation(msg); });
+                Connection.$on('burn_info_available', function(e, msg){ $scope.parse_burn_info(msg); });
+
+                Connection.$on('hello', function(e, msg){
                     console.log('Received a hello', msg);
                     $scope.add_peer({
                         'guid': msg.senderGUID,
@@ -98,7 +53,7 @@ angular.module('app')
                         'nick': msg.senderNick
                     });
                 });
-            }
+            });
 
             // Listen for Sidebar mods
             $scope.$on('sidebar', function(event, visible) {
@@ -171,8 +126,6 @@ angular.module('app')
                     }
                     $scope.reviews[pubkey].push(review);
                 }
-                $scope.$apply();
-                console.log($scope.reviews);
             };
 
 
@@ -185,10 +138,6 @@ angular.module('app')
                 console.log(msg);
                 $scope.log_output += msg.line;
 
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
-
             };
 
             /**
@@ -197,9 +146,6 @@ angular.module('app')
              */
             $scope.parse_notaries = function(msg) {
                 $scope.trusted_notaries = msg.notaries;
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
             };
 
             $scope.parse_welcome = function(msg) {
@@ -228,10 +174,6 @@ angular.module('app')
                 $scope.orders_total = msg.total;
                 $scope.orders_pages = msg.total % 10;
                 $scope.orders_current_page = msg.page + 1;
-
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
 
             };
 
@@ -263,9 +205,6 @@ angular.module('app')
                 }
 
                 $scope.contract2 = {};
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
 
             };
 
@@ -279,9 +218,6 @@ angular.module('app')
                     $scope.messages = msg.messages.messages.inboxMessages;
 
                     $scope.message = {};
-                    if (!$scope.$$phase) {
-                        $scope.$apply();
-                    }
                 }
             };
 
@@ -293,13 +229,9 @@ angular.module('app')
                 bitcoins = Math.round(bitcoins * 10000) / 10000;
 
                 // console.log(bitcoins);
-
-                $scope.$apply(function() {
-                    console.log(bitcoins);
-                    console.log(msg.addr);
-                    $scope.settings.burnAmount = bitcoins;
-                    $scope.settings.burnAddr = msg.addr;
-                });
+                console.log('Trust Pledge:', bitcoins+'BTC', msg.addr);
+                $scope.settings.burnAmount = bitcoins;
+                $scope.settings.burnAddr = msg.addr;
             };
 
             // Peer information has arrived
@@ -309,40 +241,25 @@ angular.module('app')
                 msg.reviews.forEach(function(review) {
                     add_review_to_page(review.subject, review);
                 });
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
             };
 
             $scope.add_peer = function(msg) {
-
-                console.log('Add peer: ', msg);
-
                 /* get index if peer is already known */
                 var index = [-1].concat($scope.peers).reduce(
                     function(previousValue, currentValue, index, array) {
                         return currentValue.uri == msg.uri ? index : previousValue;
                     });
-                console.log('Index', index);
 
                 if (index == -1) {
                     /* it is a new peer */
                     $scope.peers.push(msg);
-                }
-                if (!$scope.$$phase) {
-                    $scope.$apply();
                 }
             };
 
             $scope.update_peers = function(msg) {
 
                 console.log('Refresh peers: ', msg);
-
                 $scope.peers = msg.peers;
-
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
             };
 
             $scope.remove_peer = function(msg) {
@@ -352,10 +269,6 @@ angular.module('app')
                 $scope.peers = $scope.peers.filter(function(element) {
                     return element.uri != msg.uri;
                 });
-
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
             };
 
             $scope.review = {
@@ -388,18 +301,10 @@ angular.module('app')
 
             // My information has arrived
             $scope.parse_myself = function(msg) {
-
-
                 $scope.myself = msg;
-
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
-
 
                 // Settings
                 $scope.settings = msg.settings;
-                console.log(msg.settings);
 
                 //msg.reputation.forEach(function(review) {
                 //   add_review_to_page($scope.myself.pubkey, review)
@@ -409,16 +314,12 @@ angular.module('app')
                     $scope.add_peer(peer);
                 });
 
-
             };
 
             // A shout has arrived
             $scope.parse_shout = function(msg) {
                 $scope.shouts.push(msg);
                 console.log('Shout', $scope.shouts);
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
             };
 
             $scope.checkOrderCount = function() {
@@ -467,10 +368,6 @@ angular.module('app')
 
                 $scope.showDashboardPanel('orders');
 
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
-
                 $('#pill-orders').addClass('active').siblings().removeClass('active').blur();
                 $("#orderSuccessAlert").alert();
                 window.setTimeout(function() {
@@ -493,10 +390,6 @@ angular.module('app')
                 Connection.send('order', order);
 
                 $scope.queryMyOrder(0);
-
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
 
             };
 
@@ -620,22 +513,20 @@ angular.module('app')
 
                 }
 
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
-
             };
 
             $scope.getNotaries = function() {
-                console.log('Getting notaries');
                 Connection.send('get_notaries', {});
             };
 
-            $scope.go = function(url, guid) {
-                $location.path(url);
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
+            $scope.goToStore = function(url, guid) {
+                $scope.awaitingStore = guid;
+                $scope.page = null;
+                $scope.go(url);
+            };
+
+            $scope.go = function (url) {
+              $location.path(url);
             };
 
             /**
@@ -655,9 +546,6 @@ angular.module('app')
 
                 $scope.page = null;
                 Connection.send('query_page', query);
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
 
             };
 

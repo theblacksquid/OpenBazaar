@@ -109,15 +109,9 @@ angular.module('app')
                         msg.senderNick = msg.senderNick.substring(0, 120);
                         msg.text = msg.text.substring(0, 2048);
 
-                        if (msg.senderGUID != $scope.awaitingShop) {
-                            console.log('got here for some reason', msg.senderGUID, $scope.awaitingShop);
-
-                        }
-
                         if (!$scope.reviews.hasOwnProperty(msg.pubkey)) {
                             $scope.reviews[msg.pubkey] = [];
                         }
-
 
                         $.each($scope.settings.notaries, function(idx, val) {
                             if (val.guid == msg.senderGUID) {
@@ -130,16 +124,6 @@ angular.module('app')
                             $scope.page = msg;
                             $scope.page.reputation_pledge = 0;
                         }
-
-                        if (!$scope.$$phase) {
-                            console.log('Can update page', msg);
-                            $scope.page = msg;
-                        }
-
-
-
-                    console.log($scope);
-
 
             };
 
