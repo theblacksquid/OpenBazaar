@@ -511,7 +511,9 @@ class Market(object):
             limit=10,
             limit_offset=(page * 10)
         )
+
         my_contracts = []
+
         for contract in contracts:
             try:
                 contract_body = json.loads(u"%s" % contract['contract_body'])

@@ -107,7 +107,8 @@ class DHT(object):
             self.log.debug('Back from handshake %s', new_peer)
             self.transport.save_peer_to_db(peer_tuple)
 
-        new_peer.start_handshake(cb)
+        if new_peer:
+            new_peer.start_handshake(cb)
 
     def _add_known_node(self, node):
         """ Accept a peer tuple and add it to known nodes list
@@ -163,10 +164,6 @@ class DHT(object):
                     # Found key in local data store
                     response_msg["foundKey"] = self.dataStore[key]
                     self.log.info('Found a key: %s', key)
-                else:
-                    self.log.info('Did not find a key: %s', key)
-                    response_msg["foundNodes"] = self.close_nodes(key, guid)
-                    self.log.info('Sending found close nodes to: %s', guid)
 
                 new_peer.send(response_msg)
             else:
@@ -414,17 +411,19 @@ class DHT(object):
 
         if peer:
             peer.send({'type': 'query_listings', 'key': key})
-            return
+        else:
+            self.log.error('Peer is not available for listings.')
 
+        # TODO: Fix DHT listings search
         # Check cache in DHT if peer not available
-        listing_index_key = hashlib.sha1('contracts-%s' % key).hexdigest()
-        hashvalue = hashlib.new('ripemd160')
-        hashvalue.update(listing_index_key)
-        listing_index_key = hashvalue.hexdigest()
-
-        self.log.info('Finding contracts for store: %s', listing_index_key)
-
-        self.iterativeFindValue(listing_index_key, callback)
+        # listing_index_key = hashlib.sha1('contracts-%s' % key).hexdigest()
+        # hashvalue = hashlib.new('ripemd160')
+        # hashvalue.update(listing_index_key)
+        # listing_index_key = hashvalue.hexdigest()
+        #
+        # self.log.info('Finding contracts for store: %s', listing_index_key)
+        #
+        # self.iterativeFindValue(listing_index_key, callback)
 
     def find_listings_by_keyword(self, keyword, listingFilter=None, callback=None):
 

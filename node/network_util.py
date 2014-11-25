@@ -2,7 +2,10 @@ import sys
 
 import IPy
 import requests
+import rfc3986
 import stun
+from urlparse import urlparse
+import re
 
 
 # List taken from natvpn project and tested manually.
@@ -39,8 +42,26 @@ def is_loopback_addr(addr):
     return addr.startswith("127.0.0.") or addr == 'localhost'
 
 
+def str_to_ipy(addr):
+    """Convert an address to an IPy.IP object or None if unsuccessful."""
+    try:
+        return IPy.IP(addr)
+    except ValueError as e:
+        print 'Not IP address:', e
+    return None
+
+
 def is_private_ip_address(addr):
-    return is_loopback_addr(addr) or IPy.IP(addr).iptype() != 'PUBLIC'
+
+    if is_loopback_addr(addr):
+        return True
+
+    ip = str_to_ipy(addr)
+
+    if ip and ip.iptype() == 'PRIVATE':
+        return True
+
+    return False
 
 
 def get_my_ip(ip_site=IP_DETECT_SITE):
@@ -94,6 +115,33 @@ def test_stun_servers(servers=_STUN_SERVERS):
             print 'FAIL'
         else:
             print 'OK'
+
+
+def is_valid_openbazaar_scheme(uri):
+    """Check for OpenBazaar appropriate scheme"""
+    return rfc3986.uri_reference(uri).scheme == u'tcp'
+
+
+def is_valid_hostname(hostname):
+    if len(hostname) > 255:
+        return False
+    if hostname[-1] == ".":
+        hostname = hostname[:-1]
+    allowed = re.compile(r'(?!-)[A-Z\d-]{1,63}(?<!-)$', re.IGNORECASE)
+    return all(allowed.match(x) for x in hostname.split("."))
+
+
+def is_valid_uri(uri):
+    hostname = urlparse(uri).hostname
+
+    return (
+        uri
+        and rfc3986.is_valid_uri(
+            uri, 'utf-8', require_scheme=True, require_authority=True
+        )
+        and is_valid_openbazaar_scheme(uri)
+        and is_valid_hostname(hostname)
+    )
 
 
 def main():

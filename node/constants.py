@@ -53,4 +53,4 @@ checkRefreshInterval = refreshTimeout / 5
 udpDatagramMaxSize = 8192  # 8 KB
 
 DB_PATH = "db/ob.db"
-VERSION = "0.3.1.dev0"
+VERSION = "0.3.1"
