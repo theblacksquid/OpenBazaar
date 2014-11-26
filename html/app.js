@@ -140,7 +140,6 @@ app.directive("validateOnBlur", [function() {
         link: function(scope, element, attrs, modelCtrl) {
             element.on('blur', function () {
                 modelCtrl.$showValidationMessage = modelCtrl.$dirty;
-                scope.$apply();
             });
         }
     };

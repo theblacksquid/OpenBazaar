@@ -20,7 +20,10 @@ angular.module('app')
              * Establish message handlers
              * @msg - message from websocket to pass on to handler
              */
-            Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
+            var listeners = Connection.$$listeners;
+            if(!listeners.hasOwnProperty('load_page')) {
+                Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
+            }
             Connection.$on('settings_notaries', function(e, msg){ $scope.parse_notaries(msg); });
             Connection.$on('create_backup_result', function(e, msg){ $scope.onCreateBackupResult(msg); });
             Connection.$on('on_get_backups_response', function(e, msg){ $scope.onGetBackupsResponse(msg); });
@@ -116,7 +119,6 @@ angular.module('app')
             };
 
             $scope.getNotaries = function() {
-                console.log('Getting notaries');
                 Connection.send('get_notaries', {});
             };
 
