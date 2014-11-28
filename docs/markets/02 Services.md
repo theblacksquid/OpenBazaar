@@ -4,7 +4,7 @@
 
 ## Introduction
 
-A service contract in *OpenBazaar* replaces a physical good to be sold with the terms and conditions of a service to be performed by one party. The distinction between a good and service within a [Ricardian contract](https://gist.github.com/drwasho/a5380544c170bdbbbad8) is minimal, as will be described in this article. Morever, the combination of pseudonym (nym) reputation management (*proof of burn* nyms, *web of trust*) and surety bonds can ensure a robust service industry within *OpenBazaar*.
+A service contract in *OpenBazaar* replaces a physical good to be sold with the terms and conditions of a service to be performed by one party. The distinction between a good and service within a [Ricardian contract](https://gist.github.com/drwasho/a5380544c170bdbbbad8) is minimal, as will be described in this article. Moreover, the combination of pseudonym (nym) reputation management (*proof of burn* nyms, *web of trust*) and surety bonds can ensure a robust service industry within *OpenBazaar*.
 
 ## Service Contracts
 
@@ -21,7 +21,7 @@ For the sake of simplicity, we will examine two types of service contracts that 
 The first type of contract is an **invitation to tender (ITT)**, whereby a client publishes their list of requirements for a desired good or service. In the context of a service, these details are specified within a Ricardian contract and distributed to potential service providers in the *OpenBazaar* network. Relevant ITT contract details include:
 
 1. Name and category of the service
-	- Chosen from a list of pre-determined categories and sub-cateogories
+	- Chosen from a list of pre-determined categories and sub-categories
 	- This list will be frequently updated to reflect market needs, and include custom categories to support new markets on *OpenBazaar*
 2. Price range
 	- The price that the buyer is prepared to pay for the service
@@ -222,9 +222,9 @@ Alice may receive tens or hundreds of bidding contracts to her ITT and can filte
 
 #### The *TradeNet* 
 
-A long term outcome of supporting **ITT** contracts within *OpenBazaar* is the potential for it to become a 'TradeNet', as descibed by [Mike Hearn](http://www.slideshare.net/mikehearn/future-of-money-26663148) (slide 25). The original proposal imagined the *TradeNet* to be a market infrastructure for applications, potentially distributed autonomous corporations/businesses, to interface with in order to purchase goods and services according to their programmed goals and profit motives. These applications would issue tenders for goods or services on the *TradeNet*, receive bids and automatically purchase contracts based on algorithmically-determined conditions (factoring in price, proximity, time etc).
+A long term outcome of supporting **ITT** contracts within *OpenBazaar* is the potential for it to become a 'TradeNet', as described by [Mike Hearn](http://www.slideshare.net/mikehearn/future-of-money-26663148) (slide 25). The original proposal imagined the *TradeNet* to be a market infrastructure for applications, potentially distributed autonomous corporations/businesses, to interface with in order to purchase goods and services according to their programmed goals and profit motives. These applications would issue tenders for goods or services on the *TradeNet*, receive bids and automatically purchase contracts based on algorithmically-determined conditions (factoring in price, proximity, time etc).
 
-A much more attractive alternative is for *OpenBazaar* to potentially faciliate **ITT** contracts for both individuals and distributed consensus/autonomous organisations for peer-to-peer exchanges of goods and services. This is achievable using Ricardian contracts as they are both human and application readable, permitting human-application exchanges without either party known the true identity of each other if so desired.
+A much more attractive alternative is for *OpenBazaar* to potentially facilitate **ITT** contracts for both individuals and distributed consensus/autonomous organisations for peer-to-peer exchanges of goods and services. This is achievable using Ricardian contracts as they are both human and application readable, permitting human-application exchanges without either party known the true identity of each other if so desired.
 
 ### Service Listing
 
@@ -260,8 +260,8 @@ The GPB can be factored as a deduction for the service provider's fee for the sa
 <GPB03_penalty> 2 mBTC/24 hours until contract cancelled </GPB03_penalty>
 ```
 
-The inclusion of GPBs would occur from the outset of the contract's formation, requiring both parties to digitially sign to indicate their agreement. The arbiter can verify the authenticity and integrity of these terms by both party's digital signatures and contract hashes, as per a normal Ricardian contract.
+The inclusion of GPBs would occur from the outset of the contract's formation, requiring both parties to digitally sign to indicate their agreement. The arbiter can verify the authenticity and integrity of these terms by both party's digital signatures and contract hashes, as per a normal Ricardian contract.
 
 ## Conclusion
 
-In addition to the sale of physical goods, *OpenBazaar* supports a *true* free market for services within a censorship-resistant platform. Service contracts leverage the benefits of Ricardian contracts, used for physical goods and P2P lending, to form a tamper-proof chain of authenticity for contractual consensus between two parties and an arbitrating third party. Finally, the potential for **Invitation to Tender** contracts to form a *TradeNet* effect is an exciting long-term possibility for distributed autonomous corporations/organisations to rapdily obtain goods and services.
+In addition to the sale of physical goods, *OpenBazaar* supports a *true* free market for services within a censorship-resistant platform. Service contracts leverage the benefits of Ricardian contracts, used for physical goods and P2P lending, to form a tamper-proof chain of authenticity for contractual consensus between two parties and an arbitrating third party. Finally, the potential for **Invitation to Tender** contracts to form a *TradeNet* effect is an exciting long-term possibility for distributed autonomous corporations/organisations to rapidly obtain goods and services.
