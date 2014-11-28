@@ -115,7 +115,7 @@ function installUbuntu {
   # print commands
   set -x
 
-  sudo apt-get update
+  sudo apt-get -q update || echo 'apt-get update failed. Continuing...'
   sudo apt-get -y install python-pip build-essential python-zmq rng-tools
   sudo apt-get -y install python-dev g++ libjpeg-dev sqlite3 openssl
   sudo apt-get -y install alien libssl-dev python-virtualenv lintian libjs-jquery
