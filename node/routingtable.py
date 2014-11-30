@@ -310,8 +310,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
             except kbucket.BucketFull:
                 # The bucket is full; see if it can be split (by checking
                 # if its range includes the host node's id)
-                if self.buckets[bucketIndex].keyInRange(
-                   self.parent_node_id):
+                if self.buckets[bucketIndex].keyInRange(self.parent_node_id):
                     self.splitBucket(bucketIndex)
                     # Retry the insertion attempt
                     self.addContact(contact)

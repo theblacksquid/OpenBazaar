@@ -436,7 +436,7 @@ class CryptoTransportLayer(TransportLayer):
 
             else:
                 self.log.warning("Couldn't find peer %s to send message type %s",
-                               send_to, data.get('type'))
+                                 send_to, data.get('type'))
 
         else:
             # FindKey and then send
