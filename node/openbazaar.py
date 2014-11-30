@@ -228,10 +228,6 @@ def create_openbazaar_contexts(arguments, nat_status):
     if not os.path.exists(defaults['log_dir']):
         os.makedirs(defaults['log_dir'], 0o755)
 
-    # log path (requires LOG_DIR to exist)
-    if not os.path.exists(defaults['log_dir']):
-        os.makedirs(defaults['log_dir'], 0o755)
-
     # db path
     if not os.path.exists(defaults['db_dir']):
         os.makedirs(defaults['db_dir'], 0o755)
