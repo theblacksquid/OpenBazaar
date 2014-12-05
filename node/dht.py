@@ -5,7 +5,7 @@ import logging
 import os
 import time
 import functools
-from threading import Thread, RLock
+from threading import RLock
 
 from node import constants, datastore, network_util, routingtable
 from node.protocol import proto_store
