@@ -117,7 +117,7 @@ _SCHEMA = (
             'id INTEGER PRIMARY KEY AUTOINCREMENT',
             'market_id INT',
             'nickname TEXT',
-            'Namecoin_id TEXT',
+            'namecoin_id TEXT',
             'secret TEXT',
             'sin TEXT',
             'pubkey TEXT',
