@@ -278,6 +278,7 @@ class CryptoTransportLayer(TransportLayer):
             self.settings.update(newsettings)
 
         self.nickname = self.settings.get('nickname', '')
+        self.namecoin_id = self.settings.get('namecoin_id', '')
         self.secret = self.settings.get('secret', '')
         self.pubkey = self.settings.get('pubkey', '')
         self.privkey = self.settings.get('privkey')
