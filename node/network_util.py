@@ -46,8 +46,8 @@ def str_to_ipy(addr):
     """Convert an address to an IPy.IP object or None if unsuccessful."""
     try:
         return IPy.IP(addr)
-    except ValueError as e:
-        print 'Not IP address:', e
+    except ValueError as err:
+        print 'Not IP address:', err
     return None
 
 
@@ -56,9 +56,9 @@ def is_private_ip_address(addr):
     if is_loopback_addr(addr):
         return True
 
-    ip = str_to_ipy(addr)
+    ip_address = str_to_ipy(addr)
 
-    if ip and ip.iptype() == 'PRIVATE':
+    if ip_address and ip_address.iptype() == 'PRIVATE':
         return True
 
     return False
@@ -66,10 +66,10 @@ def is_private_ip_address(addr):
 
 def get_my_ip(ip_site=IP_DETECT_SITE):
     try:
-        r = requests.get(ip_site)
-        return r.text.strip()
-    except (AttributeError, requests.RequestException) as e:
-        print '[Requests] error: %s' % e
+        request = requests.get(ip_site)
+        return request.text.strip()
+    except (AttributeError, requests.RequestException) as exc:
+        print '[Requests] error: %s' % exc
     return None
 
 

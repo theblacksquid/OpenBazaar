@@ -40,14 +40,14 @@ class PeerConnection(object):
     def _initiate_connection(self):
         try:
             self.socket.connect(self.address)
-        except zmq.ZMQError as e:
-            if e.errno != errno.EINVAL:
+        except zmq.ZMQError as err:
+            if err.errno != errno.EINVAL:
                 raise
             self.socket.ipv6 = True
             try:
                 self.socket.connect(self.address)
-            except zmq.ZMQError as e:
-                self.log.error('Bad URI %s', e)
+            except zmq.ZMQError as err:
+                self.log.error('Bad URI %s', err)
 
     def send(self, data, callback):
         self.send_raw(json.dumps(data), callback)
@@ -188,14 +188,14 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
                 'sig': signature,
                 'data': sig_data
             }))
-        except Exception as e:
-            self.log.error('Encryption failed. %s', e)
+        except Exception as exc:
+            self.log.error('Encryption failed. %s', exc)
             return
 
         try:
             self.send_raw(data, callback)
-        except Exception as e:
-            self.log.error("Was not able to send raw data: %s", e)
+        except Exception as exc:
+            self.log.error("Was not able to send raw data: %s", exc)
 
 
 class PeerListener(GUIDMixin):
@@ -345,11 +345,11 @@ class CryptoPeerListener(PeerListener):
 
                 else:
                     return
-            except RuntimeError as e:
-                self.log.error('Could not decrypt message properly %s', e)
+            except RuntimeError as err:
+                self.log.error('Could not decrypt message properly %s', err)
                 return
-            except Exception as e:
-                self.log.error('Cannot unpack data: %s', e)
+            except Exception as exc:
+                self.log.error('Cannot unpack data: %s', exc)
                 return
         else:
             message = json.loads(serialized)

@@ -115,14 +115,14 @@ class KBucket(object):
         @rtype:  list of guid.GUIDMixin
         """
 
-        currentLen = len(self)
-        if not currentLen:
+        current_len = len(self)
+        if not current_len:
             return []
 
         if count <= 0:
-            count = currentLen
+            count = current_len
         else:
-            count = min(count, currentLen)
+            count = min(count, current_len)
 
         # Return no more contacts than bucket size.
         count = min(count, constants.k)
