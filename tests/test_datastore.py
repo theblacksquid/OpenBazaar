@@ -10,10 +10,10 @@ class TestSqliteDatastore(unittest.TestCase):
     def setUp(self):
         self.db_mock = mock.MagicMock(spec=db_store.Obdb)
         data = {
-        'datastore': [
-            {'key': 'Zurich'.encode('hex')},
-            {'key': 'CH'.encode('hex')}
-            ]
+            'datastore': [
+                {'key': 'Zurich'.encode('hex')},
+                {'key': 'CH'.encode('hex')}
+                ]
         }
         self.db_mock.selectEntries.side_effect = data.__getitem__
         self.d = datastore.SqliteDataStore(self.db_mock)

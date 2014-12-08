@@ -128,8 +128,11 @@ thank you for contributing!
 
 1. **Look at the code and see if you can refactor something**. Look for
 [broken windows](http://pragmatictips.com/4). [pylint](http://www.pylint.org/)
-can sometimes be a good guide.
+can sometimes be a good guide. Running pylint:
 
+       ```
+       pylint node --rcfile=.pylintrc
+       ```
 Please be bold in your pull requests. If you have a big idea, you're very
 welcome to create an issue and bring it up for discussion.
 

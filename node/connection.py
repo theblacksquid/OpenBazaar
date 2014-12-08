@@ -355,7 +355,7 @@ class CryptoPeerListener(PeerListener):
             message = json.loads(serialized)
 
         self.log.debugv('Received message of type "%s"',
-                       message.get('type', 'unknown'))
+                        message.get('type', 'unknown'))
         self._data_cb(message)
 
     @staticmethod

@@ -91,7 +91,7 @@ class DHT(object):
 
         if peer_tuple in self.knownNodes:
             self.log.debugv('Peer already known and up to date: "%s" %s %s',
-                           nickname, uri, guid)
+                            nickname, uri, guid)
             return
         else:
             self._add_known_node(peer_tuple)
@@ -156,8 +156,7 @@ class DHT(object):
                             "uri": self.transport.uri,
                             "pubkey": self.transport.pubkey,
                             "senderNick": self.transport.nickname,
-                            "findID": findID
-                            }
+                            "findID": findID}
 
             if msg['findValue']:
                 if key in self.dataStore and self.dataStore[key] is not None:
@@ -462,7 +461,7 @@ class DHT(object):
             self.iterativeFindNode(
                 key,
                 lambda msg, findKey=key, value=value_to_store, originalPublisherID=originalPublisherID, age=age:
-                    self.storeKeyValue(msg, findKey, value, originalPublisherID, age)
+                self.storeKeyValue(msg, findKey, value, originalPublisherID, age)
             )
 
     def storeKeyValue(self, nodes, key, value, originalPublisherID, age):
