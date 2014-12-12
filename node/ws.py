@@ -16,7 +16,7 @@ from bitcoin import (
 )
 import tornado.websocket
 from twisted.internet import reactor
-from node import protocol, trust
+from node import protocol, trust, constants
 from node.backuptool import BackupTool, Backup, BackupJSONEncoder
 
 
@@ -128,8 +128,7 @@ class ProtocolHandler(object):
                 'Received reputation pledge amount %s for guid %s',
                 amount, guid
             )
-            SATOSHIS_IN_BITCOIN = 100000000
-            bitcoins = float(amount) / SATOSHIS_IN_BITCOIN
+            bitcoins = float(amount) / constants.SATOSHIS_IN_BITCOIN
             bitcoins = round(bitcoins, 4)
             self.market.pages[sin]['reputation_pledge'] = bitcoins
             self.send_to_client(
