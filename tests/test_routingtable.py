@@ -72,19 +72,19 @@ class TestRoutingTable(unittest.TestCase):
 
     def test_num_to_id(self):
         self.assertEqual(
-            routingtable.RoutingTable.numToId(0),
+            routingtable.RoutingTable.num_to_id(0),
             '0000000000000000000000000000000000000000'
         )
         self.assertEqual(
-            routingtable.RoutingTable.numToId(42),
+            routingtable.RoutingTable.num_to_id(42),
             '000000000000000000000000000000000000002a'
         )
         self.assertEqual(
-            routingtable.RoutingTable.numToId(2**100),
+            routingtable.RoutingTable.num_to_id(2**100),
             '0000000000000010000000000000000000000000'
         )
         self.assertEqual(
-            routingtable.RoutingTable.numToId(2**160 - 1),
+            routingtable.RoutingTable.num_to_id(2**160 - 1),
             'ffffffffffffffffffffffffffffffffffffffff'
         )
 
@@ -93,15 +93,15 @@ class TestOptimizedTreeRoutingTable(TestRoutingTable):
     """Test OptimizedTreeRoutingTable implementation of RoutingTable."""
 
     def _ad_hoc_KBucket_eq(self, kbucket1, kbucket2, msg=None):
-        self.assertEqual(kbucket1.rangeMin, kbucket2.rangeMin, msg)
-        self.assertEqual(kbucket1.rangeMax, kbucket2.rangeMax, msg)
+        self.assertEqual(kbucket1.range_min, kbucket2.range_min, msg)
+        self.assertEqual(kbucket1.range_max, kbucket2.range_max, msg)
         self.assertItemsEqual(kbucket1.contacts, kbucket2.contacts, msg)
 
     @staticmethod
     def _make_KBucket(range_min, range_max, market_id):
         return kbucket.KBucket(
-            rangeMin=range_min,
-            rangeMax=range_max,
+            range_min=range_min,
+            range_max=range_max,
             market_id=market_id
         )
 
@@ -140,10 +140,10 @@ class TestOptimizedTreeRoutingTable(TestRoutingTable):
     def test_findCloseNodes(self):
         pass
 
-    def test_getContact(self):
-        self.rt.buckets[0].addContact(self.id1)
-        self.assertEqual(self.id1, self.rt.getContact(self.id1))
-        self.assertIsNone(self.rt.getContact(self.id2))
+    def test_get_contact(self):
+        self.rt.buckets[0].add_contact(self.id1)
+        self.assertEqual(self.id1, self.rt.get_contact(self.id1))
+        self.assertIsNone(self.rt.get_contact(self.id2))
 
     def _init_N_buckets(self, N):
         bucket_range = self.range_max - self.range_min
@@ -158,121 +158,121 @@ class TestOptimizedTreeRoutingTable(TestRoutingTable):
         ]
         return self.range_min + bucket_range // N
 
-    def test_getRefreshList(self):
+    def test_get_refresh_list(self):
         # We will override the parent method case-by case.
         pass
 
-    def test_getRefreshList_force(self):
+    def test_get_refresh_list_force(self):
         self._init_N_buckets(7)
         self.assertEqual(
             self.rt.buckets,
-            self.rt.getRefreshList(force=True)
+            self.rt.get_refresh_list(force=True)
         )
 
         self.assertEqual(
             self.rt.buckets[1:],
-            self.rt.getRefreshList(start_index=1, force=True)
+            self.rt.get_refresh_list(start_index=1, force=True)
         )
 
         # Check immutability
-        refresh_list = self.rt.getRefreshList(force=True)
+        refresh_list = self.rt.get_refresh_list(force=True)
         refresh_list.pop(0)
         self.assertEqual(
             refresh_list,
-            self.rt.getRefreshList(force=True)[1:]
+            self.rt.get_refresh_list(force=True)[1:]
         )
 
-    def test_getRefreshList_noforce(self):
+    def test_get_refresh_list_noforce(self):
         bucket_count = 7
         self._init_N_buckets(bucket_count)
         stale_idxs = {0, 3, 6}
         for i in range(bucket_count):
             bucket = self.rt.buckets[i]
-            self.assertEqual(0, bucket.lastAccessed)
+            self.assertEqual(0, bucket.last_accessed)
             if i not in stale_idxs:
-                self.rt.touchKBucket(self.rt.numToId(bucket.rangeMin))
+                self.rt.touch_kbucket(self.rt.num_to_id(bucket.range_min))
 
-        refresh_list = self.rt.getRefreshList()
+        refresh_list = self.rt.get_refresh_list()
         recovered_idxs = set()
         for node_id in refresh_list:
-            bucket_idx = self.rt.kbucketIndex(node_id)
+            bucket_idx = self.rt.kbucket_index(node_id)
             recovered_idxs.add(bucket_idx)
         self.assertEqual(stale_idxs, recovered_idxs)
 
         # Check immutability
-        refresh_list = self.rt.getRefreshList()
+        refresh_list = self.rt.get_refresh_list()
         refresh_list.pop(0)
         self.assertEqual(
             refresh_list,
-            self.rt.getRefreshList()[1:]
+            self.rt.get_refresh_list()[1:]
         )
 
-        refresh_list = self.rt.getRefreshList(start_index=4)
+        refresh_list = self.rt.get_refresh_list(start_index=4)
         recovered_idxs = set()
         for node_id in refresh_list:
-            bucket_idx = self.rt.kbucketIndex(node_id)
+            bucket_idx = self.rt.kbucket_index(node_id)
             recovered_idxs.add(bucket_idx)
         new_stale_idxs = {idx for idx in stale_idxs if idx >= 4}
         self.assertEqual(new_stale_idxs, recovered_idxs)
 
-    def _test_removeContact_scenario(self, contact):
+    def _test_remove_contact_scenario(self, contact):
         self.assertNotIn(contact, self.rt.buckets[0])
-        self.rt.buckets[0].addContact(contact)
+        self.rt.buckets[0].add_contact(contact)
         self.assertIn(contact, self.rt.buckets[0])
-        self.rt.removeContact(contact)
+        self.rt.remove_contact(contact)
         self.assertNotIn(contact, self.rt.buckets[0])
 
-    def test_removeContact(self):
-        self._test_removeContact_scenario(self.id1)
-        self._test_removeContact_scenario(unicode(self.id1))
-        self._test_removeContact_scenario(guid.GUIDMixin(self.id1))
+    def test_remove_contact(self):
+        self._test_remove_contact_scenario(self.id1)
+        self._test_remove_contact_scenario(unicode(self.id1))
+        self._test_remove_contact_scenario(guid.GUIDMixin(self.id1))
 
         # Removing an absent contact shouldn't raise a ValueError
-        self._test_removeContact_scenario(self.id2)
+        self._test_remove_contact_scenario(self.id2)
 
-    def test_touchKBucket(self):
+    def test_touch_kbucket(self):
         half_range = self._init_N_buckets(2)
 
         self.assertEqual(
-            self.rt.buckets[0].lastAccessed,
-            self.rt.buckets[1].lastAccessed
+            self.rt.buckets[0].last_accessed,
+            self.rt.buckets[1].last_accessed
         )
 
         now = int(time.time())
-        self.assertNotEqual(now, self.rt.buckets[0].lastAccessed)
+        self.assertNotEqual(now, self.rt.buckets[0].last_accessed)
 
-        hex_key = self.rt.numToId(half_range)
-        self.rt.touchKBucket(hex_key, timestamp=now)
-        self.assertLessEqual(now, self.rt.buckets[1].lastAccessed)
+        hex_key = self.rt.num_to_id(half_range)
+        self.rt.touch_kbucket(hex_key, timestamp=now)
+        self.assertLessEqual(now, self.rt.buckets[1].last_accessed)
         self.assertNotEqual(
-            self.rt.buckets[0].lastAccessed,
-            self.rt.buckets[1].lastAccessed
+            self.rt.buckets[0].last_accessed,
+            self.rt.buckets[1].last_accessed
         )
 
         now2 = now + 1
-        self.rt.touchKBucket(self.rt.numToId(half_range - 1), now2)
-        self.assertEqual(now, self.rt.buckets[1].lastAccessed)
-        self.assertEqual(now2, self.rt.buckets[0].lastAccessed)
+        self.rt.touch_kbucket(self.rt.num_to_id(half_range - 1), now2)
+        self.assertEqual(now, self.rt.buckets[1].last_accessed)
+        self.assertEqual(now2, self.rt.buckets[0].last_accessed)
 
-    def test_kbucketIndex_bad_key(self):
+    def test_kbucket_index_bad_key(self):
         bad_hex_key = "z"  # not a hex value
-        self.assertRaises(ValueError, self.rt.kbucketIndex, bad_hex_key)
+        self.assertRaises(ValueError, self.rt.kbucket_index, bad_hex_key)
 
-    def test_kbucketIndex_not_found(self):
-        ghost_hex_key = self.rt.numToId(self.range_max)
-        self.assertRaises(KeyError, self.rt.kbucketIndex, ghost_hex_key)
+    def test_kbucket_index_not_found(self):
+        ghost_hex_key = self.rt.num_to_id(self.range_max)
+        self.assertRaises(KeyError, self.rt.kbucket_index, ghost_hex_key)
 
-    def test_kbucketIndex_many_found(self):
-        hex_key = self.rt.numToId(self.range_min)
+    def test_kbucket_index_many_found(self):
+        hex_key = self.rt.num_to_id(self.range_min)
         # Insert duplicate kbucket
         self.rt.buckets.append(self.rt.buckets[0])
-        self.assertRaises(RuntimeError, self.rt.kbucketIndex, hex_key)
+        self.assertRaises(RuntimeError, self.rt.kbucket_index, hex_key)
 
-    def test_kbucketIndex_default(self):
-        hex_key = self.rt.numToId(self._init_N_buckets(2))
-        self.assertEqual(1, self.rt.kbucketIndex(hex_key))
-        self.assertEqual(1, self.rt.kbucketIndex(unicode(hex_key)))
-        self.assertEqual(1, self.rt.kbucketIndex(guid.GUIDMixin(hex_key)))
+    def test_kbucket_index_default(self):
+        hex_key = self.rt.num_to_id(self._init_N_buckets(2))
+        self.assertEqual(1, self.rt.kbucket_index(hex_key))
+        self.assertEqual(1, self.rt.kbucket_index(unicode(hex_key)))
+        self.assertEqual(1, self.rt.kbucket_index(guid.GUIDMixin(hex_key)))
 
 if __name__ == "__main__":
     unittest.main()

@@ -233,10 +233,10 @@ class ProtocolHandler(object):
     def client_add_guid(self, socket_handler, msg):
         self.log.info('Adding node by guid %s', msg)
 
-        def cb(msg):
+        def get_peers_callback(msg):
             self.get_peers()
 
-        self.transport.dht.iterativeFindNode(msg.get('guid'), cb)
+        self.transport.dht.iterative_find_node(msg.get('guid'), get_peers_callback)
 
     def client_remove_trusted_notary(self, socket_handler, msg):
         self.log.info('Removing trusted notary %s', msg)
@@ -757,7 +757,7 @@ class ProtocolHandler(object):
     def client_search(self, socket_handler, msg):
 
         self.log.info("[Search] %s", msg)
-        self.transport.dht.iterativeFindValue(
+        self.transport.dht.iterative_find_value(
             msg['key'], callback=self.on_node_search_value
         )
 
@@ -852,7 +852,7 @@ class ProtocolHandler(object):
 
             # Go get listing metadata and then send it to the GUI
             for contract in contracts:
-                self.transport.dht.iterativeFindValue(
+                self.transport.dht.iterative_find_value(
                     contract,
                     callback=lambda msg, key=contract: (
                         self.on_node_search_value(msg, key)
@@ -873,7 +873,7 @@ class ProtocolHandler(object):
                     self.log.debug('Results contract %s', contract)
                     key = contract.get('key', contract)
 
-                    self.transport.dht.iterativeFindValue(
+                    self.transport.dht.iterative_find_value(
                         key,
                         callback=lambda msg, key=key: (
                             self.on_global_search_value(msg, key)
@@ -958,8 +958,8 @@ class ProtocolHandler(object):
                     if contract_guid == self.transport.guid:
                         nickname = self.transport.nickname
                     else:
-                        routing_table = self.transport.dht.routingTable
-                        peer = routing_table.getContact(contract_guid)
+                        routing_table = self.transport.dht.routing_table
+                        peer = routing_table.get_contact(contract_guid)
                         nickname = peer.nickname if peer is not None else ""
 
                     self.send_to_client(None, {
@@ -1059,7 +1059,7 @@ class ProtocolHandler(object):
     def get_peers(self):
         peers = []
 
-        for peer in self.transport.dht.activePeers:
+        for peer in self.transport.dht.active_peers:
 
             if hasattr(peer, 'address'):
                 peer_item = {'uri': peer.address}

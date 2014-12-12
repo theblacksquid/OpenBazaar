@@ -49,7 +49,7 @@ class Market(object):
         self.transport = transport
         self.dht = transport.dht
         self.market_id = transport.market_id
-        self.peers = self.dht.getActivePeers()
+        self.peers = self.dht.get_active_peers()
         self.db = db
         self.orders = Orders(transport, self.market_id, db)
         self.pages = {}
@@ -84,10 +84,10 @@ class Market(object):
 
         # Periodically refresh buckets
         loop = tornado.ioloop.IOLoop.instance()
-        refreshCB = tornado.ioloop.PeriodicCallback(self.dht._refreshNode,
-                                                    constants.REFRESH_TIMEOUT,
-                                                    io_loop=loop)
-        refreshCB.start()
+        refresh_cb = tornado.ioloop.PeriodicCallback(self.dht._refresh_node,
+                                                     constants.REFRESH_TIMEOUT,
+                                                     io_loop=loop)
+        refresh_cb.start()
 
     def disable_welcome_screen(self):
         """This just flags the welcome screen to not show on startup"""
@@ -335,11 +335,11 @@ class Market(object):
 
         # Untested code
         if online_only:
-            for n in settings['notaries']:
-                peer = self.dht.routingTable.getContact(n.guid)
+            for notary in settings['notaries']:
+                peer = self.dht.routing_table.get_contact(notary.guid)
                 if peer is not None:
                     peer.start_handshake()
-                    notaries.append(n)
+                    notaries.append(notary)
             return notaries
         # End of untested code
 
