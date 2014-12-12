@@ -72,7 +72,7 @@ class KBucket(object):
             # updated add-on data (e.g. optimization-specific stuff).
         except ValueError:
             # The contact wasn't there after all, so add it.
-            if len(self.contacts) < constants.k:
+            if len(self.contacts) < constants.K:
                 self.contacts.append(contact)
             else:
                 raise BucketFull('No space in bucket to insert contact')
@@ -125,7 +125,7 @@ class KBucket(object):
             count = min(count, current_len)
 
         # Return no more contacts than bucket size.
-        count = min(count, constants.k)
+        count = min(count, constants.K)
 
         contactList = self.contacts[:count]
         if excludeContact is not None:

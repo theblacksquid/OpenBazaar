@@ -178,7 +178,7 @@ class DHT(object):
                 self.routingTable.addContact(new_peer)
 
     def close_nodes(self, key, guid):
-        contacts = self.routingTable.findCloseNodes(key, constants.k, guid)
+        contacts = self.routingTable.findCloseNodes(key, constants.K, guid)
         contact_triples = []
         for contact in contacts:
             contact_triples.append((contact.guid, contact.address, contact.pub, contact.nickname))
@@ -337,19 +337,19 @@ class DHT(object):
             if originalPublisherID == self.settings['guid']:
                 # This node is the original publisher; it has to republish
                 # the data before it expires (24 hours in basic Kademlia)
-                if age >= constants.dataExpireTimeout:
+                if age >= constants.DATE_EXPIRE_TIMEOUT:
                     self.iterativeStore(key, self.dataStore[key])
 
             else:
                 # This node needs to replicate the data at set intervals,
                 # until it expires, without changing the metadata associated with it
                 # First, check if the data has expired
-                if age >= constants.dataExpireTimeout:
+                if age >= constants.DATE_EXPIRE_TIMEOUT:
                     # This key/value pair has expired and has not been
                     # republished by the original publishing node,
                     # so remove it.
                     expired_keys.append(key)
-                elif now - self.dataStore.lastPublished(key) >= constants.replicateInterval:
+                elif now - self.dataStore.lastPublished(key) >= constants.REPLICATE_INTERVAL:
                     self.iterativeStore(key, self.dataStore[key], originalPublisherID, age)
 
         for key in expired_keys:
@@ -641,7 +641,7 @@ class DHT(object):
         if startupShortlist == [] or startupShortlist is None:
 
             # Retrieve closest nodes and add them to the shortlist for the search
-            closeNodes = self.routingTable.findCloseNodes(key, constants.alpha, self.settings['guid'])
+            closeNodes = self.routingTable.findCloseNodes(key, constants.ALPHA, self.settings['guid'])
             shortlist = []
 
             for closeNode in closeNodes:
@@ -684,7 +684,7 @@ class DHT(object):
         #
         # # If you have more k amount of nodes in your shortlist then stop
         # # or ...
-        # if (len(new_search.shortlist) >= constants.k) or (
+        # if (len(new_search.shortlist) >= constants.K) or (
         # new_search.shortlist[0] == new_search.previous_closest_node and len(
         # new_search.active_probes) ==
         # new_search.slowNodeCount[0]):

@@ -13,11 +13,11 @@ class TestKBucket(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.range_min = 1
-        cls.range_max = cls.range_min + 16 * constants.k
+        cls.range_max = cls.range_min + 16 * constants.K
 
         cls.market_id = 42
 
-        cls.init_contact_count = constants.k - 1
+        cls.init_contact_count = constants.K - 1
 
         cls.ghost_contact_id = 0
         cls.ghost_contact = cls._mk_contact_by_num(cls.ghost_contact_id)
@@ -148,7 +148,7 @@ class TestKBucket(unittest.TestCase):
     def test_addContact_full(self):
         self.assertEqual(
             len(self.bucket.getContacts()),
-            constants.k - 1,
+            constants.K - 1,
             "Bucket is not full enough."
         )
 
