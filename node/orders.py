@@ -169,12 +169,12 @@ class Orders(object):
         if isinstance(item_title, unicode):
             item_title = item_title.encode('utf-8', 'ignore')
         qr_url = urllib.urlencode({"url": item_title})
-        qr = qrcode.make("bitcoin:" + address + "?amount=" + str(total) + "&message=" + qr_url)
+        qr_code = qrcode.make("bitcoin:" + address + "?amount=" + str(total) + "&message=" + qr_url)
         output = StringIO.StringIO()
-        qr.save(output, "PNG")
-        qr = output.getvalue().encode("base64")
+        qr_code.save(output, "PNG")
+        qr_code = output.getvalue().encode("base64")
         output.close()
-        return qr
+        return qr_code
 
     def get_order(self, order_id, by_buyer_id=False):
 
@@ -224,11 +224,11 @@ class Orders(object):
             try:
                 total_price = str((Decimal(shipping_price) + Decimal(_order['item_price']))) \
                     if 'item_price' in _order else _order['item_price']
-            except Exception as e:
-                self.log.error('Probably not a number %s', e)
+            except Exception as exc:
+                self.log.error('Probably not a number %s', exc)
 
         # Generate QR code
-        qr = self.get_qr_code(offer_data_json['Contract']['item_title'], _order['address'], total_price)
+        qr_code = self.get_qr_code(offer_data_json['Contract']['item_title'], _order['address'], total_price)
         merchant_bitmessage = offer_data_json.get('Seller', '').get('seller_Bitmessage')
         buyer_bitmessage = buyer_data_json.get('Buyer', '').get('buyer_Bitmessage')
 
@@ -248,7 +248,7 @@ class Orders(object):
                  "notary": notary,
                  "payment_address": _order.get('payment_address'),
                  "payment_address_amount": _order.get('payment_address_amount'),
-                 "qrcode": 'data:image/png;base64,' + qr,
+                 "qrcode": 'data:image/png;base64,' + qr_code,
                  "item_title": offer_data_json['Contract']['item_title'],
                  "signed_contract_body": _order.get('signed_contract_body'),
                  "note_for_merchant": _order.get('note_for_merchant'),
@@ -460,9 +460,8 @@ class Orders(object):
             self.log.debug('%s', contract_data_json)
             seller_pgp = contract_data_json['Seller']['seller_PGP']
             self.gpg.import_keys(seller_pgp)
-            v = self.gpg.verify(contract)
 
-            if v:
+            if self.gpg.verify(contract):
                 self.log.info('Verified Contract')
                 self.log.info(self.get_shipping_address())
                 try:
@@ -479,8 +478,8 @@ class Orders(object):
                             "buyer": self.transport.guid
                         }
                     )
-                except Exception as e:
-                    self.log.error('Cannot update DB %s', e)
+                except Exception as exc:
+                    self.log.error('Cannot update DB %s', exc)
 
                 order_to_notary = {}
                 order_to_notary['type'] = 'order'
@@ -503,8 +502,8 @@ class Orders(object):
             else:
                 self.log.error('Could not verify signature of contract.')
 
-        except Exception as e2:
-            self.log.error(e2)
+        except Exception as exc2:
+            self.log.error(exc2)
 
     def receive_order(self, new_order):  # action
         new_order['state'] = Orders.State.RECEIVED
@@ -638,8 +637,7 @@ class Orders(object):
         bidder_pgp = contract_stripped[bidder_pgp_start_index + 13:bidder_pgp_end_index]
 
         self.gpg.import_keys(bidder_pgp)
-        v = self.gpg.verify(contract)
-        if v:
+        if self.gpg.verify(contract):
             self.log.info('Sellers contract verified')
 
         notary_section = {}
@@ -869,7 +867,7 @@ class Orders(object):
 
         multisig_address = scriptaddr(script)
 
-        seller_GUID = offer_data_json['Seller']['seller_GUID']
+        seller_guid = offer_data_json['Seller']['seller_GUID']
 
         order_id = bid_data_json['Buyer']['buyer_order_id']
 
@@ -878,7 +876,7 @@ class Orders(object):
         hash_value.update(contract_key)
         contract_key = hash_value.hexdigest()
 
-        if seller_GUID == self.transport.guid:
+        if seller_guid == self.transport.guid:
             self.log.info('I am the seller!')
             state = 'Waiting for Payment'
 

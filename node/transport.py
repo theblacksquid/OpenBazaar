@@ -198,8 +198,8 @@ class CryptoTransportLayer(TransportLayer):
                 result
             )
         # If we failed, fall back to starting our own
-        except Exception as e:
-            self.log.info("Failed to connect to bitmessage instance: %s", e)
+        except Exception as exc:
+            self.log.info("Failed to connect to bitmessage instance: %s", exc)
             self.bitmessage_api = None
         return result
 
@@ -265,8 +265,8 @@ class CryptoTransportLayer(TransportLayer):
                 self.settings.update(newsettings)
 
                 self.log.info('PGP keypair generated.')
-            except Exception as e:
-                sys.exit("Encountered a problem with GPG: %s" % e)
+            except Exception as exc:
+                sys.exit("Encountered a problem with GPG: %s" % exc)
 
         if not self.settings.get('pubkey'):
             # Generate Bitcoin keypair
@@ -421,18 +421,18 @@ class CryptoTransportLayer(TransportLayer):
                         break
 
             if peer:
-                msgType = data.get('type', 'unknown')
+                msg_type = data.get('type', 'unknown')
                 nickname = peer.nickname
                 uri = peer.address
 
                 self.log.info('Sending message type "%s" to "%s" %s %s',
-                              msgType, nickname, uri, send_to)
+                              msg_type, nickname, uri, send_to)
                 self.log.datadump('Raw message: %s', data)
 
                 try:
                     peer.send(data, callback=callback)
-                except Exception as e:
-                    self.log.error('Failed to send message directly to peer %s', e)
+                except Exception as exc:
+                    self.log.error('Failed to send message directly to peer %s', exc)
 
             else:
                 self.log.warning("Couldn't find peer %s to send message type %s",
@@ -470,7 +470,7 @@ class CryptoTransportLayer(TransportLayer):
         uri = msg.get('uri')
         guid = msg.get('senderGUID')
         nickname = msg.get('senderNick', '')[:120]
-        msgType = msg.get('type')
+        msg_type = msg.get('type')
 
         # Checking for malformed URIs
         if not network_util.is_valid_uri(uri):
@@ -478,7 +478,7 @@ class CryptoTransportLayer(TransportLayer):
             return
 
         self.log.info('Received message type "%s" from "%s" %s %s',
-                      msgType, nickname, uri, guid)
+                      msg_type, nickname, uri, guid)
         self.log.datadump('Raw message: %s', json.dumps(msg, ensure_ascii=False))
         self.dht.add_peer(uri, pubkey, guid, nickname)
         self.trigger_callbacks(msg['type'], msg)
@@ -498,9 +498,9 @@ class CryptoTransportLayer(TransportLayer):
         try:
             if self.bitmessage_api is not None:
                 self.bitmessage_api.close()
-        except Exception as e:
+        except Exception as exc:
             # It might not even be open; we can't do much more on our
             # way out if exception is thrown here.
             self.log.error(
-                "Could not shutdown bitmessage_api's ServerProxy: %s", e.message
+                "Could not shutdown bitmessage_api's ServerProxy: %s", exc.message
             )

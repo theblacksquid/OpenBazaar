@@ -109,14 +109,14 @@ class Market(object):
     def process_contract_image(image):
         """Get image from web client for use on server side"""
         uri = DataURI(image)
-        imageData = uri.data
+        image_data = uri.data
         # mime_type = uri.mimetype
         charset = uri.charset
 
-        image = Image.open(StringIO(imageData))
-        croppedImage = ImageOps.fit(image, (200, 200), centering=(0.5, 0.5))
+        image = Image.open(StringIO(image_data))
+        cropped_image = ImageOps.fit(image, (200, 200), centering=(0.5, 0.5))
         data = StringIO()
-        croppedImage.save(data, format='PNG')
+        cropped_image.save(data, format='PNG')
         new_uri = DataURI.make(
             'image/png',
             charset=charset,
@@ -469,15 +469,15 @@ class Market(object):
 
                     self.transport.bitmessage_api.getInboxMessagesByReceiver(
                         settings['bitmessage']))
-                for m in inboxmsgs['inboxMessages']:
+                for message in inboxmsgs['inboxMessages']:
                     # Base64 decode subject and content
-                    m['subject'] = b64decode(m['subject'])
-                    m['message'] = b64decode(m['message'])
+                    message['subject'] = b64decode(message['subject'])
+                    message['message'] = b64decode(message['message'])
                     # TODO: Augment with market, if available
 
                 return {"messages": inboxmsgs}
-        except Exception as e:
-            self.log.error("Failed to get inbox messages: {}".format(e))
+        except Exception as exc:
+            self.log.error("Failed to get inbox messages: {}".format(exc))
             self.log.error(traceback.format_exc())
             return {}
 
@@ -496,8 +496,8 @@ class Market(object):
             )
             self.log.info("Send message result: {}".format(result))
             return {}
-        except Exception as e:
-            self.log.error("Failed to send message: %s", e)
+        except Exception as exc:
+            self.log.error("Failed to send message: %s", exc)
             self.log.error(traceback.format_exc())
             return {}
 
@@ -517,9 +517,9 @@ class Market(object):
         for contract in contracts:
             try:
                 contract_body = json.loads(u"%s" % contract['contract_body'])
-            except (KeyError, ValueError) as e:
+            except (KeyError, ValueError) as err:
                 self.log.error('Problem loading the contract body JSON: %s',
-                               e.message)
+                               err.message)
                 continue
             try:
                 contract_field = contract_body['Contract']

@@ -363,9 +363,9 @@ def start(arguments):
     if hasattr(sys, 'frozen'):
         start_node(ob_ctxs[0])
     else:
-        p = multiprocessing.Process(target=node_starter,
-                                    args=(ob_ctxs,))
-        p.start()
+        process = multiprocessing.Process(target=node_starter,
+                                          args=(ob_ctxs,))
+        process.start()
 
 
 def terminate_or_kill_process(process):
@@ -405,12 +405,12 @@ def load_config_file_arguments(parser):
     parsed_arguments = parser.parse_args()
     if parsed_arguments.config_file is not None:
         try:
-            with open(parsed_arguments.config_file) as fp:
-                config_file_lines = fp.readlines()
-        except IOError as e:
+            with open(parsed_arguments.config_file) as opened_file:
+                config_file_lines = opened_file.readlines()
+        except IOError as err:
             print "NOTICE: Ignoring invalid config file: ",
             print parsed_arguments.config_file
-            print e
+            print err
             return
 
         # in case user entered config flags

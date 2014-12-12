@@ -38,9 +38,9 @@ class DHT(object):
 
         :param seed_peer: (CryptoPeerConnection) for seed peer
         """
-        ip = seed_peer.ip
+        ip_address = seed_peer.ip
         port = seed_peer.port
-        self._add_known_node(('tcp://%s:%s' % (ip, port), seed_peer.guid, seed_peer.nickname))
+        self._add_known_node(('tcp://%s:%s' % (ip_address, port), seed_peer.guid, seed_peer.nickname))
 
         self.log.debug('Starting Seed Peer: %s', seed_peer.nickname)
         self.add_peer(seed_peer.address,
@@ -138,13 +138,13 @@ class DHT(object):
 
         guid = msg['senderGUID']
         key = msg['key']
-        findID = msg['findID']
+        find_id = msg['findID']
         uri = msg['uri']
         pubkey = msg['pubkey']
 
         assert guid is not None and guid != self.transport.guid
         assert key is not None
-        assert findID is not None
+        assert find_id is not None
         assert uri is not None
         assert pubkey is not None
 
@@ -156,7 +156,7 @@ class DHT(object):
                             "uri": self.transport.uri,
                             "pubkey": self.transport.pubkey,
                             "senderNick": self.transport.nickname,
-                            "findID": findID}
+                            "findID": find_id}
 
             if msg['findValue']:
                 if key in self.dataStore and self.dataStore[key] is not None:
@@ -179,11 +179,11 @@ class DHT(object):
 
     def close_nodes(self, key, guid):
         contacts = self.routingTable.findCloseNodes(key, constants.k, guid)
-        contactTriples = []
+        contact_triples = []
         for contact in contacts:
-            contactTriples.append((contact.guid, contact.address, contact.pub, contact.nickname))
+            contact_triples.append((contact.guid, contact.address, contact.pub, contact.nickname))
 
-        return self.dedupe(contactTriples)
+        return self.dedupe(contact_triples)
 
     def on_findNodeResponse(self, msg):
 
@@ -198,9 +198,9 @@ class DHT(object):
         if 'foundKey' in msg.keys():
             self.log.debug('Found the key-value pair. Executing callback.')
 
-            for idx, s in enumerate(self.searches):
-                if s.findID == msg['findID']:
-                    s.callback(msg['foundKey'])
+            for idx, search in enumerate(self.searches):
+                if search.findID == msg['findID']:
+                    search.callback(msg['foundKey'])
                     if idx in self.searches:
                         del self.searches[idx]
 
@@ -208,36 +208,36 @@ class DHT(object):
 
             if 'foundNode' in msg.keys():
 
-                foundNode = msg['foundNode']
-                self.log.debug('Found the node you were looking for: %s', foundNode)
+                found_node = msg['foundNode']
+                self.log.debug('Found the node you were looking for: %s', found_node)
 
-                # Add foundNode to active peers list and routing table
-                if foundNode[2] != self.transport.guid:
-                    self.log.debug('Found a tuple %s', foundNode)
-                    if len(foundNode) == 3:
-                        foundNode.append('')
-                    self.add_peer(foundNode[1], foundNode[2], foundNode[0], foundNode[3])
+                # Add found_node to active peers list and routing table
+                if found_node[2] != self.transport.guid:
+                    self.log.debug('Found a tuple %s', found_node)
+                    if len(found_node) == 3:
+                        found_node.append('')
+                    self.add_peer(found_node[1], found_node[2], found_node[0], found_node[3])
 
                 for idx, search in enumerate(self.searches):
                     if search.findID == msg['findID']:
 
                         # Execute callback
                         if search.callback is not None:
-                            search.callback((foundNode[2], foundNode[1], foundNode[0], foundNode[3]))
+                            search.callback((found_node[2], found_node[1], found_node[0], found_node[3]))
 
                         # Clear search
                         del self.searches[idx]
 
             else:
-                foundSearch = False
+                found_search = False
                 search = None
-                findID = msg['findID']
-                for s in self.searches:
-                    if s.findID == findID:
-                        search = s
-                        foundSearch = True
+                find_id = msg['findID']
+                for ser in self.searches:
+                    if ser.findID == find_id:
+                        search = ser
+                        found_search = True
 
-                if not foundSearch:
+                if not found_search:
                     self.log.info('No search found')
                     return
                 else:
@@ -321,7 +321,7 @@ class DHT(object):
         This method should run in a deferred thread
         """
         self.log.debug('Republishing Data')
-        expiredKeys = []
+        expired_keys = []
 
         for key in self.dataStore.keys():
 
@@ -348,24 +348,24 @@ class DHT(object):
                     # This key/value pair has expired and has not been
                     # republished by the original publishing node,
                     # so remove it.
-                    expiredKeys.append(key)
+                    expired_keys.append(key)
                 elif now - self.dataStore.lastPublished(key) >= constants.replicateInterval:
                     self.iterativeStore(key, self.dataStore[key], originalPublisherID, age)
 
-        for key in expiredKeys:
+        for key in expired_keys:
             del self.dataStore[key]
 
     def extendShortlist(self, findID, foundNodes):
 
         self.log.datadump('foundNodes: %s', foundNodes)
 
-        foundSearch = False
-        for s in self.searches:
-            if s.findID == findID:
-                search = s
-                foundSearch = True
+        found_search = False
+        for ser in self.searches:
+            if ser.findID == findID:
+                search = ser
+                found_search = True
 
-        if not foundSearch:
+        if not found_search:
             self.log.error('There was no search found for this ID')
             return
 
@@ -523,15 +523,15 @@ class DHT(object):
                     # Not in keyword index anyways
                     return
 
-        except Exception as e:
-            self.log.debug('Value is not a JSON array: %s', e)
+        except Exception as exc:
+            self.log.debug('Value is not a JSON array: %s', exc)
 
         now = int(time.time())
-        originallyPublished = now - age
+        originally_published = now - age
 
         # Store it in your own node
         self.dataStore.setItem(
-            key, value, now, originallyPublished, originalPublisherID, market_id=self.market_id
+            key, value, now, originally_published, originalPublisherID, market_id=self.market_id
         )
 
         for node in nodes:
@@ -553,17 +553,17 @@ class DHT(object):
 
         key = msg['key']
         value = msg['value']
-        originalPublisherID = msg['originalPublisherID']
+        original_publisher_id = msg['originalPublisherID']
         age = msg['age']
 
-        self.log.info('Storing key %s for %s', key, originalPublisherID)
+        self.log.info('Storing key %s for %s', key, original_publisher_id)
         self.log.datadump('Value: %s', value)
 
         now = int(time.time())
-        originallyPublished = now - age
+        originally_published = now - age
 
         if value:
-            self.dataStore.setItem(key, value, now, originallyPublished, originalPublisherID, self.market_id)
+            self.dataStore.setItem(key, value, now, originally_published, original_publisher_id, self.market_id)
         else:
             self.log.error('No value to store')
 
@@ -747,11 +747,11 @@ class DHT(object):
 
     def activeSearchExists(self, findID):
 
-        activeSearchExists = False
+        active_search_exists = False
         for search in self.searches:
             if findID == search.findID:
                 return True
-        if not activeSearchExists:
+        if not active_search_exists:
             return False
 
     def iterativeFindValue(self, key, callback=None):
