@@ -19,9 +19,9 @@
 set -e
 
 function command_exists {
-  # this should be a very portable way of checking if something is on the path
+  # POSIX-compatible way to check if a command exists.
   # usage: "if command_exists foo; then echo it exists; fi"
-  type "$1" &> /dev/null
+  command -v "$1" > /dev/null
 }
 
 function brewDoctor {
