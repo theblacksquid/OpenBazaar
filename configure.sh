@@ -24,6 +24,14 @@ function command_exists {
   command -v "$1" > /dev/null
 }
 
+function make_env {
+  # Create a virtualenv for OpenBazaar.
+  # NOTE: we get env/bin/pip by doing this.
+  if [ ! -d "./env" ]; then
+    virtualenv --python=python2.7 env
+  fi
+}
+
 function brewDoctor {
     if ! brew doctor; then
       echo ""
@@ -82,10 +90,7 @@ function installMac {
     pip install virtualenv
   fi
 
-  # create a virtualenv for OpenBazaar. note we get env/bin/pip by doing this. We also needed pip earlier to install virtualenv.
-  if [ ! -d "./env" ]; then
-    virtualenv --python=python2.7 env
-  fi
+  make_env
 
   # "To begin using the virtual environment, it needs to be activated:"
   # http://docs.python-guide.org/en/latest/dev/virtualenvs/
@@ -138,9 +143,7 @@ function installUbuntu {
   python-dev libjpeg-dev sqlite3 openssl \
   alien libssl-dev python-virtualenv lintian libjs-jquery
 
-  if [ ! -d "./env" ]; then
-    virtualenv --python=python2.7 env
-  fi
+  make_env
 
   ./env/bin/pip install -r requirements.txt
 
@@ -159,9 +162,7 @@ function installArch {
   # Can conflict with multilib packages. Uncomment previous line if you don't already have base-devel installed
   sudo pacman -S --needed python2 python2-pip python2-virtualenv python2-pyzmq rng-tools libjpeg sqlite3 openssl
 
-  if [ ! -d "./env" ]; then
-    virtualenv2 env
-  fi
+  make_env
 
   ./env/bin/pip install -r requirements.txt
 
@@ -228,9 +229,7 @@ function installFedora {
   kernel-devel python-devel openjpeg-devel sqlite \
   zeromq-devel zeromq python python-qt4 openssl-compat-bitcoin-libs
 
-  if [ ! -d "./env" ]; then
-    virtualenv env
-  fi
+  make_env
 
   ./env/bin/pip install -r requirements.txt
 
@@ -266,9 +265,7 @@ function installSlack {
       sudo /usr/sbin/slackpkg install libjpeg sqlite openssl
    fi
 
-  if [ ! -d "./env" ]; then
-        virtualenv env
-  fi
+   make_env
 
   ./env/bin/pip install -r requirements.txt
   doneMessage
