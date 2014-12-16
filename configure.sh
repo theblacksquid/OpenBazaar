@@ -105,10 +105,6 @@ function installMac {
 
   # Install python deps inside our virtualenv
   ./env/bin/pip install -r requirements.txt
-
-  # There are still pysqlcipher issues on OS X.
-  # Temporarily disable sqlite-crypt until that is resolved.
-  doneMessage "--disable-sqlite-crypt "
 }
 
 function doneMessage {
@@ -146,8 +142,6 @@ function installUbuntu {
   make_env
 
   ./env/bin/pip install -r requirements.txt
-
-  doneMessage
 }
 
 function installArch {
@@ -165,8 +159,6 @@ function installArch {
   make_env
 
   ./env/bin/pip install -r requirements.txt
-
-  doneMessage
 }
 
 function confirm {
@@ -187,7 +179,6 @@ function installRaspiArch {
   echo "Notice : pip install requires 10~30 minutes to complete."
   if confirm ; then
     pip2 install -r requirements.txt
-    doneMessage
     echo "Run OpenBazaar on Raspberry Pi Arch without HDMI/VideoOut"
     echo "Type the following shell command to start."
     echo " "
@@ -203,7 +194,6 @@ function installRaspbian {
   echo "Notice : pip install requires 2~3 hours to complete."
   if confirm ; then
     sudo pip install -r requirements.txt
-    doneMessage
     echo "Run OpenBazaar on Raspberry Pi Raspbian without HDMI/VideoOut"
     echo "Type the following shell command to start."
     echo " "
@@ -218,7 +208,6 @@ function installPortage {
   # /usr/lib/python-exec/python-exec* gets overwritten by nose,
   # killing most Python programs.
   pip install --user -r requirements.txt
-  doneMessage
 }
 
 function installFedora {
@@ -232,8 +221,6 @@ function installFedora {
   make_env
 
   ./env/bin/pip install -r requirements.txt
-
-  doneMessage
 }
 
 function installSlack {
@@ -268,11 +255,13 @@ function installSlack {
    make_env
 
   ./env/bin/pip install -r requirements.txt
-  doneMessage
 }
 
 if [[ $OSTYPE == darwin* ]] ; then
   installMac
+  # There are still pysqlcipher issues on OS X.
+  # Suggest disabling sqlite-crypt until that is resolved.
+  doneMessage "--disable-sqlite-crypt "
 elif [[ $OSTYPE == linux-gnu || $OSTYPE == linux-gnueabihf ]]; then
   UNAME=$(uname -a)
   if [ -f /etc/arch-release ]; then
@@ -297,4 +286,5 @@ elif [[ $OSTYPE == linux-gnu || $OSTYPE == linux-gnueabihf ]]; then
   else
     installUbuntu
   fi
+  doneMessage
 fi
