@@ -15,7 +15,7 @@
 #
 #
 
-#exit on error
+# exit on error
 set -e
 
 function command_exists {
@@ -48,10 +48,7 @@ function brewUpgrade {
 }
 
 function installMac {
-  # print commands (useful for debugging)
-  # set -x # echoes the commands executed
-
-  # install brew if it is not installed, otherwise upgrade it
+  # Install brew if it is not installed, otherwise upgrade it.
   if ! command_exists brew ; then
     echo "installing brew..."
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
@@ -66,9 +63,11 @@ function installMac {
     export CPPFLAGS=$ORIGINAL_CPPFLAGS
   fi
 
-  # Use brew's python 2.7, even if user has a system python. The brew version comes with pip and setuptools.
+  # Use brew's python 2.7, even if user has a system python.
+  # The brew version comes with pip and setuptools.
   # If user already has brew installed python, then this won't do anything.
-  # Note we get pip for free by doing this, and can avoid future calls to sudo. brew convention abhors all things 'sudo' anyway.
+  # Note we get pip for free by doing this, and can avoid future calls to sudo.
+  # brew convention abhors all things 'sudo' anyway.
   brew install python
 
   for dep in gpg sqlite3 wget openssl zmq autoenv
@@ -78,7 +77,7 @@ function installMac {
     fi
   done
 
-  # install python's virtualenv if it is not installed
+  # Install python's virtualenv if it is not installed.
   if ! command_exists virtualenv ; then
     pip install virtualenv
   fi
@@ -90,17 +89,20 @@ function installMac {
 
   # "To begin using the virtual environment, it needs to be activated:"
   # http://docs.python-guide.org/en/latest/dev/virtualenvs/
-  # We have autoenv and an appropriate .env in our OB home dir, but we should activate the env just in case (e.g. for first time users).
+  # We have autoenv and an appropriate .env in our OB home dir,
+  # but we should activate the env just in case
+  # (e.g. for first time or non-Mac users).
   source env/bin/activate
 
-  # set compile flags for brew's openssl instead of using brew link --force
+  # Set compile flags for brew's openssl instead of using brew link --force
   export CFLAGS="-I$(brew --prefix openssl)/include"
   export LDFLAGS="-L$(brew --prefix openssl)/lib"
 
-  # install python deps inside our virtualenv
+  # Install python deps inside our virtualenv
   ./env/bin/pip install -r requirements.txt
 
-  # There are still pysqlcipher issues on OS X. Temporarily disable sqlite-crypt until that is resolved.
+  # There are still pysqlcipher issues on OS X.
+  # Temporarily disable sqlite-crypt until that is resolved.
   doneMessage "--disable-sqlite-crypt "
 }
 
@@ -131,9 +133,6 @@ function doneMessage {
 
 
 function installUbuntu {
-  # print commands (useful for debugging)
-  # set -x # echoes the commands executed
-
   sudo apt-get -q update || echo 'apt-get update failed. Continuing...'
   sudo apt-get -y install python-pip build-essential python-zmq rng-tools \
   python-dev libjpeg-dev sqlite3 openssl \
@@ -149,9 +148,6 @@ function installUbuntu {
 }
 
 function installArch {
-  # print commands (useful for debugging)
-  # set -x # echoes the commands executed
-
   echo "Some packages and dependencies may fail to install if your package list is out of date."
   echo "Would you like to upgrade your system now? "
   if confirm ; then
@@ -160,7 +156,7 @@ function installArch {
     echo "Continuing."
   fi
   # sudo pacman -S --needed base-devel
-  # Can conflict with multilib packages. Uncomment this line if you don't already have base-devel installed
+  # Can conflict with multilib packages. Uncomment previous line if you don't already have base-devel installed
   sudo pacman -S --needed python2 python2-pip python2-virtualenv python2-pyzmq rng-tools libjpeg sqlite3 openssl
 
   if [ ! -d "./env" ]; then
@@ -216,9 +212,6 @@ function installRaspbian {
 }
 
 function installPortage {
-  # print commands (useful for debugging)
-  # set -x # echoes the commands executed
-
   sudo emerge -an dev-lang/python:2.7 dev-python/pip pyzmq rng-tools gcc jpeg sqlite3 openssl dev-python/virtualenv
   # FIXME: on gentoo install as user, because otherwise
   # /usr/lib/python-exec/python-exec* gets overwritten by nose,
@@ -228,9 +221,6 @@ function installPortage {
 }
 
 function installFedora {
-  # print commands (useful for debugging)
-  # set -x # echoes the commands executed
-
   sudo yum install -y http://linux.ringingliberty.com/bitcoin/f18/x86_64/bitcoin-release-1-4.noarch.rpm
 
   sudo yum -y install python-pip python-zmq rng-tools openssl \
@@ -248,8 +238,6 @@ function installFedora {
 }
 
 function installSlack {
-  # set -x # echoes the commands executed
-
   sudo /usr/sbin/slackpkg update
   if ! command_exists python; then
     sudo /usr/sbin/slackpkg install python
