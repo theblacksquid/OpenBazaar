@@ -211,12 +211,11 @@ function installPortage {
 }
 
 function installFedora {
-  sudo yum install -y http://linux.ringingliberty.com/bitcoin/f18/x86_64/bitcoin-release-1-4.noarch.rpm
 
-  sudo yum -y install python-pip python-zmq rng-tools openssl \
-  openssl-devel alien python-virtualenv make automake gcc gcc-c++ \
-  kernel-devel python-devel openjpeg-devel sqlite \
-  zeromq-devel zeromq python python-qt4 openssl-compat-bitcoin-libs
+  sudo yum -y install kernel-devel rng-tools openssl openssl-libs openssl-devel openjpeg openjpeg-devel make alien
+  sudo yum -y install python2 python-pip python-virtualenv python-devel python-zmq zeromq3 zeromq3-devel pyOpenSSL
+  rpm -q bitcoin-release || sudo yum -y install http://linux.ringingliberty.com/bitcoin/f20/x86_64/bitcoin-release-1-6.noarch.rpm
+  sudo yum -y install openssl-compat-bitcoin-libs
 
   make_env
 
