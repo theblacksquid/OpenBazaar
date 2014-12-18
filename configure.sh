@@ -204,10 +204,10 @@ function installRaspbian {
 
 function installPortage {
   sudo emerge -an dev-lang/python:2.7 dev-python/pip pyzmq rng-tools gcc jpeg sqlite3 openssl dev-python/virtualenv
-  # FIXME: on gentoo install as user, because otherwise
-  # /usr/lib/python-exec/python-exec* gets overwritten by nose,
-  # killing most Python programs.
-  pip install --user -r requirements.txt
+
+  make_env
+
+  ./env/bin/pip install -r requirements.txt
 }
 
 function installFedora {
