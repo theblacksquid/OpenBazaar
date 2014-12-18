@@ -134,8 +134,8 @@ function doneMessage {
 
 
 function installUbuntu {
-  sudo apt-get -q update || echo 'apt-get update failed. Continuing...'
-  sudo apt-get -y install python-pip build-essential python-zmq rng-tools \
+  sudo apt-get --quiet update || echo 'apt-get update failed. Continuing...'
+  sudo apt-get --assume-yes install python-pip build-essential python-zmq rng-tools \
   python-dev libjpeg-dev sqlite3 openssl \
   alien libssl-dev python-virtualenv lintian libjs-jquery
 
@@ -148,13 +148,13 @@ function installArch {
   echo "Some packages and dependencies may fail to install if your package list is out of date."
   echo "Would you like to upgrade your system now? "
   if confirm ; then
-    sudo pacman -Syu
+    sudo pacman --sync --refresh --sysupgrade
   else
     echo "Continuing."
   fi
-  # sudo pacman -S --needed base-devel
+  # sudo pacman --sync --needed base-devel
   # Can conflict with multilib packages. Uncomment previous line if you don't already have base-devel installed
-  sudo pacman -S --needed python2 python2-pip python2-virtualenv python2-pyzmq rng-tools libjpeg sqlite3 openssl
+  sudo pacman --sync --needed python2 python2-pip python2-virtualenv python2-pyzmq rng-tools libjpeg sqlite3 openssl
 
   make_env
 
@@ -172,9 +172,9 @@ function confirm {
 }
 
 function installRaspiArch {
-  # pacman -S sudo
-  sudo pacman -Sy
-  sudo pacman -S --needed base-devel curl wget python2 python2-pip rng-tools libjpeg sqlite3 openssl libunistring
+  # pacman --sync sudo
+  sudo pacman --sync --refresh
+  sudo pacman --sync --needed base-devel curl wget python2 python2-pip rng-tools libjpeg sqlite3 openssl libunistring
   echo " "
   echo "Notice : pip install requires 10~30 minutes to complete."
   if confirm ; then
@@ -188,12 +188,12 @@ function installRaspiArch {
 }
 
 function installRaspbian {
-  sudo apt-get -y install python-pip build-essential rng-tools alien \
+  sudo apt-get --assume-yes install python-pip build-essential rng-tools alien \
   openssl libssl-dev python-dev libjpeg-dev sqlite3
   echo " "
   echo "Notice : pip install requires 2~3 hours to complete."
   if confirm ; then
-    sudo pip install -r requirements.txt
+    sudo pip install --requirement requirements.txt
     echo "Run OpenBazaar on Raspberry Pi Raspbian without HDMI/VideoOut"
     echo "Type the following shell command to start."
     echo " "
@@ -203,7 +203,7 @@ function installRaspbian {
 }
 
 function installPortage {
-  sudo emerge -an dev-lang/python:2.7 dev-python/pip pyzmq rng-tools gcc jpeg sqlite3 openssl dev-python/virtualenv
+  sudo emerge --noreplace dev-lang/python:2.7 dev-python/pip pyzmq rng-tools gcc jpeg sqlite3 openssl dev-python/virtualenv
 
   make_env
 
@@ -212,10 +212,10 @@ function installPortage {
 
 function installFedora {
 
-  sudo yum -y install kernel-devel rng-tools openssl openssl-libs openssl-devel openjpeg openjpeg-devel make alien
-  sudo yum -y install python2 python-pip python-virtualenv python-devel python-zmq zeromq3 zeromq3-devel pyOpenSSL
-  rpm -q bitcoin-release || sudo yum -y install http://linux.ringingliberty.com/bitcoin/f20/x86_64/bitcoin-release-1-6.noarch.rpm
-  sudo yum -y install openssl-compat-bitcoin-libs
+  sudo yum --assumeyes install kernel-devel rng-tools openssl openssl-libs openssl-devel openjpeg openjpeg-devel make alien
+  sudo yum --assumeyes install python2 python-pip python-virtualenv python-devel python-zmq zeromq3 zeromq3-devel pyOpenSSL
+  rpm --query bitcoin-release || sudo yum --assumeyes install http://linux.ringingliberty.com/bitcoin/f20/x86_64/bitcoin-release-1-6.noarch.rpm
+  sudo yum --assumeyes install openssl-compat-bitcoin-libs
 
   make_env
 
