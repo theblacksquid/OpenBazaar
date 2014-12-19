@@ -477,7 +477,7 @@ class Market(object):
 
                 return {"messages": inboxmsgs}
         except Exception as exc:
-            self.log.error("Failed to get inbox messages: {}".format(exc))
+            self.log.error("Failed to get inbox messages: %s", exc)
             self.log.error(traceback.format_exc())
             return {}
 
@@ -488,13 +488,13 @@ class Market(object):
         settings = self.get_settings()
         try:
             # Base64 decode subject and content
-            self.log.info("Encoding message: {}".format(msg))
+            self.log.info("Encoding message: %s", msg)
             subject = b64encode(msg['subject'])
             body = b64encode(msg['body'])
             result = self.transport.bitmessage_api.sendMessage(
                 msg['to'], settings['bitmessage'], subject, body
             )
-            self.log.info("Send message result: {}".format(result))
+            self.log.info("Send message result: %s", result)
             return {}
         except Exception as exc:
             self.log.error("Failed to send message: %s", exc)
