@@ -94,7 +94,7 @@ class OpenBazaarContext(object):
 
         # to deduct up-time, and (TODO) average up-time
         # time stamp in (non-local) Coordinated Universal Time format.
-        self.started_utc_timestamp = long(time.time())
+        self.started_utc_timestamp = int(time.time())
 
     def __repr__(self):
         representation = {"server_ip": self.server_ip,
@@ -117,8 +117,8 @@ class OpenBazaarContext(object):
                           "disable_sqlite_crypt": self.disable_sqlite_crypt,
                           "enable_ip_checker": self.enable_ip_checker,
                           "started_utc_timestamp": self.started_utc_timestamp,
-                          "uptime_in_secs": (long(time.time()) -
-                                             long(self.started_utc_timestamp))}
+                          "uptime_in_secs": (int(time.time()) -
+                                             int(self.started_utc_timestamp))}
 
         return json.dumps(representation).replace(", ", ",\n  ")
 

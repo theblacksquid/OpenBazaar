@@ -95,8 +95,8 @@ class RoutingTable(object):
                 )
             )
 
-        val_key1 = long(key1, 16)
-        val_key2 = long(key2, 16)
+        val_key1 = int(key1, base=16)
+        val_key2 = int(key2, base=16)
         return val_key1 ^ val_key2
 
     @staticmethod

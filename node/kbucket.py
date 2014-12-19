@@ -168,5 +168,5 @@ class KBucket(object):
         if isinstance(key, guid.GUIDMixin):
             key = key.guid
         if isinstance(key, basestring):
-            key = long(key, 16)
+            key = int(key, base=16)
         return self.rangeMin <= key < self.rangeMax
