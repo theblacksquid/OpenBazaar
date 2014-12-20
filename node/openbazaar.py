@@ -7,6 +7,7 @@ Authors: Angel "gubatron" Leon
 import argparse
 import multiprocessing
 import os
+import shlex
 import sys
 import threading
 
@@ -400,45 +401,19 @@ def stop():
 
 def load_config_file_arguments(parser):
     """
-    Load configuration file into sys.argv for further argument parsing.
+    Load configuration file into sys.argv for argument parsing. Insert
+    config file arguments before command line arguments so that command
+    line arguments have higher precedence.
     """
     parsed_arguments = parser.parse_args()
     if parsed_arguments.config_file is not None:
         try:
             with open(parsed_arguments.config_file) as opened_file:
-                config_file_lines = opened_file.readlines()
+                sys.argv[1:1] = shlex.split(opened_file.read(), comments=True)
         except IOError as err:
             print "NOTICE: Ignoring invalid config file: ",
             print parsed_arguments.config_file
             print err
-            return
-
-        # in case user entered config flags
-        # in multiple lines, we'll keep only
-        # those that don't start with '#'
-        # also ignore everything after a '#' character
-        # for every line.
-        valid_config_lines = []
-        for line in config_file_lines:
-            if line.startswith('#'):
-                continue
-
-            normalized_line = line.strip()
-            if line.find('#') != -1:
-                normalized_line = line[:line.find('#')]
-
-            if len(normalized_line) > 0:
-                valid_config_lines.append(normalized_line)
-
-        # 1. join read lines list into a string,
-        # 2. re-split it to make it look like sys.argv
-        # 3. get rid of possible '' list elements
-        # 4. merge the new arguments from the file into sys.argv
-        if len(valid_config_lines) > 0:
-            config_file_arguments = [x for x in
-                                     ' '.join(valid_config_lines).split(' ')
-                                     if len(x) > 0]
-            sys.argv[1:1] = config_file_arguments
 
 
 def main():
