@@ -133,7 +133,7 @@
         <div class="form-group">
 
             <div class="col-sm-3"></div>
-            <div class="col-sm-9" style="text-align:right">
+            <div class="col-sm-9 btn-save">
                 <button type="submit" class="btn btn-default" data-ng-disabled="!profileForm.$valid">Save</button>
             </div>
         </div>
@@ -167,13 +167,6 @@
                 <textarea class="form-control" data-ng-model="settings.PGPPubKey" id="inputPGPPubkey" rows="20" style="font-size:12px;" placeholder="Copy-paste your PGP public key here" readonly></textarea>
             </div>
         </div>
-
-        <div class="form-group">
-            <div class="col-sm-3"></div>
-            <div class="col-sm-9" style="text-align:right">
-                <button type="submit" class="btn btn-default" data-ng-click="saveSettings()">Save</button>
-            </div>
-        </div>
     </form>
 
     <!-- Communication Form -->
@@ -197,7 +190,7 @@
 
         <div class="form-group">
             <div class="col-sm-3"></div>
-            <div class="col-sm-9" style="text-align:right">
+            <div class="col-sm-9 btn-save">
                 <button type="submit" class="btn btn-default" data-ng-click="saveSettings()">Save</button>
             </div>
         </div>
@@ -242,12 +235,13 @@
         <p>If you are interested in acting as a trusted arbiter on the network you can set it up here.</p>
 
         <div class="form-group">
-
-            <label for="inputArbiter" class="col-sm-3 control-label">Make me an arbiter</label>
-            <input type="checkbox" id="inputArbiter" class="col-sm-9" data-ng-model="settings.arbiter" value="1" />
-
+            <label class="col-sm-3 control-label">Make me an arbiter</label>
+            <div class="btn-group col-sm-5">
+                <label class="btn btn-default" data-ng-model="settings.arbiter" btn-radio="true">Yes</label>
+                <label class="btn btn-default" data-ng-model="settings.arbiter" btn-radio="">No</label>
+            </div>
         </div>
-
+        
         <div class="form-group">
             <label for="inputArbiterDescription" class="col-sm-3 control-label">Experience & Services</label>
             <div class="col-sm-9">
@@ -257,7 +251,7 @@
 
         <div class="form-group">
             <div class="col-sm-3"></div>
-            <div class="col-sm-9" style="text-align:right">
+            <div class="col-sm-9 btn-save">
                 <button type="submit" class="btn btn-default" data-ng-click="saveSettings()">Save</button>
             </div>
         </div>
@@ -301,18 +295,18 @@
             </div>
 
             <h4>Acting as an Notary</h4>
-            <p>If you want to act as a notary check the box below.</p>
 
-            <div class="checkbox">
-
-                <label for="inputNotary" class="control-label"><input type="checkbox" id="inputNotary" data-ng-model="settings.notary" value="1" /> Make me a notary</label>
-
-
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Make me a notary</label>
+                <div class="btn-group col-sm-5">
+                    <label class="btn btn-default" data-ng-model="settings.notary" btn-radio="true">Yes</label>
+                    <label class="btn btn-default" data-ng-model="settings.notary" btn-radio="">No</label>
+                </div>
             </div>
 
             <div class="form-group">
                 <div class="col-sm-3"></div>
-                <div class="col-sm-9" style="text-align:right">
+                <div class="col-sm-9 btn-save">
                     <button type="submit" class="btn btn-default" data-ng-click="saveSettings()">Save</button>
                 </div>
             </div>
@@ -325,8 +319,11 @@
         <h4>Advanced</h4>
 
         <div class="form-group">
-            <label for="inputTestnet" class="col-sm-3 control-label">Use Testnet</label>
-            <input type="checkbox" id="inputTestnet" class="col-sm-9" data-ng-model="settings.testnet" value="1" />
+            <label class="col-sm-3 control-label">Use Testnet</label>
+            <div class="btn-group col-sm-5">
+                <label class="btn btn-default" data-ng-model="settings.testnet" btn-radio="true">Yes</label>
+                <label class="btn btn-default" data-ng-model="settings.testnet" btn-radio="">No</label>
+            </div>
         </div>
 
         <div class="form-group">
@@ -338,9 +335,9 @@
             </div>
         </div>
 
-         <div class="form-group">
+        <div class="form-group">
             <div class="col-sm-3"></div>
-            <div class="col-sm-5" style="padding:0">
+            <div class="col-sm-5 btn-save">
                 <button type="submit" class="btn btn-default" data-ng-click="saveSettings()">Save</button>
             </div>
         </div>
@@ -365,18 +362,18 @@
         <h4>Backup Management</h4>
 
         <div class="form-group">
-			<span class="col-xs-7"></span><button id="createBackupButton" class="btn btn-info col-sm-5" data-ng-click="createBackup(); getBackups();">Create New Backup</button>
+            <span class="col-xs-7"></span><button id="createBackupButton" class="btn btn-info col-sm-5" data-ng-click="createBackup(); getBackups();">Create New Backup</button>
         </div>
 
         <div style="margin:20px 0">
-	        <h4>Previous Backups</h4>
+            <h4>Previous Backups</h4>
 
-	        <div id="previous-backups-container"
-	             data-ng-model="backups"
-	             data-ng-repeat="backup in backups">
-	        	<div ng-hide="!backups.length"><a class="col-sm-8" href="/html/backups/{{backup.file_name}}">{{backup.file_name}}</a> &nbsp;&nbsp; <!-- <a href="#" data-ng-click="deleteBackup('{{backup.file_name}}')">Delete</a> --></div>
-	        	<div ng-hide="backups.length">No backup</div>
-	        </div>
+            <div id="previous-backups-container"
+                 data-ng-model="backups"
+                 data-ng-repeat="backup in backups">
+                <div ng-hide="!backups.length"><a class="col-sm-8" href="/html/backups/{{backup.file_name}}">{{backup.file_name}}</a> &nbsp;&nbsp; <!-- <a href="#" data-ng-click="deleteBackup('{{backup.file_name}}')">Delete</a> --></div>
+                <div ng-hide="backups.length">No backup</div>
+            </div>
         </div>
     </form>
 
