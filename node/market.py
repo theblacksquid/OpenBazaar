@@ -594,8 +594,9 @@ class Market(object):
                 data = json.dumps({'notary_index_remove': self.transport.guid})
                 self.transport.store(key, data, self.transport.guid)
 
-        # Update nickname
+        # Update nickname and namecoin id
         self.transport.nickname = msg['nickname']
+        self.transport.namecoin_id = msg['namecoin_id']
 
         if 'burnAmount' in msg:
             del msg['burnAmount']

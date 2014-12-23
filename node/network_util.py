@@ -6,6 +6,8 @@ import rfc3986
 import stun
 from urlparse import urlparse
 import re
+from dnschain import server as DNSChainServer
+
 
 
 # List taken from natvpn project and tested manually.
@@ -142,6 +144,19 @@ def is_valid_uri(uri):
         and is_valid_openbazaar_scheme(uri)
         and is_valid_hostname(hostname)
     )
+
+
+def is_valid_namecoin(namecoin, guid):
+    if not namecoin:
+        return False
+
+    server = DNSChainServer.Server("192.184.93.146", "")
+    try:
+        data = server.lookup("id/"+namecoin)
+    except DNSChainServer.DataNotFound, DNSChainServer.MalformedJSON:
+        return False
+
+    return 'openbazaar' in data and data['openbazaar'] == guid
 
 
 def main():

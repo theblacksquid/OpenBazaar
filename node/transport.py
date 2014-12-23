@@ -472,11 +472,16 @@ class CryptoTransportLayer(TransportLayer):
         guid = msg.get('senderGUID')
         nickname = msg.get('senderNick', '')[:120]
         msgType = msg.get('type')
+        namecoin = msg.get('senderNamecoin')
 
         # Checking for malformed URIs
         if not network_util.is_valid_uri(uri):
             self.log.error('Malformed URI: %s', uri)
             return
+
+        # Validate the claimed namecoin in DNSChain
+        if not network_util.is_valid_namecoin(namecoin, guid):
+            msg['senderNamecoin'] = ''
 
         self.log.info('Received message type "%s" from "%s" %s %s',
                       msgType, nickname, uri, guid)
