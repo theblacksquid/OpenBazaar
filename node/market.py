@@ -11,6 +11,7 @@ from PIL import Image, ImageOps
 import random
 from StringIO import StringIO
 import traceback
+import re
 
 from bitcoin.main import privkey_to_pubkey
 import tornado
@@ -85,7 +86,7 @@ class Market(object):
         # Periodically refresh buckets
         loop = tornado.ioloop.IOLoop.instance()
         refreshCB = tornado.ioloop.PeriodicCallback(self.dht._refreshNode,
-                                                    constants.refreshTimeout,
+                                                    constants.REFRESH_TIMEOUT,
                                                     io_loop=loop)
         refreshCB.start()
 
@@ -109,14 +110,14 @@ class Market(object):
     def process_contract_image(image):
         """Get image from web client for use on server side"""
         uri = DataURI(image)
-        imageData = uri.data
+        image_data = uri.data
         # mime_type = uri.mimetype
         charset = uri.charset
 
-        image = Image.open(StringIO(imageData))
-        croppedImage = ImageOps.fit(image, (200, 200), centering=(0.5, 0.5))
+        image = Image.open(StringIO(image_data))
+        cropped_image = ImageOps.fit(image, (200, 200), centering=(0.5, 0.5))
         data = StringIO()
-        croppedImage.save(data, format='PNG')
+        cropped_image.save(data, format='PNG')
         new_uri = DataURI.make(
             'image/png',
             charset=charset,
@@ -469,15 +470,15 @@ class Market(object):
 
                     self.transport.bitmessage_api.getInboxMessagesByReceiver(
                         settings['bitmessage']))
-                for m in inboxmsgs['inboxMessages']:
+                for message in inboxmsgs['inboxMessages']:
                     # Base64 decode subject and content
-                    m['subject'] = b64decode(m['subject'])
-                    m['message'] = b64decode(m['message'])
+                    message['subject'] = b64decode(message['subject'])
+                    message['message'] = b64decode(message['message'])
                     # TODO: Augment with market, if available
 
                 return {"messages": inboxmsgs}
-        except Exception as e:
-            self.log.error("Failed to get inbox messages: {}".format(e))
+        except Exception as exc:
+            self.log.error("Failed to get inbox messages: %s", exc)
             self.log.error(traceback.format_exc())
             return {}
 
@@ -488,16 +489,16 @@ class Market(object):
         settings = self.get_settings()
         try:
             # Base64 decode subject and content
-            self.log.info("Encoding message: {}".format(msg))
+            self.log.info("Encoding message: %s", msg)
             subject = b64encode(msg['subject'])
             body = b64encode(msg['body'])
             result = self.transport.bitmessage_api.sendMessage(
                 msg['to'], settings['bitmessage'], subject, body
             )
-            self.log.info("Send message result: {}".format(result))
+            self.log.info("Send message result: %s", result)
             return {}
-        except Exception as e:
-            self.log.error("Failed to send message: %s", e)
+        except Exception as exc:
+            self.log.error("Failed to send message: %s", exc)
             self.log.error(traceback.format_exc())
             return {}
 
@@ -517,9 +518,9 @@ class Market(object):
         for contract in contracts:
             try:
                 contract_body = json.loads(u"%s" % contract['contract_body'])
-            except (KeyError, ValueError) as e:
+            except (KeyError, ValueError) as err:
                 self.log.error('Problem loading the contract body JSON: %s',
-                               e.message)
+                               err.message)
                 continue
             try:
                 contract_field = contract_body['Contract']
@@ -593,6 +594,10 @@ class Market(object):
                 self.log.info('Letting the network know you are not a notary')
                 data = json.dumps({'notary_index_remove': self.transport.guid})
                 self.transport.store(key, data, self.transport.guid)
+
+        # Validate that the namecoin id received is well formed
+        if not re.match(r'^[a-z0-9\-]{1,39}$', msg['namecoin_id']):
+            msg['namecoin_id'] = ''
 
         # Update nickname and namecoin id
         self.transport.nickname = msg['nickname']

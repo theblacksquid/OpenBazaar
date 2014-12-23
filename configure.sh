@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # configure.sh - Setup your OpenBazaar development environment in one step.
@@ -116,9 +116,9 @@ function installUbuntu {
   set -x
 
   sudo apt-get -q update || echo 'apt-get update failed. Continuing...'
-  sudo apt-get -y install python-pip build-essential python-zmq rng-tools
-  sudo apt-get -y install python-dev g++ libjpeg-dev sqlite3 openssl
-  sudo apt-get -y install alien libssl-dev python-virtualenv lintian libjs-jquery
+  sudo apt-get -y install python-pip build-essential python-zmq rng-tools \
+  python-dev libjpeg-dev sqlite3 openssl \
+  alien libssl-dev python-virtualenv lintian libjs-jquery
 
   if [ ! -d "./env" ]; then
     virtualenv --python=python2.7 env
@@ -181,8 +181,8 @@ function installRaspiArch {
 }
 
 function installRaspbian {
-  sudo apt-get -y install python-pip build-essential rng-tools alien
-  sudo apt-get -y install openssl libssl-dev gcc python-dev libjpeg-dev sqlite3
+  sudo apt-get -y install python-pip build-essential rng-tools alien \
+  openssl libssl-dev python-dev libjpeg-dev sqlite3
   echo " "
   echo "Notice : pip install requires 2~3 hours to complete."
   if confirm ; then
@@ -217,7 +217,7 @@ function installFedora {
   sudo yum -y install python-pip python-zmq rng-tools openssl \
   openssl-devel alien python-virtualenv make automake gcc gcc-c++ \
   kernel-devel python-devel openjpeg-devel sqlite \
-   zeromq-devel zeromq python python-qt4 openssl-compat-bitcoin-libs
+  zeromq-devel zeromq python python-qt4 openssl-compat-bitcoin-libs
 
   if [ ! -d "./env" ]; then
     virtualenv env
@@ -247,7 +247,7 @@ function installSlack {
       fi
 
       PYZVAR=$(grep "pyzmq" requirements.txt) # Get pip version.
-      /usr/bin/pip install --user $PYZVAR
+      /usr/bin/pip install --user "$PYZVAR"
       sudo pip install virtualenv
       wget http://sourceforge.net/projects/gkernel/files/rng-tools/5/rng-tools-5.tar.gz
       tar -xvf rng-tools-5.tar.gz

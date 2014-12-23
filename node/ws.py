@@ -16,7 +16,7 @@ from bitcoin import (
 )
 import tornado.websocket
 from twisted.internet import reactor
-from node import protocol, trust
+from node import protocol, trust, constants
 from node.backuptool import BackupTool, Backup, BackupJSONEncoder
 
 
@@ -128,8 +128,7 @@ class ProtocolHandler(object):
                 'Received reputation pledge amount %s for guid %s',
                 amount, guid
             )
-            SATOSHIS_IN_BITCOIN = 100000000
-            bitcoins = float(amount) / SATOSHIS_IN_BITCOIN
+            bitcoins = float(amount) / constants.SATOSHIS_IN_BITCOIN
             bitcoins = round(bitcoins, 4)
             self.market.pages[sin]['reputation_pledge'] = bitcoins
             self.send_to_client(
@@ -144,9 +143,9 @@ class ProtocolHandler(object):
     def send_opening(self):
         peers = self.get_peers()
 
-        countryCodes = []
+        country_codes = []
         for country in pycountry.countries:
-            countryCodes.append({"code": country.alpha2, "name": country.name})
+            country_codes.append({"code": country.alpha2, "name": country.name})
 
         settings = self.market.get_settings()
 
@@ -158,21 +157,21 @@ class ProtocolHandler(object):
             'guid': self.transport.guid,
             'sin': self.transport.sin,
             'uri': self.transport.uri,
-            'countryCodes': countryCodes,
+            'countryCodes': country_codes,
         }
 
         self.send_to_client(None, message)
 
-        burnAddr = trust.burnaddr_from_guid(self.transport.guid)
+        burn_addr = trust.burnaddr_from_guid(self.transport.guid)
 
         def found_unspent(amount):
             self.send_to_client(None, {
                 'type': 'burn_info_available',
                 'amount': amount,
-                'addr': burnAddr
+                'addr': burn_addr
             })
 
-        trust.get_unspent(burnAddr, found_unspent)
+        trust.get_unspent(burn_addr, found_unspent)
 
     def client_read_log(self, socket_handler, msg):
         self.market.p = subprocess.Popen(
@@ -296,7 +295,7 @@ class ProtocolHandler(object):
         self.send_to_client(None, {"type": "peers", "peers": self.get_peers()})
 
     def client_query_page(self, socket_handler, msg):
-        findGUID = msg['findGUID']
+        find_guid = msg['findGUID']
 
         query_id = random.randint(0, 1000000)
         self.timeouts.append(query_id)
@@ -305,7 +304,7 @@ class ProtocolHandler(object):
             self.log.info('Received a query page response: %s', query_id)
 
         self.market.query_page(
-            findGUID,
+            find_guid,
             lambda msg, query_id=query_id: cb(msg, query_id)
         )
 
@@ -474,13 +473,13 @@ class ProtocolHandler(object):
             script = mk_multisig_script(pubkeys, 2, 3)
             multi_address = scriptaddr(script)
 
-            def cb(ec, history, order):
+            def get_history_callback(escrow, history, order):
 
                 settings = self.market.get_settings()
                 private_key = settings.get('privkey')
 
-                if ec is not None:
-                    self.log.error("Error fetching history: %s", ec)
+                if escrow is not None:
+                    self.log.error("Error fetching history: %s", escrow)
                     # TODO: Send error message to GUI
                     return
 
@@ -502,25 +501,25 @@ class ProtocolHandler(object):
                 send_amount = total_amount - fee
 
                 payment_output = order['payment_address']
-                tx = mktx(inputs, ["%s:%s" % (payment_output, send_amount)])
+                transaction = mktx(inputs, ["%s:%s" % (payment_output, send_amount)])
 
-                signatures = [multisign(tx, x, script, private_key)
+                signatures = [multisign(transaction, x, script, private_key)
                               for x in range(len(inputs))]
 
                 self.market.release_funds_to_merchant(
-                    buyer['buyer_order_id'], tx, script, signatures,
+                    buyer['buyer_order_id'], transaction, script, signatures,
                     order.get('merchant')
                 )
 
             def get_history():
                 client.fetch_history(
                     multi_address,
-                    lambda ec, history, order=order: cb(ec, history, order))
+                    lambda escrow, history, order=order: get_history_callback(escrow, history, order))
 
             reactor.callFromThread(get_history)
 
-        except Exception as e:
-            self.log.error('%s', e)
+        except Exception as exc:
+            self.log.error('%s', exc)
 
     def client_release_payment(self, socket_handler, msg):
         self.log.info('Releasing payment to Merchant %s', msg)
@@ -578,12 +577,12 @@ class ProtocolHandler(object):
             script = mk_multisig_script(pubkeys, 2, 3)
             multi_address = scriptaddr(script)
 
-            def cb(ec, history, order):
+            def get_history_callback(escrow, history, order):
                 settings = self.market.get_settings()
                 private_key = settings.get('privkey')
 
-                if ec is not None:
-                    self.log.error("Error fetching history: %s", ec)
+                if escrow is not None:
+                    self.log.error("Error fetching history: %s", escrow)
                     # TODO: Send error message to GUI
                     return
 
@@ -607,33 +606,33 @@ class ProtocolHandler(object):
                 send_amount = total_amount - fee
 
                 payment_output = order['payment_address']
-                tx = mktx(
+                transaction = mktx(
                     inputs, [str(payment_output) + ":" + str(send_amount)]
                 )
 
                 signatures = []
-                for x in range(0, len(inputs)):
-                    ms = multisign(tx, x, script, private_key)
-                    signatures.append(ms)
+                for inpt in range(len(inputs)):
+                    mltsgn = multisign(transaction, inpt, script, private_key)
+                    signatures.append(mltsgn)
 
                 print signatures
 
                 self.market.release_funds_to_merchant(
                     buyer['buyer_order_id'],
-                    tx, script, signatures,
+                    transaction, script, signatures,
                     order.get('merchant')
                 )
 
             def get_history():
                 client.fetch_history(
                     multi_address,
-                    lambda ec, history, order=order: cb(ec, history, order)
+                    lambda escrow, history, order=order: get_history_callback(escrow, history, order)
                 )
 
             reactor.callFromThread(get_history)
 
-        except Exception as e:
-            self.log.error('%s', e)
+        except Exception as exc:
+            self.log.error('%s', exc)
 
     def validate_on_release_funds_tx(self, *data):
         self.log.debug('Validating on release funds tx message.')
@@ -685,12 +684,12 @@ class ProtocolHandler(object):
             )
 
             script = msg['script']
-            tx = msg['tx']
+            transaction = msg['tx']
             multi_addr = scriptaddr(script)
 
-            def cb(ec, history, order):
-                if ec is not None:
-                    self.log.error("Error fetching history: %s", ec)
+            def get_history_callback(escrow, history, order):
+                if escrow is not None:
+                    self.log.error("Error fetching history: %s", escrow)
                     # TODO: Send error message to GUI
                     return
 
@@ -707,19 +706,19 @@ class ProtocolHandler(object):
 
                 seller_signatures = []
                 print 'private key ', self.transport.settings['privkey']
-                for x in range(0, len(inputs)):
-                    ms = multisign(
-                        tx, x, script, self.transport.settings['privkey']
+                for inpt in range(0, len(inputs)):
+                    mltsgn = multisign(
+                        transaction, inpt, script, self.transport.settings['privkey']
                     )
-                    print 'seller sig', ms
-                    seller_signatures.append(ms)
+                    print 'seller sig', mltsgn
+                    seller_signatures.append(mltsgn)
 
-                tx2 = apply_multisignatures(
-                    tx, 0, script, seller_signatures[0], msg['signatures'][0]
+                transaction2 = apply_multisignatures(
+                    transaction, 0, script, seller_signatures[0], msg['signatures'][0]
                 )
 
-                print 'FINAL SCRIPT: %s' % tx2
-                print 'Sent', eligius_pushtx(tx2)
+                print 'FINAL SCRIPT: %s' % transaction2
+                print 'Sent', eligius_pushtx(transaction2)
 
                 self.send_to_client(
                     None,
@@ -732,13 +731,13 @@ class ProtocolHandler(object):
             def get_history():
                 client.fetch_history(
                     multi_addr,
-                    lambda ec, history, order=order: cb(ec, history, order)
+                    lambda escrow, history, order=order: get_history_callback(escrow, history, order)
                 )
 
             reactor.callFromThread(get_history)
 
-        except Exception as e:
-            self.log.error('%s', e)
+        except Exception as exc:
+            self.log.error('%s', exc)
 
     def client_generate_secret(self, socket_handler, msg):
         self.transport._generate_new_keypair()
@@ -816,8 +815,7 @@ class ProtocolHandler(object):
                            Backup.get_backups(BackupTool.get_backup_path())]
                 self.send_to_client(None, {'type': 'on_get_backups_response',
                                            'result': 'success',
-                                           'backups': backups
-                                           })
+                                           'backups': backups})
             except Exception:
                 self.send_to_client(None, {'type': 'on_get_backups_response',
                                            'result': 'failure'})
@@ -911,8 +909,7 @@ class ProtocolHandler(object):
 
             gpg.import_keys(seller_pubkey)
 
-            v = gpg.verify(results)
-            if v:
+            if gpg.verify(results):
                 self.send_to_client(None, {
                     "type": "new_listing",
                     "data": contract_data_json,
@@ -953,8 +950,7 @@ class ProtocolHandler(object):
 
                 gpg.import_keys(seller_pubkey)
 
-                v = gpg.verify(results)
-                if v:
+                if gpg.verify(results):
 
                     seller = contract_data_json.get('Seller')
                     contract_guid = seller.get('seller_GUID')
@@ -1003,12 +999,8 @@ class ProtocolHandler(object):
         self.log.info("Add peer: %s", peer)
 
         response = {'type': 'peer',
-                    'pubkey': peer.pub
-                    if peer.pub
-                    else 'unknown',
-                    'guid': peer.guid
-                    if peer.guid
-                    else '',
+                    'pubkey': peer.pub if peer.pub else 'unknown',
+                    'guid': peer.guid if peer.guid else '',
                     'uri': peer.address}
         self.send_to_client(None, response)
 

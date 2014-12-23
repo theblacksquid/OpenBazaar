@@ -6,8 +6,6 @@ import rfc3986
 import stun
 from urlparse import urlparse
 import re
-from dnschain import server as DNSChainServer
-
 
 
 # List taken from natvpn project and tested manually.
@@ -48,8 +46,8 @@ def str_to_ipy(addr):
     """Convert an address to an IPy.IP object or None if unsuccessful."""
     try:
         return IPy.IP(addr)
-    except ValueError as e:
-        print 'Not IP address:', e
+    except ValueError as err:
+        print 'Not IP address:', err
     return None
 
 
@@ -58,9 +56,9 @@ def is_private_ip_address(addr):
     if is_loopback_addr(addr):
         return True
 
-    ip = str_to_ipy(addr)
+    ip_address = str_to_ipy(addr)
 
-    if ip and ip.iptype() == 'PRIVATE':
+    if ip_address and ip_address.iptype() == 'PRIVATE':
         return True
 
     return False
@@ -68,10 +66,10 @@ def is_private_ip_address(addr):
 
 def get_my_ip(ip_site=IP_DETECT_SITE):
     try:
-        r = requests.get(ip_site)
-        return r.text.strip()
-    except (AttributeError, requests.RequestException) as e:
-        print '[Requests] error: %s' % e
+        request = requests.get(ip_site)
+        return request.text.strip()
+    except (AttributeError, requests.RequestException) as exc:
+        print '[Requests] error: %s' % exc
     return None
 
 
@@ -144,19 +142,6 @@ def is_valid_uri(uri):
         and is_valid_openbazaar_scheme(uri)
         and is_valid_hostname(hostname)
     )
-
-
-def is_valid_namecoin(namecoin, guid):
-    if not namecoin:
-        return False
-
-    server = DNSChainServer.Server("192.184.93.146", "")
-    try:
-        data = server.lookup("id/"+namecoin)
-    except DNSChainServer.DataNotFound, DNSChainServer.MalformedJSON:
-        return False
-
-    return 'openbazaar' in data and data['openbazaar'] == guid
 
 
 def main():

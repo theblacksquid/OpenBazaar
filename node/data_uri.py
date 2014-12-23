@@ -42,8 +42,8 @@ class DataURI(str):
     @classmethod
     def from_file(cls, filename, charset=None, base64=True):
         mimetype, _ = mimetypes.guess_type(filename, strict=False)
-        with open(filename) as fp:
-            data = fp.read()
+        with open(filename) as fileobject:
+            data = fileobject.read()
         return cls.make(mimetype, charset, base64, data)
 
     def __new__(cls, *args, **kwargs):

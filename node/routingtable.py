@@ -95,8 +95,8 @@ class RoutingTable(object):
                 )
             )
 
-        val_key1 = long(key1, 16)
-        val_key2 = long(key2, 16)
+        val_key1 = int(key1, base=16)
+        val_key2 = int(key2, base=16)
         return val_key1 ^ val_key2
 
     @staticmethod
@@ -138,7 +138,7 @@ class RoutingTable(object):
         @type rpc_node_id: guid.GUIDMixin or str or unicode
 
         @return: A list of nodes closest to the specified key.
-                 This method will return constants.k (or count, if
+                 This method will return constants.K (or count, if
                  specified) contacts if at all possible; it will only
                  return fewer if the node is returning all of the
                  contacts that it knows of.
@@ -298,7 +298,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
                     # TODO: Using k to limit the size of the contact
                     # replacement cache - maybe define a separate value for
                     # this in constants.py?
-                    elif len(self.replacement_cache) >= constants.k:
+                    elif len(self.replacement_cache) >= constants.K:
                         self.replacement_cache.pop(0)
                     self.replacement_cache[bucketIndex].append(contact)
         elif old_contact.address != contact.address:
@@ -310,8 +310,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
             except kbucket.BucketFull:
                 # The bucket is full; see if it can be split (by checking
                 # if its range includes the host node's id)
-                if self.buckets[bucketIndex].keyInRange(
-                   self.parent_node_id):
+                if self.buckets[bucketIndex].keyInRange(self.parent_node_id):
                     self.splitBucket(bucketIndex)
                     # Retry the insertion attempt
                     self.addContact(contact)
@@ -332,7 +331,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
                     # TODO: Using k to limit the size of the contact
                     # replacement cache - maybe define a separate value
                     # for this in constants.py?
-                    elif len(self.replacement_cache) >= constants.k:
+                    elif len(self.replacement_cache) >= constants.K:
                         self.replacement_cache.pop(0)
                     self.replacement_cache[bucketIndex].append(contact)
 
@@ -360,7 +359,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
         """
         bucketIndex = self.kbucketIndex(key)
         bucket = self.buckets[bucketIndex]
-        closestNodes = bucket.getContacts(constants.k, node_id)
+        closestNodes = bucket.getContacts(constants.K, node_id)
 
         # This method must return k contacts (even if we have the node with
         # the specified key as node ID), unless there is less than k remote
@@ -370,13 +369,13 @@ class OptimizedTreeRoutingTable(RoutingTable):
         canGoHigher = bucketIndex + i < len(self.buckets)
         # Fill up the node list to k nodes, starting with the closest
         # neighbouring nodes known.
-        while len(closestNodes) < constants.k and (canGoLower or canGoHigher):
+        while len(closestNodes) < constants.K and (canGoLower or canGoHigher):
             # TODO: this may need to be optimized
             if canGoLower:
                 bucket = self.buckets[bucketIndex - i]
                 closestNodes.extend(
                     bucket.getContacts(
-                        constants.k - len(closestNodes), node_id
+                        constants.K - len(closestNodes), node_id
                     )
                 )
                 canGoLower = bucketIndex - (i + 1) >= 0
@@ -384,7 +383,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
                 bucket = self.buckets[bucketIndex + i]
                 closestNodes.extend(
                     bucket.getContacts(
-                        constants.k - len(closestNodes), node_id
+                        constants.K - len(closestNodes), node_id
                     )
                 )
                 canGoHigher = bucketIndex + (i + 1) < len(self.buckets)
@@ -415,7 +414,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
             return list(self.buckets[start_index:])
 
         now = int(time.time())
-        timeout = constants.refreshTimeout
+        timeout = constants.REFRESH_TIMEOUT
         return [
             # Since rangeMin is always in the KBucket's range
             # return that as a representative.

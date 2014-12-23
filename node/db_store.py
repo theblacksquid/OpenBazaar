@@ -68,13 +68,13 @@ class Obdb(object):
         """
         A factory that allows sqlite to return a dictionary instead of a tuple.
         """
-        d = {}
+        dictionary = {}
         for idx, col in enumerate(cursor.description):
             if row[idx] is None:
-                d[col[0]] = ""
+                dictionary[col[0]] = ""
             else:
-                d[col[0]] = row[idx]
-        return d
+                dictionary[col[0]] = row[idx]
+        return dictionary
 
     @staticmethod
     def _beforeStoring(value):

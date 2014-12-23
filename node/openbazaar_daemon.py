@@ -94,33 +94,33 @@ class OpenBazaarContext(object):
 
         # to deduct up-time, and (TODO) average up-time
         # time stamp in (non-local) Coordinated Universal Time format.
-        self.started_utc_timestamp = long(time.time())
+        self.started_utc_timestamp = int(time.time())
 
     def __repr__(self):
-        r = {"server_ip": self.server_ip,
-             "server_port": self.server_port,
-             "http_ip": self.http_ip,
-             "http_port": self.http_port,
-             "log_path": self.log_path,
-             "market_id": self.market_id,
-             "bm_user": self.bm_user,
-             "bm_pass": self.bm_pass,
-             "bm_port": self.bm_port,
-             "seeds": self.seeds,
-             "seed_mode": self.seed_mode,
-             "dev_mode": self.dev_mode,
-             "dev_nodes": self.dev_nodes,
-             "log_level": self.log_level,
-             "db_path": self.db_path,
-             "disable_upnp": self.disable_upnp,
-             "disable_open_browser": self.disable_open_browser,
-             "disable_sqlite_crypt": self.disable_sqlite_crypt,
-             "enable_ip_checker": self.enable_ip_checker,
-             "started_utc_timestamp": self.started_utc_timestamp,
-             "uptime_in_secs": (long(time.time()) -
-                                long(self.started_utc_timestamp))}
+        representation = {"server_ip": self.server_ip,
+                          "server_port": self.server_port,
+                          "http_ip": self.http_ip,
+                          "http_port": self.http_port,
+                          "log_path": self.log_path,
+                          "market_id": self.market_id,
+                          "bm_user": self.bm_user,
+                          "bm_pass": self.bm_pass,
+                          "bm_port": self.bm_port,
+                          "seeds": self.seeds,
+                          "seed_mode": self.seed_mode,
+                          "dev_mode": self.dev_mode,
+                          "dev_nodes": self.dev_nodes,
+                          "log_level": self.log_level,
+                          "db_path": self.db_path,
+                          "disable_upnp": self.disable_upnp,
+                          "disable_open_browser": self.disable_open_browser,
+                          "disable_sqlite_crypt": self.disable_sqlite_crypt,
+                          "enable_ip_checker": self.enable_ip_checker,
+                          "started_utc_timestamp": self.started_utc_timestamp,
+                          "uptime_in_secs": (int(time.time()) -
+                                             int(self.started_utc_timestamp))}
 
-        return json.dumps(r).replace(", ", ",\n  ")
+        return json.dumps(representation).replace(", ", ",\n  ")
 
     @staticmethod
     def get_defaults():
@@ -189,9 +189,9 @@ class MarketApplication(tornado.web.Application):
     def __init__(self, ob_ctx):
         self.shutdown_mutex = Lock()
         self.ob_ctx = ob_ctx
-        db = Obdb(ob_ctx.db_path, ob_ctx.disable_sqlite_crypt)
-        self.transport = CryptoTransportLayer(ob_ctx, db)
-        self.market = Market(self.transport, db)
+        db_connection = Obdb(ob_ctx.db_path, ob_ctx.disable_sqlite_crypt)
+        self.transport = CryptoTransportLayer(ob_ctx, db_connection)
+        self.market = Market(self.transport, db_connection)
         self.upnp_mapper = None
 
         Thread(target=reactor.run, args=(False,)).start()
@@ -204,7 +204,11 @@ class MarketApplication(tornado.web.Application):
             (r"/main", MainHandler),
             (r"/html/(.*)", OpenBazaarStaticHandler, {'path': './html'}),
             (r"/ws", WebSocketHandler,
-             dict(transport=self.transport, market_application=self, db=db))
+             {
+                 'transport': self.transport,
+                 'market_application': self,
+                 'db': db_connection
+             })
         ]
 
         # TODO: Move debug settings to configuration location
@@ -297,8 +301,8 @@ def start_io_loop():
 
     try:
         tornado.ioloop.IOLoop.instance().start()
-    except Exception as e:
-        print "openbazaar::start_io_loop Exception:", e
+    except Exception as exc:
+        print "openbazaar::start_io_loop Exception:", exc
         raise
 
 
@@ -314,13 +318,13 @@ def create_logger(ob_ctx):
             maxBytes=50000000,
             backupCount=1
         )
-        logFormat = logging.Formatter(
+        log_format = logging.Formatter(
             u'%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(logFormat)
+        handler.setFormatter(log_format)
         logger.addHandler(handler)
 
-    except Exception as e:
-        print "Could not setup logger, continuing: ", e.message
+    except Exception as exc:
+        print "Could not setup logger, continuing: ", exc.message
     return logger
 
 
@@ -349,11 +353,11 @@ def node_starter(ob_ctxs):
     # the actual OpenBazaar instances.
 
     for ob_ctx in ob_ctxs:
-        p = multiprocessing.Process(
+        process = multiprocessing.Process(
             target=start_node, args=(ob_ctx,),
             name="Process::openbazaar_daemon::target(start_node)")
-        p.daemon = False  # python has to wait for this user thread to end.
-        p.start()
+        process.daemon = False  # python has to wait for this user thread to end.
+        process.start()
 
 
 def start_node(ob_ctx):
