@@ -157,7 +157,7 @@ class CryptoTransportLayer(TransportLayer):
             if self.listener is not None:
                 self.listener.set_ip_address(new_ip)
 
-            self.dht._iterativeFind(self.guid, [], 'findNode')
+            self.dht.iterative_find(self.guid, [], 'findNode')
 
     def save_peer_to_db(self, peer_tuple):
         uri = peer_tuple[0]
@@ -229,7 +229,7 @@ class CryptoTransportLayer(TransportLayer):
         return True
 
     def on_findNodeResponse(self, msg):
-        self.dht.on_findNodeResponse(msg)
+        self.dht.on_find_node_response(msg)
 
     def _setup_settings(self):
         try:
@@ -361,7 +361,7 @@ class CryptoTransportLayer(TransportLayer):
             # since this will be repeated in most cases less than 10 times
             def join_callback():
                 # If we are not connected to any node, reschedule a check
-                if not self.dht.activePeers:
+                if not self.dht.active_peers:
                     ioloop.IOLoop.instance().call_later(1, join_callback)
                 else:
                     self.search_for_my_node()
@@ -376,7 +376,7 @@ class CryptoTransportLayer(TransportLayer):
 
     def search_for_my_node(self):
         self.log.info('Searching for myself')
-        self.dht._iterativeFind(self.guid, self.dht.knownNodes, 'findNode')
+        self.dht.iterative_find(self.guid, self.dht.known_nodes, 'findNode')
 
     def get_crypto_peer(self, guid=None, uri=None, pubkey=None, nickname=None):
         if guid == self.guid:
@@ -413,11 +413,11 @@ class CryptoTransportLayer(TransportLayer):
         # Directed message
         if send_to is not None:
 
-            peer = self.dht.routingTable.getContact(send_to)
+            peer = self.dht.routing_table.get_contact(send_to)
             if peer is None:
-                for activePeer in self.dht.activePeers:
-                    if activePeer.guid == send_to:
-                        peer = activePeer
+                for active_peer in self.dht.active_peers:
+                    if active_peer.guid == send_to:
+                        peer = active_peer
                         break
 
             if peer:
@@ -441,12 +441,12 @@ class CryptoTransportLayer(TransportLayer):
         else:
             # FindKey and then send
 
-            for peer in self.dht.activePeers:
+            for peer in self.dht.active_peers:
                 try:
-                    routing_peer = self.dht.routingTable.getContact(peer.guid)
+                    routing_peer = self.dht.routing_table.get_contact(peer.guid)
 
                     if routing_peer is None:
-                        self.dht.routingTable.addContact(peer)
+                        self.dht.routing_table.add_contact(peer)
                         routing_peer = peer
 
                     data['senderGUID'] = self.guid
@@ -487,9 +487,9 @@ class CryptoTransportLayer(TransportLayer):
         """
         Store or republish data.
 
-        Refer to the dht module (iterativeStore()) for further details.
+        Refer to the dht module (iterative_store()) for further details.
         """
-        self.dht.iterativeStore(*args, **kwargs)
+        self.dht.iterative_store(*args, **kwargs)
 
     def shutdown(self):
         print "CryptoTransportLayer.shutdown()!"

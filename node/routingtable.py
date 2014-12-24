@@ -43,7 +43,7 @@ class RoutingTable(object):
         )
 
     @abstractmethod
-    def addContact(self, node_id):
+    def add_contact(self, node_id):
         """
         Add the given node to the correct KBucket; if it already
         exists, update its status.
@@ -100,7 +100,7 @@ class RoutingTable(object):
         return val_key1 ^ val_key2
 
     @staticmethod
-    def numToId(node_num):
+    def num_to_id(node_num):
         """
         Converts an integer to a node ID.
 
@@ -121,7 +121,7 @@ class RoutingTable(object):
         return bare_node_id.rjust(constants.HEX_NODE_ID_LEN, '0')
 
     @abstractmethod
-    def findCloseNodes(self, node_id, count, rpc_node_id=None):
+    def find_close_nodes(self, node_id, count, rpc_node_id=None):
         """
         Find a number of known nodes closest to the node/value with the
         specified ID.
@@ -147,7 +147,7 @@ class RoutingTable(object):
         pass
 
     @abstractmethod
-    def getContact(self, node_id):
+    def get_contact(self, node_id):
         """
         Return the known node with the specified ID, None if not found.
 
@@ -160,7 +160,7 @@ class RoutingTable(object):
         pass
 
     @abstractmethod
-    def getRefreshList(self, start_index=0, force=False):
+    def get_refresh_list(self, start_index=0, force=False):
         """
         Find all KBuckets that need refreshing, starting at the KBucket
         with the specified index, and return IDs to be searched for in
@@ -186,7 +186,7 @@ class RoutingTable(object):
         pass
 
     @abstractmethod
-    def removeContact(self, node_id):
+    def remove_contact(self, node_id):
         """
         Remove the node with the specified ID from the routing table.
 
@@ -196,7 +196,7 @@ class RoutingTable(object):
         pass
 
     @abstractmethod
-    def touchKBucket(self, node_id, timestamp=None):
+    def touch_kbucket(self, node_id, timestamp=None):
         """
         Update the "last accessed" timestamp of the KBucket which covers
         the range containing the specified key in the key/ID space.
@@ -246,13 +246,13 @@ class OptimizedTreeRoutingTable(RoutingTable):
 
         self.buckets = [
             kbucket.KBucket(
-                rangeMin=0,
-                rangeMax=2**constants.BIT_NODE_ID_LEN,
+                range_min=0,
+                range_max=2**constants.BIT_NODE_ID_LEN,
                 market_id=market_id
             )
         ]
 
-    def addContact(self, contact):
+    def add_contact(self, contact):
         """
         Add the given contact to the correct KBucket; if it already
         exists, update its status.
@@ -268,19 +268,19 @@ class OptimizedTreeRoutingTable(RoutingTable):
             self.log.info('Trying to add yourself. Leaving.')
             return
 
-        bucketIndex = self.kbucketIndex(contact.guid)
-        old_contact = self.buckets[bucketIndex].getContact(contact.guid)
+        bucket_index = self.kbucket_index(contact.guid)
+        old_contact = self.buckets[bucket_index].get_contact(contact.guid)
 
         if not old_contact:
             try:
-                self.buckets[bucketIndex].addContact(contact)
+                self.buckets[bucket_index].add_contact(contact)
             except kbucket.BucketFull:
                 # The bucket is full; see if it can be split (by checking if
                 # its range includes the host node's id)
-                if self.buckets[bucketIndex].keyInRange(self.parent_node_id):
-                    self.splitBucket(bucketIndex)
+                if self.buckets[bucket_index].key_in_range(self.parent_node_id):
+                    self.split_bucket(bucket_index)
                     # Retry the insertion attempt
-                    self.addContact(contact)
+                    self.add_contact(contact)
                 else:
                     # We can't split the KBucket
                     # NOTE: This implementation follows section 4.1 of the 13
@@ -291,29 +291,29 @@ class OptimizedTreeRoutingTable(RoutingTable):
                     # Put the new contact in our replacement cache for the
                     # corresponding KBucket (or update it's position if it
                     # exists already)
-                    if bucketIndex not in self.replacement_cache:
-                        self.replacement_cache[bucketIndex] = []
-                    if contact in self.replacement_cache[bucketIndex]:
-                        self.replacement_cache[bucketIndex].remove(contact)
+                    if bucket_index not in self.replacement_cache:
+                        self.replacement_cache[bucket_index] = []
+                    if contact in self.replacement_cache[bucket_index]:
+                        self.replacement_cache[bucket_index].remove(contact)
                     # TODO: Using k to limit the size of the contact
                     # replacement cache - maybe define a separate value for
                     # this in constants.py?
                     elif len(self.replacement_cache) >= constants.K:
                         self.replacement_cache.pop(0)
-                    self.replacement_cache[bucketIndex].append(contact)
+                    self.replacement_cache[bucket_index].append(contact)
         elif old_contact.address != contact.address:
             self.log.info('Remove contact')
-            self.removeContact(contact.guid)
+            self.remove_contact(contact.guid)
 
             try:
-                self.buckets[bucketIndex].addContact(contact)
+                self.buckets[bucket_index].add_contact(contact)
             except kbucket.BucketFull:
                 # The bucket is full; see if it can be split (by checking
                 # if its range includes the host node's id)
-                if self.buckets[bucketIndex].keyInRange(self.parent_node_id):
-                    self.splitBucket(bucketIndex)
+                if self.buckets[bucket_index].key_in_range(self.parent_node_id):
+                    self.split_bucket(bucket_index)
                     # Retry the insertion attempt
-                    self.addContact(contact)
+                    self.add_contact(contact)
                 else:
                     # We can't split the KBucket
                     # NOTE: This implementation follows section 4.1 of the
@@ -324,18 +324,18 @@ class OptimizedTreeRoutingTable(RoutingTable):
                     # Put the new contact in our replacement cache for the
                     # corresponding KBucket (or update it's position if
                     # it exists already)
-                    if bucketIndex not in self.replacement_cache:
-                        self.replacement_cache[bucketIndex] = []
-                    if contact in self.replacement_cache[bucketIndex]:
-                        self.replacement_cache[bucketIndex].remove(contact)
+                    if bucket_index not in self.replacement_cache:
+                        self.replacement_cache[bucket_index] = []
+                    if contact in self.replacement_cache[bucket_index]:
+                        self.replacement_cache[bucket_index].remove(contact)
                     # TODO: Using k to limit the size of the contact
                     # replacement cache - maybe define a separate value
                     # for this in constants.py?
                     elif len(self.replacement_cache) >= constants.K:
                         self.replacement_cache.pop(0)
-                    self.replacement_cache[bucketIndex].append(contact)
+                    self.replacement_cache[bucket_index].append(contact)
 
-    def findCloseNodes(self, key, count, node_id=None):
+    def find_close_nodes(self, key, count, node_id=None):
         """
         Find a number of known nodes closest to the node/value with the
         specified key.
@@ -357,51 +357,51 @@ class OptimizedTreeRoutingTable(RoutingTable):
                  node is returning all of the contacts that it knows of.
         @rtype: list
         """
-        bucketIndex = self.kbucketIndex(key)
-        bucket = self.buckets[bucketIndex]
-        closestNodes = bucket.getContacts(constants.K, node_id)
+        bucket_index = self.kbucket_index(key)
+        bucket = self.buckets[bucket_index]
+        closest_nodes = bucket.get_contacts(constants.K, node_id)
 
         # This method must return k contacts (even if we have the node with
         # the specified key as node ID), unless there is less than k remote
         # nodes in the routing table.
         i = 1
-        canGoLower = bucketIndex - i >= 0
-        canGoHigher = bucketIndex + i < len(self.buckets)
+        can_go_lower = bucket_index - i >= 0
+        can_go_higher = bucket_index + i < len(self.buckets)
         # Fill up the node list to k nodes, starting with the closest
         # neighbouring nodes known.
-        while len(closestNodes) < constants.K and (canGoLower or canGoHigher):
+        while len(closest_nodes) < constants.K and (can_go_lower or can_go_higher):
             # TODO: this may need to be optimized
-            if canGoLower:
-                bucket = self.buckets[bucketIndex - i]
-                closestNodes.extend(
-                    bucket.getContacts(
-                        constants.K - len(closestNodes), node_id
+            if can_go_lower:
+                bucket = self.buckets[bucket_index - i]
+                closest_nodes.extend(
+                    bucket.get_contacts(
+                        constants.K - len(closest_nodes), node_id
                     )
                 )
-                canGoLower = bucketIndex - (i + 1) >= 0
-            if canGoHigher:
-                bucket = self.buckets[bucketIndex + i]
-                closestNodes.extend(
-                    bucket.getContacts(
-                        constants.K - len(closestNodes), node_id
+                can_go_lower = bucket_index - (i + 1) >= 0
+            if can_go_higher:
+                bucket = self.buckets[bucket_index + i]
+                closest_nodes.extend(
+                    bucket.get_contacts(
+                        constants.K - len(closest_nodes), node_id
                     )
                 )
-                canGoHigher = bucketIndex + (i + 1) < len(self.buckets)
+                can_go_higher = bucket_index + (i + 1) < len(self.buckets)
             i += 1
 
-        self.log.datadump('Closest Nodes: %s', closestNodes)
-        return closestNodes
+        self.log.datadump('Closest Nodes: %s', closest_nodes)
+        return closest_nodes
 
-    def getContact(self, node_id):
+    def get_contact(self, node_id):
         """
         Return the known node with the specified ID, None if not found.
 
         For details, see RoutingTable documentation.
         """
-        bucket_index = self.kbucketIndex(node_id)
-        return self.buckets[bucket_index].getContact(node_id)
+        bucket_index = self.kbucket_index(node_id)
+        return self.buckets[bucket_index].get_contact(node_id)
 
-    def getRefreshList(self, start_index=0, force=False):
+    def get_refresh_list(self, start_index=0, force=False):
         """
         Find all KBuckets that need refreshing, starting at the
         KBucket with the specified index, and return IDs to be searched for
@@ -416,22 +416,22 @@ class OptimizedTreeRoutingTable(RoutingTable):
         now = int(time.time())
         timeout = constants.REFRESH_TIMEOUT
         return [
-            # Since rangeMin is always in the KBucket's range
+            # Since range_min is always in the KBucket's range
             # return that as a representative.
-            self.numToId(bucket.rangeMin)
+            self.num_to_id(bucket.range_min)
             for bucket in self.buckets[start_index:]
-            if now - bucket.lastAccessed >= timeout
+            if now - bucket.last_accessed >= timeout
         ]
 
-    def removeContact(self, node_id):
+    def remove_contact(self, node_id):
         """
         Remove the node with the specified ID from the routing table.
 
         For details, see RoutingTable documentation.
         """
-        bucket_index = self.kbucketIndex(node_id)
+        bucket_index = self.kbucket_index(node_id)
         try:
-            self.buckets[bucket_index].removeContact(node_id)
+            self.buckets[bucket_index].remove_contact(node_id)
         except ValueError:
             self.log.error("Attempted to remove absent contact %s.", node_id)
         else:
@@ -446,11 +446,11 @@ class OptimizedTreeRoutingTable(RoutingTable):
                 # No cached contact for this bucket.
                 pass
             else:
-                self.buckets[bucket_index].addContact(cached)
+                self.buckets[bucket_index].add_contact(cached)
         finally:
             self.log.datadump('Contacts: %s', self.buckets[bucket_index].contacts)
 
-    def touchKBucket(self, node_id, timestamp=None):
+    def touch_kbucket(self, node_id, timestamp=None):
         """
         Update the "last accessed" timestamp of the KBucket which covers
         the range containing the specified key in the key/ID space.
@@ -459,10 +459,10 @@ class OptimizedTreeRoutingTable(RoutingTable):
         """
         if timestamp is None:
             timestamp = int(time.time())
-        bucket_index = self.kbucketIndex(node_id)
-        self.buckets[bucket_index].lastAccessed = timestamp
+        bucket_index = self.kbucket_index(node_id)
+        self.buckets[bucket_index].last_accessed = timestamp
 
-    def kbucketIndex(self, node_id):
+    def kbucket_index(self, node_id):
         """
         Calculate the index of the KBucket which is responsible for the
         specified key (or ID).
@@ -488,7 +488,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
         indexes = [
             i
             for i, bucket in enumerate(self.buckets)
-            if bucket.keyInRange(key)
+            if bucket.key_in_range(key)
         ]
 
         if not indexes:
@@ -499,30 +499,30 @@ class OptimizedTreeRoutingTable(RoutingTable):
             )
         return indexes[0]
 
-    def splitBucket(self, old_bucket_index):
+    def split_bucket(self, old_bucket_index):
         """
         Split the specified KBucket into two new buckets which together cover
         the same range in the key/ID space.
 
-        @param oldBucketIndex: The index of KBucket to split (in this table's
-                               list of KBuckets)
-        @type oldBucketIndex: int
+        @param old_bucket_index: The index of KBucket to split (in this table's
+                                 list of KBuckets)
+        @type old_bucket_index: int
         """
         # Halve the range of the current (old) KBucket.
-        oldBucket = self.buckets[old_bucket_index]
-        splitPoint = (oldBucket.rangeMax -
-                      (oldBucket.rangeMax - oldBucket.rangeMin) // 2)
+        old_bucket = self.buckets[old_bucket_index]
+        split_point = (old_bucket.range_max -
+                       (old_bucket.range_max - old_bucket.range_min) // 2)
         # Create a new KBucket to cover the range split off from the old one.
-        newBucket = kbucket.KBucket(
-            splitPoint, oldBucket.rangeMax, self.market_id
+        new_bucket = kbucket.KBucket(
+            split_point, old_bucket.range_max, self.market_id
         )
-        oldBucket.rangeMax = splitPoint
+        old_bucket.range_max = split_point
         # Now, add the new bucket into the routing table tree
-        self.buckets.insert(old_bucket_index + 1, newBucket)
+        self.buckets.insert(old_bucket_index + 1, new_bucket)
         # Finally, copy all nodes that belong to the new KBucket into it...
-        for contact in oldBucket.contacts:
-            if newBucket.keyInRange(contact.guid):
-                newBucket.addContact(contact)
+        for contact in old_bucket.contacts:
+            if new_bucket.key_in_range(contact.guid):
+                new_bucket.add_contact(contact)
         # ...and remove them from the old bucket
-        for contact in newBucket.contacts:
-            oldBucket.removeContact(contact)
+        for contact in new_bucket.contacts:
+            old_bucket.remove_contact(contact)
