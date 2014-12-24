@@ -71,7 +71,7 @@ class TransportLayer(object):
 
 class CryptoTransportLayer(TransportLayer):
 
-    def __init__(self, ob_ctx, db):
+    def __init__(self, ob_ctx, db_connection):
 
         self.ob_ctx = ob_ctx
 
@@ -81,7 +81,7 @@ class CryptoTransportLayer(TransportLayer):
         requests_log = logging.getLogger("requests")
         requests_log.setLevel(logging.WARNING)
 
-        self.db = db
+        self.db_connection = db_connection
 
         self.bitmessage_api = None
         if (ob_ctx.bm_user, ob_ctx.bm_pass, ob_ctx.bm_port) != (None, None, -1):
@@ -104,7 +104,7 @@ class CryptoTransportLayer(TransportLayer):
 
         self._setup_settings()
         ob_ctx.market_id = self.market_id
-        self.dht = DHT(self, self.market_id, self.settings, self.db)
+        self.dht = DHT(self, self.market_id, self.settings, self.db_connection)
         TransportLayer.__init__(self, ob_ctx, self.guid, self.nickname)
         self.start_listener()
 
@@ -166,9 +166,9 @@ class CryptoTransportLayer(TransportLayer):
         nickname = peer_tuple[3]
 
         # Update query
-        self.db.deleteEntries("peers", {"uri": uri, "guid": guid}, "OR")
+        self.db_connection.delete_entries("peers", {"uri": uri, "guid": guid}, "OR")
         if guid is not None:
-            self.db.insertEntry("peers", {
+            self.db_connection.insert_entry("peers", {
                 "uri": uri,
                 "pubkey": pubkey,
                 "guid": guid,
@@ -215,7 +215,7 @@ class CryptoTransportLayer(TransportLayer):
         return True
 
     def on_store(self, msg):
-        self.dht._on_storeValue(msg)
+        self.dht._on_store_value(msg)
 
     def validate_on_findNode(self, msg):
         self.log.debugv('Validating find node message.')
@@ -228,19 +228,19 @@ class CryptoTransportLayer(TransportLayer):
         self.log.debugv('Validating find node response message.')
         return True
 
-    def on_findNodeResponse(self, msg):
+    def on_findNodeResponse(self, msg):  # pylint: disable=invalid-name
         self.dht.on_find_node_response(msg)
 
     def _setup_settings(self):
         try:
-            self.settings = self.db.selectEntries("settings", {"market_id": self.market_id})
-        except (OperationalError, DatabaseError) as e:
-            print e
-            raise SystemExit("database file %s corrupt or empty - cannot continue" % self.db.db_path)
+            self.settings = self.db_connection.select_entries("settings", {"market_id": self.market_id})
+        except (OperationalError, DatabaseError) as err:
+            print err
+            raise SystemExit("database file %s corrupt or empty - cannot continue" % self.db_connection.db_path)
 
         if len(self.settings) == 0:
             self.settings = {"market_id": self.market_id, "welcome": "enable"}
-            self.db.insertEntry("settings", self.settings)
+            self.db_connection.insert_entry("settings", self.settings)
         else:
             self.settings = self.settings[0]
 
@@ -261,7 +261,7 @@ class CryptoTransportLayer(TransportLayer):
 
                 pubkey_text = gpg.export_keys(key.fingerprint)
                 newsettings = {"PGPPubKey": pubkey_text, "PGPPubkeyFingerprint": key.fingerprint}
-                self.db.updateEntries("settings", newsettings, {"market_id": self.market_id})
+                self.db_connection.update_entries("settings", newsettings, {"market_id": self.market_id})
                 self.settings.update(newsettings)
 
                 self.log.info('PGP keypair generated.')
@@ -274,7 +274,7 @@ class CryptoTransportLayer(TransportLayer):
 
         if not self.settings.get('nickname'):
             newsettings = {'nickname': 'Default'}
-            self.db.updateEntries('settings', newsettings, {"market_id": self.market_id})
+            self.db_connection.update_entries('settings', newsettings, {"market_id": self.market_id})
             self.settings.update(newsettings)
 
         self.nickname = self.settings.get('nickname', '')
@@ -321,7 +321,7 @@ class CryptoTransportLayer(TransportLayer):
             "guid": self.guid,
             "sin": self.sin
         }
-        self.db.updateEntries("settings", newsettings, {"market_id": self.market_id})
+        self.db_connection.update_entries("settings", newsettings, {"market_id": self.market_id})
         self.settings.update(newsettings)
 
     def _generate_new_bitmessage_address(self):
@@ -333,7 +333,7 @@ class CryptoTransportLayer(TransportLayer):
             1.1111
         )
         newsettings = {"bitmessage": self.bitmessage}
-        self.db.updateEntries("settings", newsettings, {"market_id": self.market_id})
+        self.db_connection.update_entries("settings", newsettings, {"market_id": self.market_id})
         self.settings.update(newsettings)
 
     def join_network(self, seeds=None, callback=None):
@@ -371,7 +371,7 @@ class CryptoTransportLayer(TransportLayer):
             callback('Joined')
 
     def get_past_peers(self):
-        result = self.db.selectEntries("peers", {"market_id": self.market_id})
+        result = self.db_connection.select_entries("peers", {"market_id": self.market_id})
         return [peer['uri'] for peer in result]
 
     def search_for_my_node(self):

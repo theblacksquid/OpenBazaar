@@ -29,12 +29,12 @@ class Orders(object):
         SHIPPED = 'Shipped'
         WAITING_FOR_PAYMENT = 'Waiting for Payment'
 
-    def __init__(self, transport, market_id, db):
+    def __init__(self, transport, market_id, db_connection):
         self.transport = transport
         self.market_id = market_id
         self.log = logging.getLogger('[%s] %s' % (self.market_id, self.__class__.__name__))
         self.gpg = gnupg.GPG()
-        self.db = db
+        self.db_connection = db_connection
         self.orders = self.get_orders()
 
         self.transport.add_callbacks([
@@ -179,9 +179,9 @@ class Orders(object):
     def get_order(self, order_id, by_buyer_id=False):
 
         if not by_buyer_id:
-            _order = self.db.selectEntries("orders", {"order_id": order_id})[0]
+            _order = self.db_connection.select_entries("orders", {"order_id": order_id})[0]
         else:
-            _order = self.db.selectEntries("orders", {"buyer_order_id": order_id})[0]
+            _order = self.db_connection.select_entries("orders", {"buyer_order_id": order_id})[0]
         total_price = 0
 
         offer_data_json = self.get_offer_json(_order['signed_contract_body'], _order['state'])
@@ -270,7 +270,7 @@ class Orders(object):
         if merchant is None:
             if notarizations:
                 self.log.info('Retrieving notarizations')
-                order_ids = self.db.selectEntries(
+                order_ids = self.db_connection.select_entries(
                     "orders",
                     {"market_id": self.market_id},
                     order_field="updated",
@@ -283,7 +283,7 @@ class Orders(object):
                     if result['merchant'] != self.transport.guid and result['buyer'] != self.transport.guid:
                         order = self.get_order(result['order_id'])
                         orders.append(order)
-                all_orders = self.db.selectEntries(
+                all_orders = self.db_connection.select_entries(
                     "orders",
                     {"market_id": self.market_id}
                 )
@@ -292,7 +292,7 @@ class Orders(object):
                     if order['merchant'] != self.transport.guid and order['buyer'] != self.transport.guid:
                         total_orders += 1
             else:
-                order_ids = self.db.selectEntries(
+                order_ids = self.db_connection.select_entries(
                     "orders",
                     {"market_id": self.market_id},
                     order_field="updated",
@@ -304,13 +304,13 @@ class Orders(object):
                 for result in order_ids:
                     order = self.get_order(result['order_id'])
                     orders.append(order)
-                total_orders = len(self.db.selectEntries(
+                total_orders = len(self.db_connection.select_entries(
                     "orders",
                     {"market_id": self.market_id}
                 ))
         else:
             if merchant:
-                order_ids = self.db.selectEntries(
+                order_ids = self.db_connection.select_entries(
                     "orders",
                     {"market_id": self.market_id,
                      "merchant": self.transport.guid},
@@ -324,7 +324,7 @@ class Orders(object):
                     order = self.get_order(result['order_id'])
                     orders.append(order)
 
-                all_orders = self.db.selectEntries(
+                all_orders = self.db_connection.select_entries(
                     "orders",
                     {"market_id": self.market_id}
                 )
@@ -333,7 +333,7 @@ class Orders(object):
                     if order['merchant'] == self.transport.guid:
                         total_orders += 1
             else:
-                order_ids = self.db.selectEntries(
+                order_ids = self.db_connection.select_entries(
                     "orders",
                     {"market_id": self.market_id},
                     order_field="updated",
@@ -345,7 +345,7 @@ class Orders(object):
                         order = self.get_order(result['order_id'])
                         orders.append(order)
 
-                all_orders = self.db.selectEntries(
+                all_orders = self.db_connection.select_entries(
                     "orders",
                     {"market_id": self.market_id}
                 )
@@ -356,10 +356,10 @@ class Orders(object):
 
         for order in orders:
 
-            buyer = self.db.selectEntries("peers", {"guid": order['buyer']})
+            buyer = self.db_connection.select_entries("peers", {"guid": order['buyer']})
             if len(buyer) > 0:
                 order['buyer_nickname'] = buyer[0]['nickname']
-            merchant = self.db.selectEntries("peers", {"guid": order['merchant']})
+            merchant = self.db_connection.select_entries("peers", {"guid": order['merchant']})
             if len(merchant) > 0:
                 order['merchant_nickname'] = merchant[0]['nickname']
 
@@ -378,7 +378,7 @@ class Orders(object):
 
         order['state'] = Orders.State.SHIPPED
         order['payment_address'] = payment_address
-        self.db.updateEntries("orders", order, {"order_id": order_id})
+        self.db_connection.update_entries("orders", order, {"order_id": order_id})
 
         order['type'] = 'order'
         order['payment_address'] = payment_address
@@ -416,10 +416,10 @@ class Orders(object):
 
         new_order['address'] = self._multisig.address
 
-        if len(self.db.selectEntries("orders", {"order_id": new_order['id']})) > 0:
-            self.db.updateEntries("orders", {new_order}, {"order_id": new_order['id']})
+        if len(self.db_connection.select_entries("orders", {"order_id": new_order['id']})) > 0:
+            self.db_connection.update_entries("orders", {new_order}, {"order_id": new_order['id']})
         else:
-            self.db.insertEntry("orders", new_order)
+            self.db_connection.insert_entry("orders", new_order)
 
         self.transport.send(new_order, new_order['buyer'].decode('hex'))
 
@@ -436,7 +436,7 @@ class Orders(object):
         del new_order['merchant_bitmessage']
         del new_order['payment_address_amount']
 
-        self.db.updateEntries("orders", new_order, {"order_id": order_id})
+        self.db_connection.update_entries("orders", new_order, {"order_id": order_id})
 
         new_order['type'] = 'order'
 
@@ -465,7 +465,7 @@ class Orders(object):
                 self.log.info('Verified Contract')
                 self.log.info(self.get_shipping_address())
                 try:
-                    self.db.insertEntry(
+                    self.db_connection.insert_entry(
                         "orders",
                         {
                             "order_id": order_id,
@@ -509,11 +509,11 @@ class Orders(object):
         new_order['state'] = Orders.State.RECEIVED
 
         order_id = random.randint(0, 1000000)
-        while len(self.db.selectEntries("orders", {'id': order_id})) > 0:
+        while len(self.db_connection.select_entries("orders", {'id': order_id})) > 0:
             order_id = random.randint(0, 1000000)
 
         new_order['order_id'] = order_id
-        self.db.insertEntry("orders", new_order)
+        self.db_connection.insert_entry("orders", new_order)
         self.transport.send(new_order, new_order['seller'].decode('hex'))
 
     def get_shipping_address(self):
@@ -539,7 +539,7 @@ class Orders(object):
 
         # Save order locally in database
         order_id = random.randint(0, 1000000)
-        while (len(self.db.selectEntries("orders", {"id": order_id}))) > 0:
+        while (len(self.db_connection.select_entries("orders", {"id": order_id}))) > 0:
             order_id = random.randint(0, 1000000)
 
         seller = self.transport.dht.routing_table.get_contact(msg['sellerGUID'])
@@ -582,7 +582,7 @@ class Orders(object):
         hash_value.update(contract_key)
         contract_key = hash_value.hexdigest()
 
-        self.db.updateEntries(
+        self.db_connection.update_entries(
             "orders",
             {
                 'market_id': self.transport.market_id,
@@ -624,7 +624,7 @@ class Orders(object):
 
         # Generate unique id for this bid
         order_id = random.randint(0, 1000000)
-        while len(self.db.selectEntries("contracts", {"id": order_id})) > 0:
+        while len(self.db_connection.select_entries("contracts", {"id": order_id})) > 0:
             order_id = random.randint(0, 1000000)
 
         # Add to contract and sign
@@ -728,7 +728,7 @@ class Orders(object):
         script = mk_multisig_script(pubkeys, 2, 3)
         multisig_address = scriptaddr(script)
 
-        self.db.insertEntry(
+        self.db_connection.insert_entry(
             "orders", {
                 'market_id': self.transport.market_id,
                 'contract_key': contract_key,
@@ -767,7 +767,7 @@ class Orders(object):
 
     def generate_order_id(self):
         order_id = random.randint(0, 1000000)
-        while self.db.contracts.find({'id': order_id}).count() > 0:
+        while self.db_connection.contracts.find({'id': order_id}).count() > 0:
             order_id = random.randint(0, 1000000)
         return order_id
 
@@ -792,7 +792,7 @@ class Orders(object):
             bid_data_json['Buyer']['buyer_order_id']
         )
 
-        self.db.updateEntries(
+        self.db_connection.update_entries(
             "orders",
             {'state': Orders.State.BUYER_PAID, 'shipping_address': json.dumps(msg['shipping_address']),
              "updated": time.time()},
@@ -816,7 +816,7 @@ class Orders(object):
         bid_data_json = "{" + offer_data[bid_data_index:end_of_bid_index]
         bid_data_json = json.loads(bid_data_json)
 
-        self.db.updateEntries(
+        self.db_connection.update_entries(
             "orders",
             {
                 'state': Orders.State.SHIPPED,
@@ -881,7 +881,7 @@ class Orders(object):
             state = 'Waiting for Payment'
 
             merchant_order_id = random.randint(0, 1000000)
-            while len(self.db.selectEntries("orders", {"id": order_id})) > 0:
+            while len(self.db_connection.select_entries("orders", {"id": order_id})) > 0:
                 merchant_order_id = random.randint(0, 1000000)
 
             buyer_id = "%s-%s" % (
@@ -889,7 +889,7 @@ class Orders(object):
                 bid_data_json['Buyer']['buyer_order_id']
             )
 
-            self.db.insertEntry(
+            self.db_connection.insert_entry(
                 "orders",
                 {
                     'market_id': self.transport.market_id,
@@ -918,7 +918,7 @@ class Orders(object):
             self.log.info('I am the buyer')
             state = 'Need to Pay'
 
-            self.db.updateEntries(
+            self.db_connection.update_entries(
                 "orders",
                 {
                     'market_id': self.transport.market_id,

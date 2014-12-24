@@ -207,7 +207,7 @@ class MarketApplication(tornado.web.Application):
              {
                  'transport': self.transport,
                  'market_application': self,
-                 'db': db_connection
+                 'db_connection': db_connection
              })
         ]
 

@@ -22,13 +22,13 @@ class DataStore(UserDict.DictMixin, object):
         pass
 
     @abstractmethod
-    def lastPublished(self, key):
+    def get_last_published(self, key):
         """ Get the time the C{(key, value)} pair identified by C{key}
         was last published """
         pass
 
     @abstractmethod
-    def originalPublisherID(self, key):
+    def get_original_publisher_id(self, key):
         """ Get the original publisher of the data's node ID
 
         @param key: The key that identifies the stored data
@@ -40,14 +40,14 @@ class DataStore(UserDict.DictMixin, object):
         pass
 
     @abstractmethod
-    def originalPublishTime(self, key):
+    def get_original_publish_time(self, key):
         """ Get the time the C{(key, value)} pair identified by C{key}
         was originally published """
         pass
 
     @abstractmethod
-    def setItem(self, key, value, lastPublished, originallyPublished,
-                originalPublisherID, market_id):
+    def set_item(self, key, value, last_published, originally_published,
+                 original_publisher_id, market_id):
         """ Set the value of the (key, value) pair identified by C{key};
         this should set the "last published" value for the (key, value)
         pair to the current time
@@ -66,36 +66,36 @@ class DataStore(UserDict.DictMixin, object):
 
     def __setitem__(self, key, value):
         """
-        Convenience wrapper to C{setItem}; this accepts a tuple in the format:
-        (value, lastPublished, originallyPublished, originalPublisherID).
+        Convenience wrapper to C{set_item}; this accepts a tuple in the format:
+        (value, last_published, originally_published, original_publisher_id).
         """
-        self.setItem(key, *value)
+        self.set_item(key, *value)
 
 
 class SqliteDataStore(DataStore):
     """Sqlite database-based datastore."""
     def __init__(self, db_connection):
         super(SqliteDataStore, self).__init__()
-        self.db = db_connection
+        self.db_connection = db_connection
         self.log = logging.getLogger(self.__class__.__name__)
 
     def keys(self):
         """ Return a list of the keys in this data store """
         keys = []
         try:
-            db_keys = self.db.selectEntries("datastore")
+            db_keys = self.db_connection.select_entries("datastore")
             for row in db_keys:
                 keys.append(row['key'].decode('hex'))
         except Exception:
             pass
         return keys
 
-    def lastPublished(self, key):
+    def get_last_published(self, key):
         """ Get the time the C{(key, value)} pair identified by C{key}
         was last published """
-        return int(self._dbQuery(key, 'lastPublished'))
+        return int(self._db_query(key, 'lastPublished'))
 
-    def originalPublisherID(self, key):
+    def get_original_publisher_id(self, key):
         """ Get the original publisher of the data's node ID
 
         @param key: The key that identifies the stored data
@@ -104,42 +104,42 @@ class SqliteDataStore(DataStore):
         @return: Return the node ID of the original publisher of the
         C{(key, value)} pair identified by C{key}.
         """
-        return self._dbQuery(key, 'originalPublisherID')
+        return self._db_query(key, 'originalPublisherID')
 
-    def originalPublishTime(self, key):
+    def get_original_publish_time(self, key):
         """ Get the time the C{(key, value)} pair identified by C{key}
         was originally published """
-        return int(self._dbQuery(key, 'originallyPublished'))
+        return int(self._db_query(key, 'originallyPublished'))
 
-    def setItem(self, key, value, lastPublished, originallyPublished,
-                originalPublisherID, market_id=1):
+    def set_item(self, key, value, last_published, originally_published,
+                 original_publisher_id, market_id=1):
 
-        rows = self.db.selectEntries(
+        rows = self.db_connection.select_entries(
             "datastore",
             {"key": key,
              "market_id": market_id}
         )
         if len(rows) == 0:
-            self.db.insertEntry(
+            self.db_connection.insert_entry(
                 "datastore",
                 {
                     'key': key,
                     'value': value,
-                    'lastPublished': lastPublished,
-                    'originallyPublished': originallyPublished,
-                    'originalPublisherID': originalPublisherID,
+                    'lastPublished': last_published,
+                    'originallyPublished': originally_published,
+                    'originalPublisherID': original_publisher_id,
                     'market_id': market_id
                 }
             )
         else:
-            self.db.updateEntries(
+            self.db_connection.update_entries(
                 "datastore",
                 {
                     'key': key,
                     'value': value,
-                    'lastPublished': lastPublished,
-                    'originallyPublished': originallyPublished,
-                    'originalPublisherID': originalPublisherID,
+                    'lastPublished': last_published,
+                    'originallyPublished': originally_published,
+                    'originalPublisherID': original_publisher_id,
                     'market_id': market_id
                 },
                 {
@@ -148,12 +148,12 @@ class SqliteDataStore(DataStore):
                 }
             )
 
-    def _dbQuery(self, key, columnName):
+    def _db_query(self, key, column_name):
 
-        row = self.db.selectEntries("datastore", {"key": key})
+        row = self.db_connection.select_entries("datastore", {"key": key})
 
         if len(row) != 0:
-            value = row[0][columnName]
+            value = row[0][column_name]
             try:
                 value = ast.literal_eval(value)
             except Exception:
@@ -161,7 +161,7 @@ class SqliteDataStore(DataStore):
             return value
 
     def __getitem__(self, key):
-        return self._dbQuery(key, 'value')
+        return self._db_query(key, 'value')
 
     def __delitem__(self, key):
-        self.db.deleteEntries("datastore", {"key": key.encode("hex")})
+        self.db_connection.delete_entries("datastore", {"key": key.encode("hex")})

@@ -331,8 +331,8 @@ class DHT(object):
 
             now = int(time.time())
             key = key.encode('hex')
-            original_publisher_id = self.data_store.originalPublisherID(key)
-            age = now - self.data_store.originalPublishTime(key) + 500000
+            original_publisher_id = self.data_store.get_original_publisher_id(key)
+            age = now - self.data_store.get_original_publish_time(key) + 500000
 
             if original_publisher_id == self.settings['guid']:
                 # This node is the original publisher; it has to republish
@@ -349,7 +349,7 @@ class DHT(object):
                     # republished by the original publishing node,
                     # so remove it.
                     expired_keys.append(key)
-                elif now - self.data_store.lastPublished(key) >= constants.REPLICATE_INTERVAL:
+                elif now - self.data_store.get_last_published(key) >= constants.REPLICATE_INTERVAL:
                     self.iterative_store(key, self.data_store[key], original_publisher_id, age)
 
         for key in expired_keys:
@@ -530,7 +530,7 @@ class DHT(object):
         originally_published = now - age
 
         # Store it in your own node
-        self.data_store.setItem(
+        self.data_store.set_item(
             key, value, now, originally_published, original_publisher_id, market_id=self.market_id
         )
 
@@ -563,7 +563,7 @@ class DHT(object):
         originally_published = now - age
 
         if value:
-            self.data_store.setItem(key, value, now, originally_published, original_publisher_id, self.market_id)
+            self.data_store.set_item(key, value, now, originally_published, original_publisher_id, self.market_id)
         else:
             self.log.error('No value to store')
 
@@ -606,7 +606,7 @@ class DHT(object):
 
         now = int(time.time())
         originally_published = now - age
-        self.data_store.setItem(
+        self.data_store.set_item(
             key, value, now, originally_published, original_publisher_id, market_id=self.market_id
         )
         return 'OK'
