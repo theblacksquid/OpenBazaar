@@ -33,7 +33,7 @@ class TestRoutingTable(unittest.TestCase):
         self.assertNotEqual(0, dist("abcd", "dcba"))
         self.assertEqual(1, dist("2", "3"))
         self.assertEqual(10, dist("2", "8"))
-        self.assertEqual(4008636142L, dist("1" * 8, "f" * 8))
+        self.assertEqual(4008636142, dist("1" * 8, "f" * 8))
 
         d_ab = dist("a", "b")
         self.assertEqual(d_ab, dist("b", "a"))
