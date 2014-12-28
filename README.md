@@ -1,4 +1,4 @@
-<img src="http://s27.postimg.org/5i0igk0v7/Open_Bazaar_Logo.png" width="800px"/>
+<a href="http://openbazaar.org"><img src="http://s27.postimg.org/5i0igk0v7/Open_Bazaar_Logo.png" width="800px"/></a>
 
 [![Build Status](https://travis-ci.org/OpenBazaar/OpenBazaar.svg?branch=master)](https://travis-ci.org/OpenBazaar/OpenBazaar)
 [![Coverage Status](https://coveralls.io/repos/OpenBazaar/OpenBazaar/badge.png)](https://coveralls.io/r/OpenBazaar/OpenBazaar)
@@ -30,7 +30,7 @@ You can financially support the project by either:
 ## Features (Notional)
 - Full market editor for management of items catalog
 - Order management system
-- Ricardian-style contracts  
+- Ricardian-style contracts
 - Multisignature escrow-based transactions
 - Arbiter management and marketplace
 - Private messaging
@@ -96,7 +96,3 @@ Here are some screenshots of the *alpha* UI so far:
 ## License
 
 OpenBazaar is licensed under the MIT license. See [LICENSE.md](LICENSE.md) for more information.
-
-=======
-
-
