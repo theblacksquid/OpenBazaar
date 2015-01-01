@@ -15,11 +15,11 @@ class TestSqliteDatastore(unittest.TestCase):
                 {'key': 'CH'.encode('hex')}
                 ]
         }
-        self.db_mock.selectEntries.side_effect = data.__getitem__
+        self.db_mock.select_entries.side_effect = data.__getitem__
         self.d = datastore.SqliteDataStore(self.db_mock)
 
     def test_init(self):
-        self.assertIs(self.d.db, self.db_mock)
+        self.assertIs(self.d.db_connection, self.db_mock)
         self.assertIsInstance(self.d, UserDict.DictMixin)
 
     def test_keys(self):
@@ -28,14 +28,14 @@ class TestSqliteDatastore(unittest.TestCase):
         self.assertIn('Zurich', keys)
         self.assertIn('CH', keys)
 
-    def test_lastPublished(self):
+    def test_get_last_published(self):
         pass
 
-    def test_originalPublisherID(self):
+    def test_get_original_publisher_id(self):
         pass
 
-    def test_originalPublishTime(self):
+    def test_get_original_publish_time(self):
         pass
 
-    def test_setItem(self):
+    def test_set_item(self):
         pass

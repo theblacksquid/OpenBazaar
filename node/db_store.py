@@ -52,7 +52,7 @@ class Obdb(object):
         @functools.wraps(func)
         def managed_func(self, *args, **kwargs):
             with self._lock, self._make_db_connection() as self.con:
-                self.con.row_factory = self._dictFactory
+                self.con.row_factory = self._dict_factory
                 if not self.disable_sqlite_crypt:
                     self._login()
 
@@ -64,7 +64,7 @@ class Obdb(object):
         return managed_func
 
     @staticmethod
-    def _dictFactory(cursor, row):
+    def _dict_factory(cursor, row):
         """
         A factory that allows sqlite to return a dictionary instead of a tuple.
         """
@@ -77,11 +77,11 @@ class Obdb(object):
         return dictionary
 
     @staticmethod
-    def _beforeStoring(value):
+    def _before_storing(value):
         """Method called before executing SQL identifiers."""
         return unicode(value)
 
-    def getOrCreate(self, table, where_dict, data_dict=False):
+    def get_or_create(self, table, where_dict, data_dict=False):
         """
         This method attempts to grab the record first. If it fails to
         find it, it will create it.
@@ -93,13 +93,13 @@ class Obdb(object):
         if not data_dict:
             data_dict = where_dict
 
-        entries = self.selectEntries(table, where_dict)
+        entries = self.select_entries(table, where_dict)
         if not entries:
-            self.insertEntry(table, data_dict)
-        return self.selectEntries(table, where_dict)[0]
+            self.insert_entry(table, data_dict)
+        return self.select_entries(table, where_dict)[0]
 
     @_managedmethod
-    def updateEntries(self, table, set_dict, where_dict=None, operator="AND"):
+    def update_entries(self, table, set_dict, where_dict=None, operator="AND"):
         """
         A wrapper for the SQL UPDATE operation.
 
@@ -118,8 +118,8 @@ class Obdb(object):
         for key, value in set_dict.iteritems():
             if type(value) == bool:
                 value = bool(value)
-            key = self._beforeStoring(key)
-            value = self._beforeStoring(value)
+            key = self._before_storing(key)
+            value = self._before_storing(value)
             sets.append(value)
             set_part.append("%s = ?" % key)
         set_part = ",".join(set_part)
@@ -128,8 +128,8 @@ class Obdb(object):
             if isinstance(value, dict):
                 sign = value["sign"]
                 value = value["value"]
-            key = self._beforeStoring(key)
-            value = self._beforeStoring(value)
+            key = self._before_storing(key)
+            value = self._before_storing(value)
             wheres.append(value)
             where_part.append("%s %s ?" % (key, sign))
         operator = " " + operator + " "
@@ -141,7 +141,7 @@ class Obdb(object):
         cur.execute(query, tuple(sets + wheres))
 
     @_managedmethod
-    def insertEntry(self, table, update_dict):
+    def insert_entry(self, table, update_dict):
         """
         A wrapper for the SQL INSERT operation.
 
@@ -155,8 +155,8 @@ class Obdb(object):
         for key, value in update_dict.iteritems():
             if type(value) == bool:
                 value = bool(value)
-            key = self._beforeStoring(key)
-            value = self._beforeStoring(value)
+            key = self._before_storing(key)
+            value = self._before_storing(value)
             sets.append(value)
             updatefield_part.append(key)
             setfield_part.append("?")
@@ -172,8 +172,8 @@ class Obdb(object):
             return lastrowid
 
     @_managedmethod
-    def selectEntries(self, table, where_dict=None, operator="AND", order_field="id",
-                      order="ASC", limit=None, limit_offset=None, select_fields="*"):
+    def select_entries(self, table, where_dict=None, operator="AND", order_field="id",
+                       order="ASC", limit=None, limit_offset=None, select_fields="*"):
         """
         A wrapper for the SQL SELECT operation. It will always return
         all the attributes for the selected rows.
@@ -193,8 +193,8 @@ class Obdb(object):
             if isinstance(value, dict):
                 sign = value["sign"]
                 value = value["value"]
-            key = self._beforeStoring(key)
-            value = self._beforeStoring(value)
+            key = self._before_storing(key)
+            value = self._before_storing(value)
             wheres.append(value)
             where_part.append("%s %s ?" % (key, sign))
             if limit is not None and limit_offset is None:
@@ -214,7 +214,7 @@ class Obdb(object):
         return rows
 
     @_managedmethod
-    def deleteEntries(self, table, where_dict=None, operator="AND"):
+    def delete_entries(self, table, where_dict=None, operator="AND"):
         """
         A wrapper for the SQL DELETE operation.
 
@@ -232,8 +232,8 @@ class Obdb(object):
             if isinstance(value, dict):
                 sign = value["sign"]
                 value = value["value"]
-            key = self._beforeStoring(key)
-            value = self._beforeStoring(value)
+            key = self._before_storing(key)
+            value = self._before_storing(value)
             dels.append(value)
             where_part.append("%s %s ?" % (key, sign))
         operator = " " + operator + " "
