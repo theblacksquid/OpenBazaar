@@ -36,6 +36,10 @@
 
 
             <table class="table table-bordered table-striped" style="font-size:14px;width:100%;table-layout:fixed">
+                <tr data-ng-show="page.senderNamecoin">
+                    <td class="col-xs-3">Store URL</td>
+                    <td style="word-wrap:break-word">{{page.senderNamecoin}}</td>
+                </tr>
                 <tr data-ng-show="page.email">
                     <td class="col-xs-3">Email Address</td>
                     <td style="word-wrap:break-word"><a href="mailto:{{page.email}}">{{page.email}}</a></td>

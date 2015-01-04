@@ -3,6 +3,8 @@ import logging
 import bitcoin
 import obelisk
 from twisted.internet import reactor
+from dnschain import server as DNSChainServer
+from node import constants
 
 _log = logging.getLogger('trust')
 
@@ -39,3 +41,19 @@ def get_unspent(addr, callback):
 
 def get_global(guid, callback):
     get_unspent(burnaddr_from_guid(guid), callback)
+
+
+def is_valid_namecoin(namecoin, guid):
+    if not namecoin or not guid:
+        return False
+
+    server = DNSChainServer.Server(constants.DNSCHAIN_SERVER_IP, "")
+    _log.info("Looking up namecoin id: %s", namecoin)
+    try:
+        data = server.lookup("id/" + namecoin)
+    except (DNSChainServer.DataNotFound, DNSChainServer.MalformedJSON):
+        _log.info('Claimed remote namecoin id not found: %s', namecoin)
+        return False
+
+    return data.get('openbazaar') == guid
+

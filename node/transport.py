@@ -16,7 +16,7 @@ import zmq
 from zmq.eventloop import ioloop
 from zmq.eventloop.ioloop import PeriodicCallback
 
-from node import connection, network_util
+from node import connection, network_util, trust
 from node.dht import DHT
 
 
@@ -278,6 +278,7 @@ class CryptoTransportLayer(TransportLayer):
             self.settings.update(newsettings)
 
         self.nickname = self.settings.get('nickname', '')
+        self.namecoin_id = self.settings.get('namecoin_id', '')
         self.secret = self.settings.get('secret', '')
         self.pubkey = self.settings.get('pubkey', '')
         self.privkey = self.settings.get('privkey')
@@ -471,11 +472,16 @@ class CryptoTransportLayer(TransportLayer):
         guid = msg.get('senderGUID')
         nickname = msg.get('senderNick', '')[:120]
         msg_type = msg.get('type')
+        namecoin = msg.get('senderNamecoin')
 
         # Checking for malformed URIs
         if not network_util.is_valid_uri(uri):
             self.log.error('Malformed URI: %s', uri)
             return
+
+        # Validate the claimed namecoin in DNSChain
+        if not trust.is_valid_namecoin(namecoin, guid):
+            msg['senderNamecoin'] = ''
 
         self.log.info('Received message type "%s" from "%s" %s %s',
                       msg_type, nickname, uri, guid)

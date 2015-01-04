@@ -56,3 +56,7 @@ DB_PATH = "db/ob.db"
 VERSION = "0.3.1"
 
 SATOSHIS_IN_BITCOIN = 100000000
+
+# The IP of the default DNSChain Server used to validate namecoin addresses
+DNSCHAIN_SERVER_IP = "192.184.93.146"
+

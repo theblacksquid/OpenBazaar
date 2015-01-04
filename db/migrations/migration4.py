@@ -15,7 +15,7 @@ def upgrade(db_path):
 
         try:
             cur.execute("ALTER TABLE settings "
-                        "ADD COLUMN Namecoin_id TEXT")
+                        "ADD COLUMN namecoin_id TEXT")
             print 'Upgraded'
             con.commit()
         except dbapi2.Error as e:
@@ -29,7 +29,7 @@ def downgrade(db_path):
         # Use PRAGMA key to encrypt / decrypt database.
         cur.execute("PRAGMA key = 'passphrase';")
 
-        cur.execute("ALTER TABLE settings DROP COLUMN Namecoin_id")
+        cur.execute("ALTER TABLE settings DROP COLUMN namecoin_id")
 
         print 'Downgraded'
         con.commit()

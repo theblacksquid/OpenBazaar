@@ -11,6 +11,7 @@ from PIL import Image, ImageOps
 import random
 from StringIO import StringIO
 import traceback
+import re
 
 from bitcoin.main import privkey_to_pubkey
 import tornado
@@ -594,8 +595,13 @@ class Market(object):
                 data = json.dumps({'notary_index_remove': self.transport.guid})
                 self.transport.store(key, data, self.transport.guid)
 
-        # Update nickname
+        # Validate that the namecoin id received is well formed
+        if not re.match(r'^[a-z0-9\-]{1,39}$', msg['namecoin_id']):
+            msg['namecoin_id'] = ''
+
+        # Update nickname and namecoin id
         self.transport.nickname = msg['nickname']
+        self.transport.namecoin_id = msg['namecoin_id']
 
         if 'burnAmount' in msg:
             del msg['burnAmount']
