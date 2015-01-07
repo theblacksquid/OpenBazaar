@@ -113,7 +113,7 @@ function doneMessage {
 
 function installUbuntu {
   # print commands
-  set -x
+  # set -x
 
   sudo apt-get -q update || echo 'apt-get update failed. Continuing...'
   sudo apt-get -y install python-pip build-essential python-zmq rng-tools \
@@ -139,7 +139,7 @@ function installArch {
     sudo pacman -Syu
   else
     echo "Continuing."
-  fi 
+  fi
   # sudo pacman -S --needed base-devel
   # Can conflict with multilib packages. Uncomment this line if you don't already have base-devel installed
   sudo pacman -S --needed python2 python2-pip python2-virtualenv python2-pyzmq rng-tools libjpeg sqlite3 openssl
