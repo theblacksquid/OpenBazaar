@@ -49,7 +49,7 @@ function brewUpgrade {
 
 function installMac {
   # print commands (useful for debugging)
-  # set -x  #disabled because the echos and stdout are verbose enough to see progress
+  # set -x # echoes the commands executed
 
   # install brew if it is not installed, otherwise upgrade it
   if ! command_exists brew ; then
@@ -112,8 +112,8 @@ function doneMessage {
 }
 
 function installUbuntu {
-  # print commands
-  # set -x
+  # print commands (useful for debugging)
+  # set -x # echoes the commands executed
 
   sudo apt-get -q update || echo 'apt-get update failed. Continuing...'
   sudo apt-get -y install python-pip build-essential python-zmq rng-tools \
@@ -130,8 +130,8 @@ function installUbuntu {
 }
 
 function installArch {
-  # print commands
-  # set -x
+  # print commands (useful for debugging)
+  # set -x # echoes the commands executed
 
   echo "Some packages and dependencies may fail to install if your package list is out of date."
   echo "Would you like to upgrade your system now? "
@@ -197,8 +197,8 @@ function installRaspbian {
 }
 
 function installPortage {
-  # print commands
-  # set -x
+  # print commands (useful for debugging)
+  # set -x # echoes the commands executed
 
   sudo emerge -an dev-lang/python:2.7 dev-python/pip pyzmq rng-tools gcc jpeg sqlite3 openssl dev-python/virtualenv
   # FIXME: on gentoo install as user, because otherwise
@@ -209,8 +209,8 @@ function installPortage {
 }
 
 function installFedora {
-  # print commands
-  # set -x
+  # print commands (useful for debugging)
+  # set -x # echoes the commands executed
 
   sudo yum install -y http://linux.ringingliberty.com/bitcoin/f18/x86_64/bitcoin-release-1-4.noarch.rpm
 
@@ -229,7 +229,7 @@ function installFedora {
 }
 
 function installSlack {
-  # set -x
+  # set -x # echoes the commands executed
 
   sudo /usr/sbin/slackpkg update
   if ! command_exists python; then
