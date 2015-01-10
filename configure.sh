@@ -130,8 +130,8 @@ function installUbuntu {
 }
 
 function installArch {
-  #print commands
-  set -x
+  # print commands
+  # set -x
 
   echo "Some packages and dependencies may fail to install if your package list is out of date."
   echo "Would you like to upgrade your system now? "
@@ -198,7 +198,7 @@ function installRaspbian {
 
 function installPortage {
   # print commands
-  set -x
+  # set -x
 
   sudo emerge -an dev-lang/python:2.7 dev-python/pip pyzmq rng-tools gcc jpeg sqlite3 openssl dev-python/virtualenv
   # FIXME: on gentoo install as user, because otherwise
@@ -210,7 +210,7 @@ function installPortage {
 
 function installFedora {
   # print commands
-  set -x
+  # set -x
 
   sudo yum install -y http://linux.ringingliberty.com/bitcoin/f18/x86_64/bitcoin-release-1-4.noarch.rpm
 
@@ -229,7 +229,7 @@ function installFedora {
 }
 
 function installSlack {
-  set -x
+  # set -x
 
   sudo /usr/sbin/slackpkg update
   if ! command_exists python; then
