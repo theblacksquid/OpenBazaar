@@ -3,7 +3,7 @@ Pillow==2.7
 miniupnpc==1.9
 psutil==2.2.0
 bitcoin==1.1.25
-pycountry==1.9
+pycountry==1.10
 pyelliptic==1.5.5
 pysqlcipher==2.6.3-1
 pystun==0.1.0
