@@ -34,9 +34,9 @@ function make_env {
 
 function brewDoctor {
     if ! brew doctor; then
-      echo ""
+      echo
       echo "'brew doctor' did not exit cleanly! This may be okay. Read above."
-      echo ""
+      echo
       read -p "Press [Enter] to continue anyway or [ctrl + c] to exit and do what the doctor says..."
     fi
 }
@@ -47,9 +47,9 @@ function brewUpgrade {
     if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]
     then
       if ! brew upgrade; then
-        echo ""
+        echo
         echo "There were errors when attempting to 'brew upgrade' and there could be issues with the installation of OpenBazaar."
-        echo ""
+        echo
         read -p "Press [Enter] to continue anyway or [ctrl + c] to exit and fix those errors."
       fi
     fi
@@ -109,9 +109,9 @@ function installMac {
 
 function doneMessage {
   VERSION_FROM_CHANGELOG="$(head -1 changelog | awk '/openbazaar \(.*\..*\..*\)/ { print $2 }')"
-  echo ""
-  echo ""
-  echo ""
+  echo
+  echo
+  echo
   echo '   ____                     ____                            '
   echo '  / __ \                   |  _ \                           '
   echo ' | |  | |_ __   ___ _ __   | |_) | __ _ ______ _  __ _ _ __ '
@@ -120,16 +120,15 @@ function doneMessage {
   echo '  \____/| .__/ \___|_| |_| |____/ \__,_/___\__,_|\__,_|_|   '
   echo '        | |                                                 '
   echo '        |_|                                                 '                                                                                                   ##'
-  echo ""
+  echo
   echo "                                             Release $VERSION_FROM_CHANGELOG"
-  echo ""
-  echo ""
+  echo
+  echo
   echo "OpenBazaar configuration finished!"
   echo "Run './openbazaar $1start; tail -F logs/production.log' to start OpenBazaar and output logs."
-  echo ""
-  echo ""
-  echo ""
-
+  echo
+  echo
+  echo
 }
 
 
