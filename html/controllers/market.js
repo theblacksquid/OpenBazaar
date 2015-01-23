@@ -255,9 +255,6 @@ angular.module('app')
                 if(!alreadyExists){
                     $scope.peers.push(msg);
                 }
-                else{
-                    console.log('Avoided duplicate peer');
-                }
             };
 
             $scope.update_peers = function(msg) {
