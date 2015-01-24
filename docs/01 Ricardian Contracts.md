@@ -332,4 +332,4 @@ There is also some flexibility in the naming of this field for clarity and simpl
 
 ## Summary
 
-In conclusion, using Ricardian Contracts for buying and sellings goods on *OpenBazaar* is an effective means of managing risk and minimising disputes on a pseudonymous peer-to-peer market, thought its use of iterative key signing and checksum hashes at each stage of the contract's execution.
+In conclusion, using Ricardian Contracts for buying and selling goods on *OpenBazaar* is an effective means of managing risk and minimising disputes on a pseudonymous peer-to-peer market, thought its use of iterative key signing and checksum hashes at each stage of the contract's execution.

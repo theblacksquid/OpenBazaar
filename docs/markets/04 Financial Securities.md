@@ -35,7 +35,7 @@ Shares will be represented as individual Ricardian contracts, or 'asset contract
 3. Share nonce (unique identifier for the share)
 4. Share entitlement (message outlining what the bearer is entitled to from the company)
 5. Issuer Public PGP key
-6. Issuer digitial signature of (1)-(5)
+6. Issuer digital signature of (1)-(5)
 
 One of the most important pieces of data within the share contract is the share nonce. The share nonce is a unique identifier for each share, which can be verified by cross-referencing against a list of all shares issued (**share listing**) and their corresponding nonces in the initial public offering. The share listing will be digitally signed by the issuer and other arbiters.
 

@@ -237,7 +237,7 @@ The second type of service contract is called a **service listing**, where servi
 5. Comments and special considerations
 6. Quotation response time
 
-A potential client can request a quote from the a service provider by drawing up a fresh service contract (according their requirements) that includes a hash of the **service listing**. The inclusion of the hash indicates that the client is requesting a quote based off the specifications advertised by the service provider's **service listing**. From here, the contract is negotiated between both parties as described above prior to double and triple digital signing to initate the contract.
+A potential client can request a quote from the a service provider by drawing up a fresh service contract (according their requirements) that includes a hash of the **service listing**. The inclusion of the hash indicates that the client is requesting a quote based off the specifications advertised by the service provider's **service listing**. From here, the contract is negotiated between both parties as described above prior to double and triple digital signing to initiate the contract.
 
 ## Good Performance Bonds
 
