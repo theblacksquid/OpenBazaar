@@ -1,0 +1,97 @@
+# Install openbazaar on remote hosts
+# by copying the data from directory on current host or github
+# installs dependencies  and launches OB daemon
+# Supported OS : Ubuntu, Debian
+
+- hosts: all 
+  vars:
+    from_github: True
+    repo_url: https://github.com/OpenBazaar/OpenBazaar.git 
+    branch: master 
+    copy_from_local_directory: /home/user/Projects/OpenBazaar # if from_github=False, then will try to copy from this directory
+    openbazaar_toplevel_dest: /home/vagrant
+    openbazaar_python_venv: /home/vagrant/OpenBazaar/env
+    ip: 0.0.0.0
+    port: 55555
+    do_test: False
+    do_system_update: True
+    reqs:
+      - python-pip
+      - build-essential 
+      - python-zmq
+      - rng-tools 
+      - python-dev
+      - libjpeg-dev
+      - sqlite3
+      - openssl 
+      - alien 
+      - libssl-dev 
+      - python-virtualenv
+      - lintian
+      - libjs-jquery
+      - haveged # to generate entropy for PGP :)
+  sudo: False
+
+  tasks:
+
+   - name: install git
+     action: apt pkg=git state=installed
+     sudo: Yes
+     when: from_github and (ansible_os_family=="Ubuntu" or ansible_os_family=="Debian")
+
+   - name: see if directory already exists
+     stat: path={{openbazaar_toplevel_dest}}/OpenBazaar
+     register: res
+
+#   - debug: var=res
+
+   - name: clone Open Bazaar repo from git repository 
+     shell:  >
+         git clone --depth 1 --branch {{branch}} {{repo_url}} {{openbazaar_toplevel_dest}}/OpenBazaar
+     when: from_github and not res.stat.exists
+
+   - name: copy source code to target host if not getting from github
+     synchronize: src={{copy_from_local_directory}} dest={{openbazaar_toplevel_dest}}/OpenBazaar
+     when: not from_github and not res.stat.exists
+
+   - name: make openbazaar launcher executable
+     shell: chmod +x {{openbazaar_toplevel_dest}}/OpenBazaar/openbazaar
+
+   - name: Update system
+     shell: apt-get update
+     sudo: Yes
+     when: do_system_update
+
+   - name: Install list of packages
+     action: apt pkg={{item}} state=installed
+     sudo: Yes
+     with_items: reqs
+     when: ansible_os_family=="Ubuntu" or ansible_os_family=="Debian"
+
+   - name: see if virtual env directory exists
+     stat: path={{openbazaar_python_venv}}
+     register: res
+
+   - name: Create a virtual env if not exists 
+     shell: virtualenv --python=python2.7 {{openbazaar_python_venv}}
+     when: not res.stat.exists
+
+   - name: Install python requirements
+     pip: executable="{{openbazaar_python_venv}}"/bin/pip requirements={{openbazaar_toplevel_dest}}/OpenBazaar/requirements.txt
+
+   - name: Install test requirements
+     pip: executable="{{openbazaar_python_venv}}"/bin/pip requirements={{openbazaar_toplevel_dest}}/OpenBazaar/test_requirements.txt
+     when: do_test 
+
+   - name: Stop Open Bazaar daemon (if it's not running, nothing will happen)
+     action: > 
+      command sh -c "cd {{openbazaar_toplevel_dest}}/OpenBazaar/; ./openbazaar stop" 
+
+   - name: Launch open Bazaar daemon (redirect stdin, stdout, stderr to daemonize)
+     # need to cd to OpenBazaar directory because the launch script assumes the relative python env path
+     action: > 
+       command sh -c "cd {{openbazaar_toplevel_dest}}/OpenBazaar/; nohup ./openbazaar  start --disable-open-browser -j --http-ip {{ip}} --http-port {{port}} 2>&1 >/dev/null &"
+     register: result
+
+   - name: Wait for port to become available
+     wait_for: port={{port}} delay=1
