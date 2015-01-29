@@ -42,7 +42,7 @@ class DHT(object):
 
     @_synchronized
     def get_active_peers(self):
-        return self.activePeers
+        return self.active_peers
 
     @_synchronized
     def start(self, seed_peer):
