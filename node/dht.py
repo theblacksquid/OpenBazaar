@@ -4,10 +4,11 @@ import json
 import logging
 import os
 import time
+import functools
+from threading import RLock
 
 from node import constants, datastore, network_util, routingtable
 from node.protocol import proto_store
-
 
 class DHT(object):
     def __init__(self, transport, market_id, settings, db_connection):
@@ -27,9 +28,23 @@ class DHT(object):
             self.settings['guid'], market_id)
         self.data_store = datastore.SqliteDataStore(db_connection)
 
+        self._lock = RLock()
+
+    # pylint: disable=no-self-argument
+    # pylint: disable=not-callable
+    def _synchronized(f):
+        """Decorator for synchronizing access to DHT attributes."""
+        @functools.wraps(f)
+        def synced_f(self, *args, **kwargs):
+            with self._lock:
+                return f(self, *args, **kwargs)
+        return synced_f
+
+    @_synchronized
     def get_active_peers(self):
         return self.active_peers
 
+    @_synchronized
     def start(self, seed_peer):
         """ This method executes only when the server is starting up for the
             first time and add the seed peer(s) to known node list and
@@ -51,6 +66,7 @@ class DHT(object):
         self.iterative_find(self.settings['guid'], self.known_nodes,
                             'findNode')
 
+    @_synchronized
     def add_peer(self, uri, pubkey=None, guid=None, nickname=None):
         """ This takes a tuple (pubkey, URI, guid) and adds it to the active
         peers list if it doesn't already reside there.
@@ -110,6 +126,23 @@ class DHT(object):
         if new_peer:
             new_peer.start_handshake(save_peer_callback)
 
+    @_synchronized
+    def add_as_active_peer(self, new_peer):
+        for idx, peer in enumerate(self.active_peers):
+            if peer.guid == new_peer.guid or peer.address == new_peer.address:
+                self.active_peers[idx] = new_peer
+                self.add_peer(
+                    new_peer.address,
+                    new_peer.pub,
+                    new_peer.guid,
+                    new_peer.nickname
+                )
+                return
+
+        self.active_peers.append(new_peer)
+        self.routing_table.add_contact(new_peer)
+
+    @_synchronized
     def _add_known_node(self, node):
         """ Accept a peer tuple and add it to known nodes list
         :param node: (tuple)
@@ -119,6 +152,7 @@ class DHT(object):
         if node not in self.known_nodes and node[1] is not None:
             self.known_nodes.append(node)
 
+    @_synchronized
     def on_find_node(self, msg):
         """ When a findNode message is received it will be of several types:
         - findValue: Looking for a specific key-value
@@ -177,6 +211,7 @@ class DHT(object):
                 self.routing_table.remove_contact(new_peer.guid)
                 self.routing_table.add_contact(new_peer)
 
+    @_synchronized
     def close_nodes(self, key, guid):
         contacts = self.routing_table.find_close_nodes(key, constants.K, guid)
         contact_triples = []
@@ -185,6 +220,7 @@ class DHT(object):
 
         return self.dedupe(contact_triples)
 
+    @_synchronized
     def on_find_node_response(self, msg):
 
         # Update existing peer's pubkey if active peer
@@ -287,12 +323,14 @@ class DHT(object):
                         if search.callback is not None:
                             search.callback(search.shortlist)
 
+    @_synchronized
     def _refresh_node(self):
-        """ Periodically called to perform KBucket refreshes and data
+        """ Periodically called to perform k-bucket refreshes and data
         replication/republishing as necessary """
         self._refresh_routing_table()
         self._republish_data()
 
+    @_synchronized
     def _refresh_routing_table(self):
         self.log.info('Started Refreshing Routing Table')
 
@@ -311,9 +349,11 @@ class DHT(object):
         # Start the refreshing cycle
         search_for_next_node_id()
 
+    @_synchronized
     def _republish_data(self, *args):
-        self._threaded_republish_data()
+        self._threadedRepublishData()
 
+    @_synchronized
     def _threaded_republish_data(self, *args):
         """ Republishes and expires any stored data (i.e. stored
         C{(key, value pairs)} that need to be republished/expired
@@ -355,6 +395,7 @@ class DHT(object):
         for key in expired_keys:
             del self.data_store[key]
 
+    @_synchronized
     def extend_shortlist(self, find_id, found_nodes):
 
         self.log.datadump('found_nodes: %s', found_nodes)
@@ -396,6 +437,7 @@ class DHT(object):
 
         self.log.datadump('Short list after: %s', search.shortlist)
 
+    @_synchronized
     def find_listings(self, key, listing_filter=None, callback=None):
         """
         Send a get product listings call to the node in question and
@@ -424,6 +466,7 @@ class DHT(object):
         #
         # self.iterative_find_value(listing_index_key, callback)
 
+    @_synchronized
     def find_listings_by_keyword(self, keyword, listing_filter=None, callback=None):
 
         hashvalue = hashlib.new('ripemd160')
@@ -435,6 +478,7 @@ class DHT(object):
 
         self.iterative_find_value(listing_index_key, callback)
 
+    @_synchronized
     def iterative_store(self, key, value_to_store=None, original_publisher_id=None, age=0):
         """ The Kademlia store operation
 
@@ -464,6 +508,7 @@ class DHT(object):
                 self.store_key_value(msg, findKey, value, original_publisher_id, age)
             )
 
+    @_synchronized
     def store_key_value(self, nodes, key, value, original_publisher_id, age):
 
         self.log.datadump('Store Key Value: (%s, %s %s)', nodes, key, type(value))
@@ -549,6 +594,7 @@ class DHT(object):
 
             peer.send(proto_store(key, value, original_publisher_id, age))
 
+    @_synchronized
     def _on_store_value(self, msg):
 
         key = msg['key']
@@ -567,6 +613,7 @@ class DHT(object):
         else:
             self.log.error('No value to store')
 
+    @_synchronized
     def store(self, key, value, original_publisher_id=None, age=0, **kwargs):
         """ Store the received data in this node's local hash table
 
@@ -611,6 +658,7 @@ class DHT(object):
         )
         return 'OK'
 
+    @_synchronized
     def iterative_find_node(self, key, callback=None):
         """ The basic Kademlia node lookup operation
 
@@ -622,6 +670,7 @@ class DHT(object):
         self.log.info('Looking for node at: %s', key)
         self.iterative_find(key, [], callback=callback)
 
+    @_synchronized
     def iterative_find(self, key, startup_shortlist=None, call='findNode', callback=None):
         """
         - Create a new DHTSearch object and add the key and call back to it
@@ -667,6 +716,7 @@ class DHT(object):
 
         self._search_iteration(new_search, find_value=find_value)
 
+    @_synchronized
     def _search_iteration(self, new_search, find_value=False):
 
         # Update slow nodes count
@@ -745,6 +795,7 @@ class DHT(object):
                     else:
                         self.log.error('No contact was found for this guid: %s', node[2])
 
+    @_synchronized
     def active_search_exists(self, find_id):
 
         active_search_exists = False
@@ -754,8 +805,9 @@ class DHT(object):
         if not active_search_exists:
             return False
 
+    @_synchronized
     def iterative_find_value(self, key, callback=None):
-        self.iterative_find(key, call='findValue', callback=callback)
+        self._iterativeFind(key, call='findValue', callback=callback)
 
     @staticmethod
     def dedupe(lst):

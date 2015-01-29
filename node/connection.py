@@ -110,19 +110,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             self.nickname = msg['senderNick']
 
             # Add this peer to active peers list
-            for idx, peer in enumerate(self.transport.dht.active_peers):
-                if peer.guid == self.guid or peer.address == self.address:
-                    self.transport.dht.active_peers[idx] = self
-                    self.transport.dht.add_peer(
-                        self.address,
-                        self.pub,
-                        self.guid,
-                        self.nickname
-                    )
-                    return
-
-            self.transport.dht.active_peers.append(self)
-            self.transport.dht.routing_table.add_contact(self)
+            self.transport.dht.add_as_active_peer(self)
 
             if initial_handshake_cb is not None:
                 initial_handshake_cb()
