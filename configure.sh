@@ -105,14 +105,30 @@ function installMac {
 }
 
 function doneMessage {
-  echo ""
-  echo "OpenBazaar configuration finished."
-  echo "type './openbazaar $1start; tail -F logs/production.log' to start your OpenBazaar servent instance and monitor logging output."
+  VERSION_FROM_CHANGELOG="$(head -1 changelog | awk '/openbazaar \(.*\..*\..*\)/ { print $2 }')"
   echo ""
   echo ""
   echo ""
+  echo '   ____                     ____                            '
+  echo '  / __ \                   |  _ \                           '
+  echo ' | |  | |_ __   ___ _ __   | |_) | __ _ ______ _  __ _ _ __ '
+  echo ' | |  | |  _ \ / _ \  _ \  |  _ < / _` |_  / _` |/ _` |  __|'
+  echo ' | |__| | |_) |  __/ | | | | |_) | (_| |/ / (_| | (_| | |   '
+  echo '  \____/| .__/ \___|_| |_| |____/ \__,_/___\__,_|\__,_|_|   '
+  echo '        | |                                                 '
+  echo '        |_|                                                 '                                                                                                   ##'
   echo ""
+  echo "                                             Release $VERSION_FROM_CHANGELOG"
+  echo ""
+  echo ""
+  echo "OpenBazaar configuration finished!"
+  echo "Run './openbazaar $1start; tail -F logs/production.log' to start OpenBazaar and output logs."
+  echo ""
+  echo ""
+  echo ""
+
 }
+
 
 function installUbuntu {
   # print commands (useful for debugging)
