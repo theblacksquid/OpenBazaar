@@ -111,7 +111,7 @@ report.
 Maybe the project is not yet working on your favourite hardware or software
 architecture; maybe a bug in our codebase may be causing too much trouble;
 perhaps you'd like to see the project uphold to higher standards before you
-use it. We definetely want your input on this! If you feel your programming
+use it. We definitely want your input on this! If you feel your programming
 skills and your understanding of the project is sufficient, we will be glad
 if you helped us. Just go to the
 [open issues page](https://github.com/OpenBazaar/OpenBazaar/issues?state=open),
@@ -244,7 +244,7 @@ The following serve as checklists for the release maintainer:
 OpenBazaar is security-related software. We make heavy use of cryptography and
 the blockchain. We employ
 [Ricardian contracts](https://github.com/OpenBazaar/OpenBazaar/wiki/Contracts-and-Listings),
-2-of-3 [multisig](http://bitcoin.stackexchange.com/a/3729/1587),
+2-of-3 [multisig](https://bitcoin.stackexchange.com/a/3729/1587),
 [proof-of-burn](https://blog.openbazaar.org/proof-of-burn-and-reputation-pledges/),
 trust-as-risk,
 [webs-of-trust](https://gist.github.com/dionyziz/e3b296861175e0ebea4b),

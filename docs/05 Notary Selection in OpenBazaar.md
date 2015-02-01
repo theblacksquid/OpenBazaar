@@ -54,4 +54,4 @@ Data fields within the Ricardian contract can be hashed prior to forwarding to t
 
 ## 5. Conclusion
 
-The measures described above are designed to mitigate the risk of collusion taking place over *OpenBazaar*, but they do not replace individual responsibility and vigilence all users must take on the network.
+The measures described above are designed to mitigate the risk of collusion taking place over *OpenBazaar*, but they do not replace individual responsibility and vigilance all users must take on the network.
