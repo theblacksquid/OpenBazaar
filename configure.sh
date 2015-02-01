@@ -57,10 +57,13 @@ function installMac {
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
   else
     echo "updating, upgrading, checking brew..."
+    ORIGINAL_CPPFLAGS=$CPPFLAGS
+    export CPPFLAGS=
     brew update
     brewDoctor
     brewUpgrade
     brew prune
+    export CPPFLAGS=$ORIGINAL_CPPFLAGS
   fi
 
   # Use brew's python 2.7, even if user has a system python. The brew version comes with pip and setuptools.
