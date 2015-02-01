@@ -23,6 +23,11 @@ a:hover {
   border: 1px solid #ddd;
 }
 
+/* Save button  */
+.btn-save {
+  text-align:right;
+}
+
 /*
  * Base structure
  */
