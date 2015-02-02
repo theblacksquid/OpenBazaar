@@ -57,7 +57,8 @@ def create_argument_parser():
         ('--bm-port',),
         ('--dev-nodes', '-n'),
         ('--http-port', '-q'),
-        ('--server-port', '-p')
+        ('--server-port', '-p'),
+        ('--mediator-port',)
     )
     for switches in int_args:
         key = arg_to_key(switches[0])
@@ -70,7 +71,8 @@ def create_argument_parser():
         ('--disable-stun-check',),
         ('--disable-upnp', '-j'),
         ('--enable-ip-checker',),
-        ('--seed-mode', '-S')
+        ('--seed-mode', '-S'),
+        ('--mediator', '-m')
     )
     for switches in flags:
         key = arg_to_key(switches[0])
@@ -168,6 +170,12 @@ openbazaar [options] <command>
     --bm-port
         Bitmessage API port
 
+    --mediator-port
+        Act as a UDP mediator on this port
+
+    --mediator
+        Have traffic mediated through mediator server
+
     -u, --market-id
         Market ID
 
@@ -261,6 +269,8 @@ def create_openbazaar_contexts(arguments, nat_status):
                                          arguments.bm_user,
                                          arguments.bm_pass,
                                          arguments.bm_port,
+                                         arguments.mediator_port,
+                                         arguments.mediator,
                                          arguments.seeds,
                                          arguments.seed_mode,
                                          arguments.dev_mode,
@@ -285,7 +295,7 @@ def create_openbazaar_contexts(arguments, nat_status):
 
             if i:
                 seed_mode = False
-                seeds = ['localhost']
+                seeds = [('127.0.0.1', 12345)]
             else:
                 seed_mode = True
                 seeds = []
@@ -302,6 +312,8 @@ def create_openbazaar_contexts(arguments, nat_status):
                                              arguments.bm_user,
                                              arguments.bm_pass,
                                              arguments.bm_port,
+                                             arguments.mediator_port + i,
+                                             arguments.mediator,
                                              seeds,
                                              seed_mode,
                                              arguments.dev_mode,

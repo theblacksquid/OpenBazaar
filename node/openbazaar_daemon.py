@@ -20,6 +20,8 @@ from node.transport import CryptoTransportLayer
 from node.util import open_default_webbrowser, is_mac
 from node.ws import WebSocketHandler
 
+from rudp.mediator import Mediator
+
 if is_mac():
     from node.util import osx_check_dyld_library_path
     osx_check_dyld_library_path()
@@ -61,6 +63,8 @@ class OpenBazaarContext(object):
                  bm_user,
                  bm_pass,
                  bm_port,
+                 mediator_port,
+                 mediator,
                  seeds,
                  seed_mode,
                  dev_mode,
@@ -82,6 +86,8 @@ class OpenBazaarContext(object):
         self.bm_user = bm_user
         self.bm_pass = bm_pass
         self.bm_port = bm_port
+        self.mediator_port = mediator_port
+        self.mediator = mediator
         self.seeds = seeds
         self.seed_mode = seed_mode
         self.dev_mode = dev_mode
@@ -106,6 +112,8 @@ class OpenBazaarContext(object):
                           "bm_user": self.bm_user,
                           "bm_pass": self.bm_pass,
                           "bm_port": self.bm_port,
+                          "mediator_port": self.mediator_port,
+                          "mediator": self.mediator,
                           "seeds": self.seeds,
                           "seed_mode": self.seed_mode,
                           "dev_mode": self.dev_mode,
@@ -137,11 +145,11 @@ class OpenBazaarContext(object):
                 'dev_nodes': 3,
                 'seed_mode': False,
                 'seeds': [
-                    'seed.openbazaar.org',
-                    'seed2.openbazaar.org',
-                    'seed.openlabs.co',
-                    'us.seed.bizarre.company',
-                    'eu.seed.bizarre.company'
+                    #('seed.openbazaar.org', 12345),
+                    ('205.186.156.31', 12345),
+                    #('seed.openlabs.co', 12345),
+                    #('us.seed.bizarre.company', 12345),
+                    #('eu.seed.bizarre.company', 12345)
                 ],
                 'disable_upnp': False,
                 'disable_stun_check': False,
@@ -154,6 +162,8 @@ class OpenBazaarContext(object):
                 'bm_user': None,
                 'bm_pass': None,
                 'bm_port': -1,
+                'mediator_port': 5000,
+                'mediator': False,
                 'enable_ip_checker': False,
                 'config_file': None}
 
@@ -173,6 +183,8 @@ class OpenBazaarContext(object):
             bm_user=defaults['bm_user'],
             bm_pass=defaults['bm_pass'],
             bm_port=defaults['bm_port'],
+            mediator_port=defaults['mediator_port'],
+            mediator=defaults['mediator'],
             seeds=defaults['seeds'],
             seed_mode=defaults['seed_mode'],
             dev_mode=defaults['dev_mode'],
@@ -195,6 +207,9 @@ class MarketApplication(tornado.web.Application):
         self.upnp_mapper = None
 
         Thread(target=reactor.run, args=(False,)).start()
+
+        # Mediator is used to route messages between NAT'd peers
+        #self.mediator = Mediator(self.ob_ctx.http_ip, self.ob_ctx.mediator_port)
 
         peers = ob_ctx.seeds if not ob_ctx.seed_mode else []
         self.transport.join_network(peers)
@@ -286,6 +301,19 @@ class MarketApplication(tornado.web.Application):
             '[%s] %s' % (self.market.market_id, 'root')
         )
         log.info("Received TERMINATE, exiting...")
+
+        # Send goodbye message to connected peers
+        for peer in self.transport.dht.activePeers:
+            peer.send_raw(
+                json.dumps({
+                    'type': 'goodbye',
+                    'pubkey': self.transport.pubkey,
+                    'senderGUID': self.transport.guid,
+                    'hostname': self.transport.hostname,
+                    'port': self.transport.port,
+                    'senderNick': self.transport.nickname
+                })
+            )
 
         self.cleanup_upnp_port_mapping()
         tornado.ioloop.IOLoop.instance().stop()
