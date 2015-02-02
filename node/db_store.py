@@ -166,9 +166,10 @@ class Obdb(object):
         query = "INSERT INTO %s(%s) VALUES(%s)" % (
             table, updatefield_part, setfield_part
         )
+        self._log.debug("query: %s", query)
         cur.execute(query, tuple(sets))
         lastrowid = cur.lastrowid
-        self._log.debug("query: %s", query)
+
         if lastrowid:
             return lastrowid
 

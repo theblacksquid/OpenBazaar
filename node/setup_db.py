@@ -101,7 +101,8 @@ _SCHEMA = (
         'peers',
         (
             'id INTEGER PRIMARY KEY AUTOINCREMENT',
-            'uri TEXT',
+            'hostname TEXT',
+            'port TEXT',
             'pubkey TEXT',
             'nickname TEXT',
             # not sure if peers.market_id is actually supposed to be a TEXT
@@ -143,7 +144,7 @@ _SCHEMA = (
             'arbiterDescription TEXT',
             'trustedArbiters TEXT',
             'privkey TEXT',
-            'obelisk TEXT',
+            'obelisk TEXT DEFAULT "obelisk-baltic.airbitz.co:9091"',
             'notaries TEXT',
             'notary BOOLEAN',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
