@@ -91,6 +91,8 @@ angular.module('app')
 
                 Notifier.success('Success', 'Notary added successfully.');
 
+                $scope.getNotaries();
+
                 if (!$scope.$$phase) {
                     $scope.$apply();
                 }
@@ -103,7 +105,6 @@ angular.module('app')
 
             $scope.removeNotary = function(notaryGUID) {
 
-                $('#notary_'+notaryGUID).parent().hide();
                 Connection.send('remove_trusted_notary', { 'type': 'remove_trusted_notary',
                     'guid': notaryGUID
                     }

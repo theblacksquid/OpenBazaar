@@ -216,7 +216,7 @@ hr { border-top:#bbb; }
 
 .fileinput .fileinput-preview {
   border:none;
-  background-image:url('img/no-photo.png');
+  background-image:url('../img/no-photo.png');
   background-size:150px 150px;
   background-repeat: no-repeat;
   background-position:center;

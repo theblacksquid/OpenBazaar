@@ -91,8 +91,17 @@ angular.module('app')
                 $scope.awaitingShop = guid;
                 console.log('Querying for shop: ', guid);
 
+                // Tell the user store is probably offline if no response
+                setTimeout(function() {
+                    if($scope.page_loading) {
+                        $scope.page_loading = false;
+                        $scope.page_unreachable = true;
+                        $scope.$apply();
+                    }
+                }, 5000);
+
                 var query = {
-                    'type': 'query_page',
+                    'type': 'query_store_listings',
                     'findGUID': guid
                 };
 
@@ -229,7 +238,7 @@ angular.module('app')
                         $('#listing-loader').show();
                         $scope.store_listings = [];
                         $scope.queryStoreProducts($scope.guid);
-                        $scope.getNotaries();
+                        Connection.send('get_notaries', {});
                         break;
                     case 'storeOrders':
                         //$scope.storeOrdersPanel = true;
@@ -260,10 +269,6 @@ angular.module('app')
 
             $scope.addNotary = function(guid, nickname) {
 
-                //if(notaryGUID.length != 40 || !notaryGUID.match(/^[0-9a-z]+$/)) {
-                //    alert('Incorrect format for GUID');
-                //    return;
-                //}
                 $scope.page.isTrustedNotary = true;
 
                 Connection.send('add_trusted_notary', { 'type': 'add_trusted_notary',
@@ -272,8 +277,8 @@ angular.module('app')
                     }
                 );
 
+                Connection.send('refresh_settings', {});
                 Notifier.success('Success', 'Notary added successfully.');
-
 
 
             };

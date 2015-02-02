@@ -33,6 +33,7 @@ angular.module('app')
             $scope.$evalAsync( function( $scope ) {
 
                 Connection.$on('peer', function(e, msg){ $scope.add_peer(msg); });
+                Connection.$on('goodbye', function(e, msg){ $scope.goodbye(msg); });
                 Connection.$on('order_notify', function(e, msg){ $scope.order_notify(msg); });
                 Connection.$on('peers', function(e, msg){ $scope.update_peers(msg); });
                 Connection.$on('peer_remove', function(e, msg){ $scope.remove_peer(msg); });
@@ -64,7 +65,7 @@ angular.module('app')
                 Connection.send('peers', {});
             };
 
-            //$interval(refresh_peers,60000,0,true);
+            //$interval(refresh_peers,20000,0,true);
 
             /**
              * Create a shout and send it to all connected peers
@@ -245,15 +246,31 @@ angular.module('app')
 
             // Check if peer is already known by comparing the public key
             $scope.add_peer = function(msg) {
-                var alreadyExists = false;
-                angular.forEach($scope.peers,function(peer,index){
-                    if(peer.pubkey === msg.pubkey){
-                        alreadyExists = true;
-                    }
-                });
+                /* get index if peer is already known */
+                var index = [-1].concat($scope.peers).reduce(
+                    function(previousValue, currentValue, index, array) {
+                        return currentValue.guid == msg.guid ? index : previousValue;
+                    });
 
                 if(!alreadyExists){
                     $scope.peers.push(msg);
+                }
+            };
+
+            $scope.goodbye = function(msg) {
+
+                console.log('Goodbye');
+                /* get index if peer is already known */
+                var index = [-1].concat($scope.myself.peers).reduce(
+                    function(previousValue, currentValue, index, array) {
+                        return currentValue.guid == msg.senderGUID ? index : previousValue;
+                    });
+
+                if (index >= 0) {
+                    /* it is a new peer */
+                    console.log('Removing peer');
+                    $scope.myself.peers.splice(index, 1);
+                    $scope.peers = $scope.myself.peers;
                 }
             };
 

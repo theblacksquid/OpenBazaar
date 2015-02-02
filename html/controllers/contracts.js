@@ -133,7 +133,7 @@ angular.module('app')
 
                         contract = {};
                         contract.Contract_Metadata = {
-                            "OBCv": "0.1-alpha",
+                            "OBCv": "0.4",
                             "category": "physical_goods",
                             "subcategory": "fixed_price",
                             "contract_nonce": "01",
@@ -168,44 +168,15 @@ angular.module('app')
                             }
                         });
 
-                        var imgUpload = document.getElementById('inputProductImage').files[0];
+                        console.log(document.getElementById('image-thumb'));
+                        product_image = document.getElementById('image-thumb').src;
+                        contract.Contract.item_images.image1 = product_image;
 
-                        if (imgUpload) {
-
-                            if (imgUpload.type !== '' && $.inArray(imgUpload.type, ['image/jpeg', 'image/gif', 'image/png']) != -1) {
-
-                                var r = new FileReader();
-                                r.onloadend = function(e) {
-                                    var data = e.target.result;
-
-                                    contract.Contract.item_images.image1 = imgUpload.result;
-
-                                    console.log(contract);
-                                    Connection.send("create_contract", contract);
-                                    Notifier.success('Success', 'Contract saved successfully.');
-                                    Connection.send("query_contracts", {});
+                        Connection.send("create_contract", contract);
+                        Notifier.success('Success', 'Contract saved successfully.');
+                        Connection.send("query_contracts", {});
 
 
-                                };
-                                r.readAsArrayBuffer(imgUpload);
-
-
-                            } else {
-
-                                console.log(contract);
-                                Connection.send("create_contract", contract);
-                                Notifier.success('Success', 'Contract saved successfully.');
-                                Connection.send("query_contracts", {});
-
-                            }
-
-                        } else {
-                            console.log(contract);
-                            Connection.send("create_contract", contract);
-
-                            Connection.send("query_contracts", {});
-
-                        }
                     }
                     $modalInstance.dismiss('cancel');
                 };
