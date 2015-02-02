@@ -4,7 +4,7 @@
 # configure.sh - Setup your OpenBazaar development environment in one step.
 #
 # If you are a Ubuntu or MacOSX user, and you've already checked out
-# the OpenBazaar sourcecode from the git repository; you can try 
+# the OpenBazaar sourcecode from the git repository; you can try
 # configuring/installing OpenBazaar by simply executing this script
 # instead of following the build instructions in the OpenBazaar Wiki
 # https://github.com/OpenBazaar/OpenBazaar/wiki/Build-Instructions
@@ -79,7 +79,7 @@ function installMac {
   # brew convention abhors all things 'sudo' anyway.
   brew install python
 
-  for dep in gpg sqlite3 wget openssl zmq autoenv
+  for dep in gpg sqlite3 wget openssl autoenv
   do
     if ! command_exists $dep ; then
       brew install $dep
@@ -135,7 +135,8 @@ function doneMessage {
 
 function installUbuntu {
   sudo apt-get --quiet update || echo 'apt-get update failed. Continuing...'
-  sudo apt-get --assume-yes install python-pip build-essential python-zmq rng-tools \
+  sudo apt-get --assume-yes install python-pip build-essential rng-tools \
+
   python-dev libjpeg-dev sqlite3 openssl \
   alien libssl-dev python-virtualenv lintian libjs-jquery
 
@@ -154,7 +155,7 @@ function installArch {
   fi
   # sudo pacman --sync --needed base-devel
   # Can conflict with multilib packages. Uncomment previous line if you don't already have base-devel installed
-  sudo pacman --sync --needed python2 python2-pip python2-virtualenv python2-pyzmq rng-tools libjpeg sqlite3 openssl
+  sudo pacman --sync --needed python2 python2-pip python2-virtualenv rng-tools libjpeg sqlite3 openssl
 
   make_env
 
@@ -203,7 +204,7 @@ function installRaspbian {
 }
 
 function installPortage {
-  sudo emerge --noreplace dev-lang/python:2.7 dev-python/pip pyzmq rng-tools gcc jpeg sqlite3 openssl dev-python/virtualenv
+  sudo emerge --noreplace dev-lang/python:2.7 dev-python/pip rng-tools gcc jpeg sqlite3 openssl dev-python/virtualenv
 
   make_env
 
@@ -238,8 +239,6 @@ function installSlack {
         sudo /usr/sbin/sbopkg -i pip
       fi
 
-      PYZVAR=$(grep "pyzmq" requirements.txt) # Get pip version.
-      /usr/bin/pip install --user "$PYZVAR"
       sudo pip install virtualenv
       wget http://sourceforge.net/projects/gkernel/files/rng-tools/5/rng-tools-5.tar.gz
       tar -xvf rng-tools-5.tar.gz
