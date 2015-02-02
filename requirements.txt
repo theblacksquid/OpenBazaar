@@ -5,7 +5,7 @@ psutil==2.2.0
 bitcoin==1.1.25
 pycountry==1.10
 pyelliptic==1.5.5
-pysqlcipher==2.6.3-1
+pysqlcipher==2.6.4
 pystun==0.1.0
 python-gnupg==0.3.7
 python-obelisk==0.1.3
