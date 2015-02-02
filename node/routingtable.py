@@ -79,7 +79,7 @@ class RoutingTable(object):
         else:
             key2 = node_id2
 
-        if len(key1) != constants.HEX_NODE_ID_LEN:
+        if key1 and len(key1) != constants.HEX_NODE_ID_LEN:
             raise ValueError(
                 "node_id1 has invalid length %d; must be %d" % (
                     len(key1),
@@ -87,7 +87,7 @@ class RoutingTable(object):
                 )
             )
 
-        if len(key2) != constants.HEX_NODE_ID_LEN:
+        if key2 and len(key2) != constants.HEX_NODE_ID_LEN:
             raise ValueError(
                 "node_id2 has invalid length %d; must be %d" % (
                     len(key2),
@@ -291,6 +291,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
                     # Put the new contact in our replacement cache for the
                     # corresponding KBucket (or update it's position if it
                     # exists already)
+
                     if bucket_index not in self.replacement_cache:
                         self.replacement_cache[bucket_index] = []
                     if contact in self.replacement_cache[bucket_index]:
@@ -335,7 +336,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
                         self.replacement_cache.pop(0)
                     self.replacement_cache[bucket_index].append(contact)
 
-    def find_close_nodes(self, key, count, node_id=None):
+
         """
         Find a number of known nodes closest to the node/value with the
         specified key.
@@ -446,9 +447,19 @@ class OptimizedTreeRoutingTable(RoutingTable):
                 # No cached contact for this bucket.
                 pass
             else:
-                self.buckets[bucket_index].add_contact(cached)
+                self.buckets[bucket_index].addContact(cached)
         finally:
             self.log.datadump('Contacts: %s', self.buckets[bucket_index].contacts)
+
+    def updateContact(self, contact):
+        """
+        Replace existing contact with updated contact
+
+        :param contact:
+        :return:
+        """
+        bucket_index = self.kbucketIndex(contact.guid)
+        self.buckets[bucket_index].updateContact(contact)
 
     def touch_kbucket(self, node_id, timestamp=None):
         """
@@ -459,6 +470,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
         """
         if timestamp is None:
             timestamp = int(time.time())
+
         bucket_index = self.kbucket_index(node_id)
         self.buckets[bucket_index].last_accessed = timestamp
 
