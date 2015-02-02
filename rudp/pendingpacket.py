@@ -18,7 +18,7 @@ class PendingPacket():
         self._sending_count = 0
 
         self.log = logging.getLogger(
-            '%s' % (self.__class__.__name__)
+            '%s' % self.__class__.__name__
         )
 
         self.log.info('Init PendingPacket')

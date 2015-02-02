@@ -13,7 +13,7 @@ class PacketSender:
         self._src_port = transport.port
 
         self.log = logging.getLogger(
-            '%s' % (self.__class__.__name__)
+            '%s' % self.__class__.__name__
         )
 
         self.log.info('Init PacketSender')

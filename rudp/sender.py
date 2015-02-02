@@ -1,22 +1,20 @@
-from packet import Packet
-from pendingpacket import PendingPacket
-import constants
-import helpers
+from rudp.packet import Packet
+from rudp.pendingpacket import PendingPacket
+import rudp.constants
+import rudp.helpers
 import math
 import random
 import logging
 
 from pyee import EventEmitter
-from rudp.linkedlist import LinkedList
 import time
-from zmq.eventloop import ioloop
 
 
-class Window():
+class Window(object):
 
     def __init__(self, packets):
         self.log = logging.getLogger(
-            '%s' % (self.__class__.__name__)
+            '%s' % self.__class__.__name__
         )
         self.log.info('Init Window')
 
@@ -27,21 +25,20 @@ class Window():
     def send(self):
         # Our packets to send.
         pkts = list(self._packets)
-        packet_count = len(pkts)
 
         if len(pkts) < 1:
             self.ee.emit('done')
             return
 
         # The initial synchronization packet. Always send this first.
-        self._synchronization_packet = pkts.pop(0)
+        self.synchronization_packet = pkts.pop(0)
 
         # The final reset packet. It can be equal to the synchronization packet.
-        self._reset_packet = pkts.pop() if len(pkts) else self._synchronization_packet
+        self._reset_packet = pkts.pop() if len(pkts) else self.synchronization_packet
 
         # This means that the reset packet's acknowledge event thrown will be
         # different from that of the synchronization packet.
-        if self._reset_packet is not self._synchronization_packet:
+        if self._reset_packet is not self.synchronization_packet:
             @self._reset_packet.ee.on('acknowledge')
             def on_acknowledge():
                 self.log.debug('done for real')
@@ -49,7 +46,7 @@ class Window():
 
         # Will be used to handle the case when all non sync or reset packets have
         # been acknowledged.
-        @self._synchronization_packet.ee.on('acknowledge')
+        @self.synchronization_packet.ee.on('acknowledge')
         def on_sync_knowledge():
 
             self.log.debug('on_sync_knowledge')
@@ -59,7 +56,7 @@ class Window():
             # in it), or keep looping through each each non sync-reset packets until
             # they have been acknowledged.
 
-            if self._reset_packet is self._synchronization_packet:
+            if self._reset_packet is self.synchronization_packet:
                 self.log.debug('Sync Packet equals Reset Packet')
                 self.ee.emit('done')
                 return
@@ -93,7 +90,7 @@ class Window():
 
                 packet.send()
 
-        self._synchronization_packet.send()
+        self.synchronization_packet.send()
 
     def verify_acknowledgement(self, sequence_number):
 
@@ -103,12 +100,11 @@ class Window():
                 self._packets[i].acknowledge()
 
 
-
-class Sender:
+class Sender(object):
 
     def __init__(self, packet_sender):
         self.log = logging.getLogger(
-            '%s' % (self.__class__.__name__)
+            '%s' % self.__class__.__name__
         )
         self.log.info('Init Sender')
 
@@ -126,9 +122,9 @@ class Sender:
         #     self.log.debug('Waiting for windows')
         #     self._push()
 
-        chunks = helpers.splitArrayLike(data, constants.UDP_SAFE_SEGMENT_SIZE)
+        chunks = rudp.helpers.splitArrayLike(data, rudp.constants.UDP_SAFE_SEGMENT_SIZE)
         self.log.debug('Sending %d chunks' % len(chunks))
-        windows = helpers.splitArrayLike(chunks, constants.WINDOW_SIZE)
+        windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
         self._windows = self._windows + windows
         self._windows = [x for x in self._windows if x != []]
         self.log.debug('Windows: %s' % self._windows)
@@ -136,13 +132,12 @@ class Sender:
 
     def _push(self):
 
-        print int(time.time()), self._last_sent
-
         self.log.debug('self._sending: %s' % self._sending)
-        
+
         if not self._sending and len(self._windows):
             self._last_sent = int(time.time())
-            self._base_sequence_number = math.floor(random.random() * (constants.MAX_SIZE - constants.WINDOW_SIZE))
+            self._base_sequence_number = math.floor(random.random() *
+                                                    (rudp.constants.MAX_SIZE - rudp.constants.WINDOW_SIZE))
             window = self._windows.pop(0)
 
             def get_packet(i, pdata):
@@ -173,39 +168,7 @@ class Sender:
         else:
             self.log.debug('None of the above')
 
-        # def pushit():
-        #
-        #     if (not self._sending or self._counter > 10) and len(self._windows):
-        #
-        #         self._base_sequence_number = math.floor(random.random() * (constants.MAX_SIZE - constants.WINDOW_SIZE))
-        #         window = self._windows.pop(0)
-        #
-        #         def get_packet(i, pdata):
-        #             packet = Packet(float(i) + self._base_sequence_number, pdata, not i, i is (len(window) - 1))
-        #             return PendingPacket(packet, self._packet_sender)
-        #
-        #         packets = [get_packet(i, data) for i, data in enumerate(window)]
-        #         to_send = Window(packets)
-        #
-        #         self._sending = to_send
-        #
-        #         @self._sending.ee.on('done')
-        #         def on_done():
-        #             self.log.debug('_sending done')
-        #             self._sending = None
-        #             self._counter = 0
-        #             self._push()
-        #
-        #         to_send.send()
-        #     else:
-        #         if len(self._windows):
-        #             self._counter += 1
-        #             self.log.debug('Cannot push %d' % self._counter)
-        #             ioloop.IOLoop.instance().call_later(1, pushit)
-        #
-        # pushit()
-
-    def verifyAcknowledgement(self, sequence_number):
+    def verify_acknowledgement(self, sequence_number):
         self.log.debug('Verifying Acknowledgement: %s', self._sending)
         if self._sending:
             self._sending.verify_acknowledgement(sequence_number)

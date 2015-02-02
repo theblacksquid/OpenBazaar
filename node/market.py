@@ -21,6 +21,7 @@ from node.crypto_util import Cryptor
 from node.data_uri import DataURI
 from node.orders import Orders
 from node.protocol import proto_page, query_page
+import time
 
 
 class Market(object):
@@ -293,6 +294,7 @@ class Market(object):
 
     def remove_trusted_notary(self, guid):
         """Not trusted to selected notary. Dlete notary from the local list"""
+        self.log.debug('Notaries %s' % self.settings)
         notaries = self.settings.get('notaries')
         notaries = ast.literal_eval(notaries)
 
@@ -649,7 +651,8 @@ class Market(object):
         """Query network for node"""
         self.log.info("Searching network for node: %s", find_guid)
         msg = query_page(find_guid)
-        msg['uri'] = self.transport.uri
+        msg['hostname'] = self.transport.hostname
+        msg['port'] = self.transport.port
         msg['senderGUID'] = self.transport.guid
         msg['sin'] = self.transport.sin
         msg['pubkey'] = self.transport.pubkey
@@ -658,26 +661,20 @@ class Market(object):
 
     def validate_on_query_page(self, *data):
         self.log.debug('Validating on query page message.')
-        keys = ("senderGUID", "uri", "pubkey", "senderNick")
+        keys = ("senderGUID", "hostname", "port", "pubkey", "senderNick")
         return all(k in data[0] for k in keys)
 
-    def on_query_page(self, peer):
+    def on_query_page(self, msg):
         """Return your page info if someone requests it on the network"""
         self.log.info("Someone is querying for your page")
         settings = self.get_settings()
 
-        new_peer = self.transport.get_crypto_peer(
-            peer['senderGUID'],
-            peer['uri'],
-            pubkey=peer['pubkey'],
-            nickname=peer['senderNick']
-        )
-
+        peer = self.dht.routingTable.getContact(msg['senderGUID'])
         def send_page_query():
             """Send a request for the local identity page"""
-            new_peer.start_handshake()
 
-            new_peer.send(proto_page(
+            self.log.debug('Sending page')
+            peer.send(proto_page(
                 self.transport.uri,
                 self.transport.pubkey,
                 self.transport.guid,
@@ -721,6 +718,7 @@ class Market(object):
                 contract = contract
                 contract['type'] = "listing_result"
                 self.transport.send(contract, peer['senderGUID'])
+                self.log.info('Send listing result')
 
     def validate_on_peer(self, *data):
         self.log.debug('Validating on peer message.')

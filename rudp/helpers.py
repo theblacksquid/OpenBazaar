@@ -17,6 +17,7 @@ def splitArrayLike(data, length):
 
     return retval
 
+
 def set_interval(func, sec=0, times=3):
     def func_wrapper():
         i = 1
@@ -27,6 +28,7 @@ def set_interval(func, sec=0, times=3):
     t = threading.Timer(sec, func_wrapper)
     t.start()
     return t
+
 
 def sort_by_sequence(packet_a, packet_b):
     return packet_a.get_sequence_number() - packet_b.get_sequence_number()

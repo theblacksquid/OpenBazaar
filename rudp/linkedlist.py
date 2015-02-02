@@ -28,7 +28,7 @@ class LinkedList():
         self._current_node = None
 
         self.log = logging.getLogger(
-            '%s' % (self.__class__.__name__)
+            '%s' % self.__class__.__name__
         )
 
     def insert(self, obj):
@@ -94,12 +94,6 @@ class LinkedList():
         if not parentNode._child_node:
             parentNode._child_node = Node(obj)
             return LinkedList.insertion_result.get('INSERTED')
-
-        #self.log.debug('Inserting Object [%s] into %s', obj._payload, parentNode)
-        # node_array = self.toArray()
-        # for node in node_array:
-        #     self.log.debug('Node: %s' % node._payload)
-
 
         order = self._order_by(obj, parentNode._child_node.value)
 

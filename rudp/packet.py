@@ -45,7 +45,7 @@ class Packet:
             self._payload = payload
 
         self.log = logging.getLogger(
-            '%s' % (self.__class__.__name__)
+            '%s' % self.__class__.__name__
         )
 
     @staticmethod

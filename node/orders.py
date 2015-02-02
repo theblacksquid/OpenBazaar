@@ -22,6 +22,7 @@ class Orders(object):
         BID = 'Bid'
         BUYER_PAID = 'Buyer Paid'
         NEED_TO_PAY = 'Need to Pay'
+        WAITING_FOR_MERCHANT = 'Order Pending'
         NEW = 'New'
         NOTARIZED = 'Notarized'
         PAID = 'Paid'
@@ -65,6 +66,10 @@ class Orders(object):
             self.log.info('You received a notarized contract')
             self.handle_notarized_order(msg)
 
+        if state == self.State.WAITING_FOR_PAYMENT:
+            self.log.info('The merchant accepted your order')
+            self.handle_accepted_order(msg)
+
         if state == self.State.PAID:
             self.log.info('You received a payment notification')
             self.handle_paid_order(msg)
@@ -85,6 +90,7 @@ class Orders(object):
         if state in [Orders.State.WAITING_FOR_PAYMENT,
                      Orders.State.NOTARIZED,
                      Orders.State.NEED_TO_PAY,
+                     Orders.State.WAITING_FOR_MERCHANT,
                      Orders.State.PAID,
                      Orders.State.BUYER_PAID,
                      Orders.State.SHIPPED]:
@@ -96,6 +102,7 @@ class Orders(object):
 
         if state in [Orders.State.NOTARIZED,
                      Orders.State.NEED_TO_PAY,
+                     Orders.State.WAITING_FOR_MERCHANT,
                      Orders.State.PAID,
                      Orders.State.BUYER_PAID,
                      Orders.State.SHIPPED]:
@@ -105,12 +112,13 @@ class Orders(object):
 
         if state in (Orders.State.NEED_TO_PAY,
                      Orders.State.NOTARIZED,
+                     Orders.State.WAITING_FOR_MERCHANT,
                      Orders.State.BUYER_PAID,
                      Orders.State.PAID,
                      Orders.State.SHIPPED):
             offer_data_json = offer_data[0:index_of_seller_signature - 2]
             offer_data_json = json.loads(offer_data_json)
-        elif state in Orders.State.WAITING_FOR_PAYMENT:
+        elif state in (Orders.State.WAITING_FOR_PAYMENT, Orders.State.WAITING_FOR_MERCHANT):
             offer_data_json = offer_data[0:index_of_seller_signature - 4]
             offer_data_json = json.loads(str(offer_data_json))
         else:
@@ -196,6 +204,7 @@ class Orders(object):
         if _order['state'] in (Orders.State.NEED_TO_PAY,
                                Orders.State.NOTARIZED,
                                Orders.State.WAITING_FOR_PAYMENT,
+                               Orders.State.WAITING_FOR_MERCHANT,
                                Orders.State.PAID,
                                Orders.State.BUYER_PAID,
                                Orders.State.SHIPPED):
@@ -232,6 +241,12 @@ class Orders(object):
         merchant_bitmessage = offer_data_json.get('Seller', '').get('seller_Bitmessage')
         buyer_bitmessage = buyer_data_json.get('Buyer', '').get('buyer_Bitmessage')
 
+        self.log.debug('Shipping Address: %s' % _order.get('shipping_address'))
+        if _order.get('buyer') == self.transport.guid:
+            shipping_address = self.get_shipping_address()
+        else:
+            shipping_address = _order.get('shipping_address')
+
         # Get order prototype object before storing
         order = {"id": _order['id'],
                  "state": _order.get('state'),
@@ -241,7 +256,7 @@ class Orders(object):
                  "order_id": _order.get('order_id'),
                  "item_price": _order.get('item_price'),
                  "shipping_price": _order.get('shipping_price'),
-                 "shipping_address": str(_order.get('shipping_address')),
+                 "shipping_address": shipping_address,
                  "total_price": total_price,
                  "merchant_bitmessage": merchant_bitmessage,
                  "buyer_bitmessage": buyer_bitmessage,
@@ -489,7 +504,7 @@ class Orders(object):
                 merchant = self.transport.dht.routing_table.get_contact(
                     contract_data_json['Seller']['seller_GUID']
                 )
-                order_to_notary['merchantURI'] = merchant.address
+                order_to_notary['merchantURI'] = merchant.hostname+':'+str(merchant.port)
                 order_to_notary['merchantGUID'] = merchant.guid
                 order_to_notary['merchantNickname'] = merchant.nickname
                 order_to_notary['merchantPubkey'] = merchant.pub
@@ -518,10 +533,11 @@ class Orders(object):
 
     def get_shipping_address(self):
 
-        settings = self.transport.settings
+        settings = self.db.selectEntries("settings", {"market_id": self.market_id})
+        settings = settings[0]
 
         shipping_info = {
-            "street1": settings.get('street1'),
+            "street1": settings['street1'],
             "street2": settings.get('street2'),
             "city": settings.get('city'),
             "stateRegion": settings.get('stateRegion'),
@@ -531,6 +547,7 @@ class Orders(object):
             "countryCode": settings.get('countryCode'),
             "recipient_name": settings.get('recipient_name')
         }
+        self.log.debug('Shipping Info: %s' % shipping_info)
         return shipping_info
 
     def new_order(self, msg):
@@ -549,7 +566,7 @@ class Orders(object):
         buyer['Buyer']['buyer_GUID'] = self.transport.guid
         buyer['Buyer']['buyer_BTC_uncompressed_pubkey'] = msg['btc_pubkey']
         buyer['Buyer']['buyer_pgp'] = self.transport.settings['PGPPubKey']
-        buyer['Buyer']['buyer_Bitmessage'] = self.transport.settings['bitmessage']
+        #buyer['Buyer']['buyer_Bitmessage'] = self.transport.settings['bitmessage']
         buyer['Buyer']['buyer_deliveryaddr'] = seller.encrypt(json.dumps(self.get_shipping_address())).encode(
             'hex')
         buyer['Buyer']['note_for_seller'] = msg['message']
@@ -617,10 +634,27 @@ class Orders(object):
     def handle_bid_order(self, bid):
 
         self.log.info('Bid Order: %s', bid)
+        new_peer = self.transport.dht.routingTable.getContact(bid.get('merchantGUID'))
 
-        new_peer = self.transport.get_crypto_peer(bid.get('merchantGUID'),
-                                                  bid.get('merchantURI'),
-                                                  bid.get('merchantPubkey'))
+        # for x in self.transport.dht.activePeers:
+        #     if x.guid == bid.get('merchantGUID'):
+        #         new_peer = x
+        #         break
+
+        peerinfo = bid.get('merchantURI').split(':', 1)
+        hostname, port = peerinfo[0], int(peerinfo[1])
+
+        new_peer = self.transport.dht.add_peer(hostname,
+                                               port,
+                                               bid.get('merchantPubkey'),
+                                               bid.get('merchantGUID'))
+
+            # new_peer = self.transport.get_crypto_peer(bid.get('merchantGUID'),
+            #                                           hostname,
+            #                                           port,
+            #                                           bid.get('merchantPubkey'))
+
+        self.log.debug('NEW PEER %s', new_peer)
 
         # Generate unique id for this bid
         order_id = random.randint(0, 1000000)
@@ -760,7 +794,11 @@ class Orders(object):
         }
 
         if new_peer is not None:
+            self.log.debug('Sending order to Merchant')
             new_peer.send(notarized_order)
+        else:
+            self.log.error('Cannot send release to Merchant.')
+
         self.transport.send(notarized_order, bid_data_json['Buyer']['buyer_GUID'])
 
         self.log.info('Sent notarized contract to Seller and Buyer')
@@ -779,7 +817,7 @@ class Orders(object):
         index_of_seller_signature = offer_data.find('- - -----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
         offer_data_json = offer_data[0:index_of_seller_signature]
         self.log.info('Offer Data: %s', offer_data_json)
-        offer_data_json = json.loads(str(offer_data_json))
+        #offer_data_json = json.loads(str(offer_data_json))
 
         bid_data_index = offer_data.find('"Buyer"', index_of_seller_signature, len(offer_data))
         end_of_bid_index = offer_data.find('- -----BEGIN PGP SIGNATURE', bid_data_index, len(offer_data))
@@ -798,6 +836,7 @@ class Orders(object):
              "updated": time.time()},
             {'buyer_order_id': buyer_order_id}
         )
+
         if self.transport.handler is not None:
             self.transport.handler.send_to_client(None, {"type": "order_notify",
                                                          "msg": "A buyer just paid for an order."})
@@ -831,6 +870,22 @@ class Orders(object):
         if self.transport.handler is not None:
             self.transport.handler.send_to_client(None, {"type": "order_notify",
                                                          "msg": "The seller just shipped your order."})
+
+    def handle_accepted_order(self, msg):
+        self.db.updateEntries(
+                "orders",
+                {
+                    'state': Orders.State.NEED_TO_PAY,
+                    "updated": time.time()
+                },
+                {
+                    'order_id': msg.get('buyer_order_id')
+                }
+            )
+
+        self.transport.handler.send_to_client(None, {"type": "order_notify",
+                                                     "msg": "Your order requires payment now."})
+
 
     def handle_notarized_order(self, msg):
 
@@ -878,6 +933,7 @@ class Orders(object):
 
         if seller_guid == self.transport.guid:
             self.log.info('I am the seller!')
+
             state = 'Waiting for Payment'
 
             merchant_order_id = random.randint(0, 1000000)
@@ -888,6 +944,13 @@ class Orders(object):
                 bid_data_json['Buyer']['buyer_GUID'],
                 bid_data_json['Buyer']['buyer_order_id']
             )
+
+            # Send notice to order receipt
+            self.transport.send({
+                'type': 'order',
+                'state': Orders.State.WAITING_FOR_PAYMENT,
+                'buyer_order_id': bid_data_json['Buyer']['buyer_order_id'],
+            }, bid_data_json['Buyer']['buyer_GUID'])
 
             self.db_connection.insert_entry(
                 "orders",
@@ -916,7 +979,7 @@ class Orders(object):
 
         else:
             self.log.info('I am the buyer')
-            state = 'Need to Pay'
+            state = Orders.State.WAITING_FOR_MERCHANT
 
             self.db_connection.update_entries(
                 "orders",
@@ -941,4 +1004,4 @@ class Orders(object):
             )
 
             self.transport.handler.send_to_client(None, {"type": "order_notify",
-                                                         "msg": "Your order requires payment now."})
+                                                         "msg": "Your order has been notarized."})

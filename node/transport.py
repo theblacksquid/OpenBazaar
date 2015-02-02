@@ -1,3 +1,4 @@
+import constants
 from collections import defaultdict
 import hashlib
 import json
@@ -12,12 +13,13 @@ import gnupg
 import obelisk
 from bitcoin.main import privkey_to_pubkey, random_key
 from pysqlcipher.dbapi2 import OperationalError, DatabaseError
-import zmq
 from zmq.eventloop import ioloop
 from zmq.eventloop.ioloop import PeriodicCallback
 
 from node import connection, network_util, trust
 from node.dht import DHT
+from rudp.packet import Packet
+import socket
 
 
 class TransportLayer(object):
@@ -28,16 +30,15 @@ class TransportLayer(object):
         self.callbacks = defaultdict(list)
         self.timeouts = []
         self.port = ob_ctx.server_port
-        self.ip = ob_ctx.server_ip
+        self.hostname = ob_ctx.server_ip
         self.guid = guid
         self.market_id = ob_ctx.market_id
         self.nickname = nickname
         self.handler = None
-        self.uri = network_util.get_peer_url(self.ip, self.port)
+        self.uri = network_util.get_peer_url(self.hostname, self.port)
         self.listener = None
 
-        # Create one ZeroMQ context to be reused and reduce overhead
-        self.ctx = zmq.Context.instance()
+        self.mediate_peers = []
 
         self.log = logging.getLogger(
             '[%s] %s' % (ob_ctx.market_id, self.__class__.__name__)
@@ -91,15 +92,21 @@ class CryptoTransportLayer(TransportLayer):
         self.market_id = ob_ctx.market_id
         self.nick_mapping = {}
         self.uri = network_util.get_peer_url(ob_ctx.server_ip, ob_ctx.server_port)
-        self.ip = ob_ctx.server_ip
+        self.hostname = ob_ctx.server_ip
         self.nickname = ""
         self.dev_mode = ob_ctx.dev_mode
 
+        self._connections = {}
+
         self.all_messages = (
             'hello',
+            'goodbye',
             'findNode',
             'findNodeResponse',
-            'store'
+            'store',
+            'mediate',
+            'register',
+            'punch',
         )
 
         self._setup_settings()
@@ -110,6 +117,17 @@ class CryptoTransportLayer(TransportLayer):
 
         if ob_ctx.enable_ip_checker and not ob_ctx.seed_mode and not ob_ctx.dev_mode:
             self.start_ip_address_checker()
+
+    def start_mediation(self, guid):
+        self.log.debug('Starting mediation %s' % self.ob_ctx)
+        if self.ob_ctx.mediator:
+            for peer in self.dht.activePeers:
+                if peer.hostname == '205.186.156.31':
+                    peer.send({
+                        'type': 'mediate',
+                        'guid': self.guid,
+                        'guid2': guid
+                    })
 
     def start_listener(self):
         self.add_callbacks([
@@ -124,10 +142,49 @@ class CryptoTransportLayer(TransportLayer):
         ])
 
         self.listener = connection.CryptoPeerListener(
-            self.ip, self.port, self.pubkey, self.secret, self.ctx,
+            self.hostname, self.port, self.pubkey, self.secret,
             self.guid,
             self._on_message
         )
+
+        @self.listener.ee.on('on_message')
+        def on_message(msg):
+
+            data, addr = msg[0], msg[1]
+            self.log.debug('on_message: %s %s %s' % (data, 'from', addr))
+
+            try:
+                data_body = json.loads(data)
+
+                # Peer metadata
+                guid = data_body.get('guid')
+                pubkey = data_body.get('pubkey')
+                port = addr[1]
+                hostname = addr[0]
+                nickname = data_body.get('nick')
+
+                inbound_peer = self.dht.add_peer(hostname, port, pubkey, guid, nickname)
+
+                if inbound_peer:
+
+                    packet = Packet(data, buffer=True)
+
+                    if packet._finish:
+                        inbound_peer.reset()
+                        return
+                        # del self._connections[address_key]
+                    else:
+                        def receive_packet():
+                            inbound_peer._rudp_connection.receive(packet)
+
+                        receive_packet()
+
+                    self.log.debug('Updated peers: %s', self.dht.activePeers)
+                else:
+                    self.log.debug('Did not find a peer')
+            except Exception as e:
+                self.log.error('Could not deserialize message: %s' % e)
+
 
         self.listener.set_ok_msg({
             'type': 'ok',
@@ -136,6 +193,7 @@ class CryptoTransportLayer(TransportLayer):
             'senderNick': self.nickname
         })
         self.listener.listen()
+
 
     def start_ip_address_checker(self):
         '''Checks for possible public IP change'''
@@ -160,16 +218,18 @@ class CryptoTransportLayer(TransportLayer):
             self.dht.iterative_find(self.guid, [], 'findNode')
 
     def save_peer_to_db(self, peer_tuple):
-        uri = peer_tuple[0]
-        pubkey = peer_tuple[1]
-        guid = peer_tuple[2]
-        nickname = peer_tuple[3]
+        hostname = peer_tuple[0]
+        port = peer_tuple[1]
+        pubkey = peer_tuple[2]
+        guid = peer_tuple[3]
+        nickname = peer_tuple[4]
 
         # Update query
-        self.db_connection.delete_entries("peers", {"uri": uri, "guid": guid}, "OR")
+        self.db.deleteEntries("peers", {"hostname": hostname, "guid": guid}, "OR")
         if guid is not None:
-            self.db_connection.insert_entry("peers", {
-                "uri": uri,
+            self.db.insertEntry("peers", {
+                "hostname": hostname,
+                "port": port,
                 "pubkey": pubkey,
                 "guid": guid,
                 "nickname": nickname,
@@ -203,12 +263,124 @@ class CryptoTransportLayer(TransportLayer):
             self.bitmessage_api = None
         return result
 
+    def validate_on_goodbye(self, msg):
+        self.log.debug('Validating goodbye message.')
+        return True
+
+    def on_goodbye(self, msg):
+        self.log.info('Received Goodbye: %s', json.dumps(msg, ensure_ascii=False))
+        self.dht.remove_peer(msg.get('senderGUID'))
+
+    def validate_on_mediate(self, msg):
+        """
+
+        :param msg:
+        :return:
+        """
+        self.log.debug('Validating mediate message.')
+        return self.ob_ctx.seed_mode
+
+    def on_mediate(self, msg):
+        self.log.info('Received Mediate Message: %s', json.dumps(msg, ensure_ascii=False))
+
+        def send_punches():
+
+            peer1, peer2 = None, None
+
+            # Send both peers a message to message each other
+            for x in self.dht.activePeers:
+                if x.guid == msg['senderGUID']:
+                    self.log.debug('Found guid')
+                    peer1 = x
+                if x.guid == msg['guid2']:
+                    self.log.debug('Found guid2')
+                    peer2 = x
+                if peer1 and peer2:
+                    continue
+
+            if peer1 and peer2:
+                self.log.debug('Sending Punches')
+
+                peer1.send_raw(json.dumps({
+                    'type': 'punch',
+                    'guid': peer2.guid,
+                    'hostname': peer2.hostname,
+                    'port': peer2.port
+                }))
+
+                peer2.send_raw(json.dumps({
+                    'type': 'punch',
+                    'guid': peer1.guid,
+                    'hostname': peer2.hostname,
+                    'port': peer2.port
+                }))
+            else:
+                ioloop.IOLoop.instance().call_later(1, send_punches)
+        send_punches()
+
+    def validate_on_punch(self, msg):
+        return True
+
+    def on_punch(self, msg):
+        self.log.debug('Got a punch request')
+
+        hostname, port = msg['hostname'], msg['port']
+        sock = socket.socket(socket.AF_INET, # Internet
+             socket.SOCK_DGRAM) # UDP
+
+        def send_packet(counter=0):
+            if counter < 5:
+                sock.sendto(json.dumps({}), (hostname, port))
+                ioloop.IOLoop.instance().call_later(.5, send_packet, (counter+1,))
+
+        send_packet()
+
+    def validate_on_register(self, msg):
+        self.log.debug('Validating register message.')
+        return self.ob_ctx.seed_mode
+
+    def on_register(self, msg):
+        self.log.info('Received register: %s', json.dumps(msg, ensure_ascii=False))
+
+        # Add entry to mediator table
+        self.mediate_peers = [x for x in self.mediate_peers if not x.get('guid') == msg['senderGUID']]
+        self.mediate_peers.append({
+            'guid': msg['senderGUID'],
+            'hostname': msg['hostname'],
+            'port': msg['port']
+        })
+
     def validate_on_hello(self, msg):
-        self.log.debugv('Validating ping message.')
+        self.log.debug('Validating hello message.')
         return True
 
     def on_hello(self, msg):
-        self.log.info('Pinged %s', json.dumps(msg, ensure_ascii=False))
+
+        self.log.info('Received Hello: %s', json.dumps(msg, ensure_ascii=False))
+
+        peer = self.dht.routingTable.getContact(msg['senderGUID'])
+
+        # new_peer = self.dht.add_peer(
+        #     msg['hostname'],
+        #     msg['port'],
+        #     msg['pubkey'],
+        #     msg['senderGUID'],
+        #     msg['senderNick'],
+        #     dump=True
+        # )
+
+        if peer:
+            peer.send_raw(
+                json.dumps({
+                    'type': 'helloResponse',
+                    'pubkey': self.pubkey,
+                    'senderGUID': self.guid,
+                    'hostname': self.hostname,
+                    'port': self.port,
+                    'senderNick': self.nickname,
+                    'v': constants.VERSION
+                })
+            )
 
     def validate_on_store(self, msg):
         self.log.debugv('Validating store value message.')
@@ -251,8 +423,8 @@ class CryptoTransportLayer(TransportLayer):
                 print 'Generating PGP keypair. This may take several minutes...'
                 gpg = gnupg.GPG()
                 input_data = gpg.gen_key_input(key_type="RSA",
-                                               key_length=2048,
-                                               name_email='gfy@gfy.com',
+                                               key_length=4096,
+                                               name_email='pgp@openbazaar.org',
                                                name_comment="Autogenerated by Open Bazaar",
                                                passphrase="P@ssw0rd")
                 assert input_data is not None
@@ -345,7 +517,7 @@ class CryptoTransportLayer(TransportLayer):
 
         # Connect up through seed servers
         for idx, seed in enumerate(seeds):
-            seeds[idx] = network_util.get_peer_url(seed, "12345")
+            seeds[idx] = (seed[0], int(seed[1]))
 
         # Connect to persisted peers
         db_peers = self.get_past_peers()
@@ -353,61 +525,78 @@ class CryptoTransportLayer(TransportLayer):
         known_peers = list(set(seeds).union(db_peers))
 
         for known_peer in known_peers:
-            self.dht.add_peer(known_peer)
 
-        # Populate routing table by searching for self
-        if known_peers:
-            # Check every one second if we are connected
-            # We could use a PeriodicCallback but I think this is simpler
-            # since this will be repeated in most cases less than 10 times
-            def join_callback():
-                # If we are not connected to any node, reschedule a check
-                if not self.dht.active_peers:
-                    ioloop.IOLoop.instance().call_later(1, join_callback)
-                else:
-                    self.search_for_my_node()
-            join_callback()
+            hostname, port = known_peer[0], known_peer[1]
+            peer_obj = self.get_crypto_peer(None, hostname, port)
+
+            peer_obj.send_raw(
+                json.dumps({
+                    'type': 'hello',
+                    'pubkey': self.pubkey,
+                    'senderGUID': self.guid,
+                    'hostname': self.hostname,
+                    'port': self.port,
+                    'senderNick': self.nickname,
+                    'v': constants.VERSION
+                })
+            )
+
+        # Populate routing table by searching for non-existent key
+        def join_callback():
+            if known_peers:
+                self.search_for_my_node()
+            else:
+                ioloop.IOLoop.instance().call_later(2, join_callback)
+        ioloop.IOLoop.instance().call_later(2, join_callback)
 
         if callback is not None:
             callback('Joined')
 
     def get_past_peers(self):
-        result = self.db_connection.select_entries("peers", {"market_id": self.market_id})
-        return [peer['uri'] for peer in result]
+        result = self.db.selectEntries("peers", {"market_id": self.market_id})
+        return [(peer['hostname'], peer['port']) for peer in result]
 
     def search_for_my_node(self):
         self.log.info('Searching for myself')
-        self.dht.iterative_find(self.guid, self.dht.known_nodes, 'findNode')
+        self.dht._iterativeFind('0000000000000000000000000000000000000000', [], 'findNode')
 
-    def get_crypto_peer(self, guid=None, uri=None, pubkey=None, nickname=None):
+    def get_crypto_peer(self, guid=None, hostname=None, port=None, pubkey=None, nickname=None):
         if guid == self.guid:
             self.log.error('Cannot get CryptoPeerConnection for your own node')
             return
 
-        self.log.debug(
-            'Getting CryptoPeerConnection'
-            '\nGUID: %s'
-            '\nURI: %s'
-            '\nPubkey:%s'
-            '\nNickname:%s',
-            guid, uri, pubkey, nickname
-        )
+        # self.log.debug(
+        #     'Getting CryptoPeerConnection'
+        #     '\nGUID: %s',
+        #     '\nHost: %s:%s' % (hostname, port),
+        #     '\nPubkey:%s'
+        #     '\nNickname:%s',
+        #     guid, hostname, '%d' % port, pubkey, nickname
+        # )
 
-        if uri not in self.peers:
-            self.peers[uri] = connection.CryptoPeerConnection(
-                self, uri, pubkey, guid=guid, nickname=nickname
+        if guid not in self.peers:
+            self.peers[guid] = connection.CryptoPeerConnection(
+                self,
+                hostname,
+                port,
+                pubkey,
+                guid=guid,
+                nickname=nickname,
+                socket=self.listener.socket
             )
         else:
             # FIXME this is wrong to do here, but it keeps this as close as
             # possible to the original pre-connection-reuse behavior
-            if guid:
-                self.peers[uri].guid = guid
+            if hostname:
+                self.peers[guid].hostname = hostname
+            if port:
+                self.peers[guid].port = port
             if pubkey:
-                self.peers[uri].pub = pubkey
+                self.peers[guid].pub = pubkey
             if nickname:
-                self.peers[uri].nickname = nickname
+                self.peers[guid].nickname = nickname
 
-        return self.peers[uri]
+        return self.peers[guid]
 
     def send(self, data, send_to=None, callback=None):
 
@@ -424,10 +613,10 @@ class CryptoTransportLayer(TransportLayer):
             if peer:
                 msg_type = data.get('type', 'unknown')
                 nickname = peer.nickname
-                uri = peer.address
+                hostname, port = peer.hostname, peer.port
 
                 self.log.info('Sending message type "%s" to "%s" %s %s',
-                              msg_type, nickname, uri, send_to)
+                              msgType, nickname, hostname, send_to)
                 self.log.datadump('Raw message: %s', data)
 
                 try:
@@ -468,25 +657,26 @@ class CryptoTransportLayer(TransportLayer):
         # we get a "clean" msg which is a dict holding whatever
 
         pubkey = msg.get('pubkey')
-        uri = msg.get('uri')
+        hostname = msg.get('hostname')
+        port = msg.get('port')
         guid = msg.get('senderGUID')
         nickname = msg.get('senderNick', '')[:120]
         msg_type = msg.get('type')
         namecoin = msg.get('senderNamecoin')
 
         # Checking for malformed URIs
-        if not network_util.is_valid_uri(uri):
-            self.log.error('Malformed URI: %s', uri)
-            return
+        # if not network_util.is_valid_uri(uri):
+        #     self.log.error('Malformed URI: %s', uri)
+        #     return
 
         # Validate the claimed namecoin in DNSChain
         if not trust.is_valid_namecoin(namecoin, guid):
             msg['senderNamecoin'] = ''
 
         self.log.info('Received message type "%s" from "%s" %s %s',
-                      msg_type, nickname, uri, guid)
+                      msgType, nickname, hostname, guid)
         self.log.datadump('Raw message: %s', json.dumps(msg, ensure_ascii=False))
-        self.dht.add_peer(uri, pubkey, guid, nickname)
+        #self.dht.add_peer(uri, pubkey, guid, nickname)
         self.trigger_callbacks(msg['type'], msg)
 
     def store(self, *args, **kwargs):

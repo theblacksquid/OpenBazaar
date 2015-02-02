@@ -2,13 +2,9 @@ from packet import Packet
 from linkedlist import LinkedList
 import constants
 import logging
-import json
 import helpers
 
 from pyee import EventEmitter
-import time
-import threading
-import base64
 
 
 class Receiver():
@@ -36,7 +32,7 @@ class Receiver():
         self._waiting = False
 
         self.log = logging.getLogger(
-            '%s' % (self.__class__.__name__)
+            '%s' % self.__class__.__name__
         )
 
     def reset(self):
@@ -71,14 +67,6 @@ class Receiver():
         except Exception as e:
             self.log.debug('Not full yet: %s' % e)
 
-        # Pass upstream to processor if message is complete
-        # if self._message_size == len(self._message):
-        #     self.ee.emit('data', {'payload': self._message, 'size': len(self._message)})
-        #     self._message_size = 0
-        #     self._message = ''
-        #     self._waiting = False
-
-
     def receive(self, packet):
 
         try:
@@ -93,9 +81,6 @@ class Receiver():
                 return
 
             self.log.debug('Incoming Packet #%s', packet._sequenceNumber)
-            #self.log.debug('Message Value: %s', self._message)
-            # if self._packets:
-            #     self.log.debug('Reset: %s Window Exceeded: %s', packet._reset, (packet._sequenceNumber >= (self._packets.currentValue()._sequenceNumber + constants.WINDOW_SIZE)))
             self.log.debug('Synced: %s, Sync Packet: %s', self._synced, packet._synchronize)
 
             if packet._synchronize and not self._synced:
@@ -207,7 +192,7 @@ class Receiver():
         result = self._packets.insert(packet)
 
         if result is LinkedList.insertion_result.get('INSERTED'):
-            self._pushIfExpectedSequence(packet)
+            self._push_if_expected_sequence(packet)
         elif result is LinkedList.insertion_result.get('EXISTS'):
             self._packet_sender.send(Packet.createAcknowledgementPacket(
                 packet._sequenceNumber,
@@ -215,7 +200,7 @@ class Receiver():
                 self._packet_sender._transport.pubkey
             ))
 
-    def _pushIfExpectedSequence(self, packet):
+    def _push_if_expected_sequence(self, packet):
 
         if packet.get_sequence_number() == self._next_sequence_number:
 
@@ -231,7 +216,7 @@ class Receiver():
 
             self._packets.seek()
             if self._packets.hasNext():
-                self._pushIfExpectedSequence(self._packets.nextValue())
+                self._push_if_expected_sequence(self._packets.nextValue())
 
     def end(self):
         self._closed = True

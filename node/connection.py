@@ -4,91 +4,121 @@ import logging
 import platform
 from pprint import pformat
 from urlparse import urlparse
+from pyee import EventEmitter
+from threading import Thread
+from rudp.connection import Connection
+from rudp.packetsender import PacketSender
+from rudp.packet import Packet
+import rudp.helpers
+import sys
+import time
+import threading
 
 import obelisk
-import zmq
-from zmq.error import ZMQError
-from zmq.eventloop import ioloop, zmqstream
+import socket
 
 from node import constants, network_util
 from node.crypto_util import Cryptor
 from node.guid import GUIDMixin
+from rudp.connection import Connection
+from rudp.packetsender import PacketSender
+import base64
 
 
 class PeerConnection(object):
-    def __init__(self, transport, address, nickname=""):
+    def __init__(self, transport, hostname, port=12345, nickname="", socket=None):
 
         self.transport = transport
-        self.address = address
+        self.hostname = hostname
+        self.port = port
         self.nickname = nickname
-
-        # Establishing a ZeroMQ stream object
-        self.ctx = transport.ctx
-        self.socket = self.ctx.socket(zmq.REQ)
-        self.socket.setsockopt(zmq.LINGER, 0)
-        self.socket.setsockopt(zmq.RECONNECT_IVL, 2000)
-        self.socket.setsockopt(zmq.RECONNECT_IVL_MAX, 16000)
-        self.stream = zmqstream.ZMQStream(
-            self.socket, io_loop=ioloop.IOLoop.current())
 
         self.log = logging.getLogger(
             '[%s] %s' % (self.transport.market_id, self.__class__.__name__)
         )
 
-        self._initiate_connection()
+        self.log.info('Created a peer connection object')
 
-    def _initiate_connection(self):
-        try:
-            self.socket.connect(self.address)
-        except zmq.ZMQError as err:
-            if err.errno != errno.EINVAL:
-                raise
-            self.socket.ipv6 = True
-            try:
-                self.socket.connect(self.address)
-            except zmq.ZMQError as err:
-                self.log.error('Bad URI %s', err)
+        self.ee = EventEmitter()
+        self.sock = socket
+
+        self.init_packetsender()
+
+    def init_packetsender(self):
+        self._packet_sender = PacketSender(
+            self.sock,
+            self.hostname,
+            self.port,
+            self.transport
+        )
+
+        self._rudp_connection = Connection(self._packet_sender)
+
+        self.packetsmasher = {}
+        self.message_size = 0
+        self.is_listening = True
+        self.hello = False
 
     def send(self, data, callback):
         self.send_raw(json.dumps(data), callback)
 
     def send_raw(self, serialized, callback=None):
-        self.stream.send(serialized)
+        data_encoded = serialized
+        # data = "{0}|{1}".format(len(data_encoded), data_encoded)
+        print type(data_encoded)
+        data_encoded = data_encoded.encode('hex')
+        data = str(len(data_encoded)) + '|' + data_encoded
+        self._rudp_connection.send(data)
 
-        def cb(_, msg):
-            try:
-                response = json.loads(msg[0])
-            except ValueError:
-                self.log.error('[send_raw] Bad JSON response: %s', msg[0])
-                return
-            self.log.datadump('[send_raw] response: %s', pformat(response))
+    def reset(self):
+        self.log.debug('Reset 2')
+        self._rudp_connection._sender._sending = None
+        self._rudp_connection._sender._push()
+        self.is_listening = False
 
-            # Update active peer info
-            self.nickname = response.get('senderNick', self.nickname)
-            if callback is not None:
-                self.log.debug('%s', msg)
-                callback(msg)
-
-        self.stream.on_recv_stream(cb)
 
 
 class CryptoPeerConnection(GUIDMixin, PeerConnection):
 
-    def __init__(self, transport, address, pub=None, guid=None, nickname="",
-                 sin=None):
+    def __init__(self, transport, hostname, port, pub=None, guid=None, nickname="",
+                 sin=None, rudp_connection=None, socket=None):
 
         GUIDMixin.__init__(self, guid)
-        PeerConnection.__init__(self, transport, address, nickname)
+        PeerConnection.__init__(self, transport, hostname, port, nickname, socket)
 
         self.pub = pub
-
-        # Convert URI over
-        url = urlparse(address)
-        self.ip = url.hostname
-        self.port = url.port
-
         self.sin = sin
-        self.address = "tcp://%s:%s" % (self.ip, self.port)
+
+        self.setup_emitters()
+
+        @self._rudp_connection._sender.ee.on('timeout')
+        def on_timeout(data):
+            self.log.debug('Node Sender Timed Out')
+            self.transport.dht.remove_peer(self.guid)
+
+        self.transport.start_mediation(guid)
+
+    def setup_emitters(self):
+        self.log.debug('Setting up emitters')
+        self.ee = EventEmitter()
+
+        @self._rudp_connection.ee.on('data')
+        def handle_recv(msg):
+            try:
+                self.log.debug('Got the whole message: %s' % msg.get('payload'))
+                payload = json.loads(msg.get('payload'))
+                self.transport.listener._on_raw_message(payload)
+                return
+            except Exception as e:
+                self.log.debug('not yet %s' % e)
+
+            try:
+                # payload = base64.b64decode(msg.get('payload'))
+                payload = msg.get('payload').decode('hex')
+                self.transport.listener._on_raw_message(payload)
+            except Exception as e:
+                self.log.debug('not yet %s' % e)
+                self.transport.listener._on_raw_message(msg.get('payload'))
 
     def start_handshake(self, initial_handshake_cb=None):
         def cb(msg, handshake_cb=None):
@@ -110,27 +140,29 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             self.nickname = msg['senderNick']
 
             # Add this peer to active peers list
-            self.transport.dht.add_as_active_peer(self)
+            for idx, peer in enumerate(self.transport.dht.activePeers):
+                if peer.guid == self.guid or \
+                                (peer.hostname, peer.port) == (self.hostname, self.port):
+                    self.transport.dht.activePeers[idx] = self
+                    self.transport.dht.add_peer(
+                        self.hostname,
+                        self.port,
+                        self.pub,
+                        self.guid,
+                        self.nickname
+                    )
+                    return
+
+            self.transport.dht.activePeers.append(self)
+            self.transport.dht.routingTable.addContact(self)
+            self.log.debug('Active Peers %s', self.transport.dht.activePeers)
 
             if initial_handshake_cb is not None:
                 initial_handshake_cb()
 
-        self.send_raw(
-            json.dumps({
-                'type': 'hello',
-                'pubkey': self.transport.pubkey,
-                'uri': self.transport.uri,
-                'senderGUID': self.transport.guid,
-                'senderNick': self.transport.nickname,
-                'senderNamecoin': self.transport.namecoin_id,
-                'v': constants.VERSION
-            }),
-            cb
-        )
-
     def __repr__(self):
-        return '{ guid: %s, ip: %s, port: %s, pubkey: %s }' % (
-            self.guid, self.ip, self.port, self.pub
+        return '{ guid: %s, hostname: %s, port: %s, pubkey: %s }' % (
+            self.guid, self.hostname, self.port, self.pub
         )
 
     @staticmethod
@@ -160,7 +192,6 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         # Include sender information and version
         data['guid'] = self.guid
         data['senderGUID'] = self.transport.guid
-        data['uri'] = self.transport.uri
         data['pubkey'] = self.transport.pubkey
         data['senderNick'] = self.transport.nickname
         data['senderNamecoin'] = self.transport.namecoin_id
@@ -170,7 +201,8 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         sig_data = json.dumps(data).encode('hex')
         signature = self.sign(sig_data).encode('hex')
 
-        self.log.datadump('Sending to peer: %s %s', self.address, pformat(data))
+        self.log.datadump('Sending to peer: %s %s', self.hostname,
+                          pformat(data))
 
         try:
             # Encrypt signature and data
@@ -183,30 +215,32 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             return
 
         try:
+            # self.send_raw(base64.b64encode(data), callback)
+            # TODO: Refactor to protobuf
             self.send_raw(data, callback)
         except Exception as exc:
             self.log.error("Was not able to send raw data: %s", exc)
 
 
 class PeerListener(GUIDMixin):
-    def __init__(self, ip, port, ctx, guid, data_cb):
+    def __init__(self, hostname, port, guid, data_cb):
         super(PeerListener, self).__init__(guid)
 
-        self.ip = ip
+        self.hostname = hostname
         self.port = port
         self._data_cb = data_cb
-        self.uri = network_util.get_peer_url(self.ip, self.port)
         self.is_listening = False
-        self.ctx = ctx
         self.socket = None
         self.stream = None
         self._ok_msg = None
+        self._connections = {}
 
         self.log = logging.getLogger(self.__class__.__name__)
 
+        self.ee = EventEmitter()
+
     def set_ip_address(self, new_ip):
-        self.ip = new_ip
-        self.uri = network_util.get_peer_url(self.ip, self.port)
+        self.hostname = new_ip
         if not self.is_listening:
             return
 
@@ -220,54 +254,47 @@ class PeerListener(GUIDMixin):
         self._ok_msg = ok_msg
 
     def listen(self):
-        self.log.info("Listening at: %s:%s", self.ip, self.port)
-        self.socket = self.ctx.socket(zmq.REP)
+        self.log.info("Listening at: %s:%s", self.hostname, self.port)
 
-        if network_util.is_loopback_addr(self.ip):
-            try:
-                # we are in local test mode so bind that socket on the
-                # specified IP
-                self.log.info("PeerListener.socket.bind('%s') LOOPBACK", self.uri)
-                self.socket.bind(self.uri)
-            except ZMQError as e:
-                error_message = "".join([
-                    "PeerListener.listen() error: ",
-                    "Could not bind socket to %s. " % self.uri,
-                    "Details:\n",
-                    "(%s)" % e])
-
-                if platform.system() == 'Darwin':
-                    error_message.join([
-                        "\n\nPerhaps you have not added a ",
-                        "loopback alias yet.\n",
-                        "Try this on your terminal and restart ",
-                        "OpenBazaar in development mode again:\n",
-                        "\n\t$ sudo ifconfig lo0 alias 127.0.0.2",
-                        "\n\n"])
-                raise Exception(error_message)
-        elif '[' in self.ip:
+        if network_util.is_loopback_addr(self.hostname):
+            # we are in local test mode so bind that socket on the
+            # specified IP
+            self.log.info("PeerListener.socket.bind('%s') LOOPBACK", self.hostname)
+            self._prepare_datagram_socket()
+        elif '[' in self.hostname:
             self.log.info("PeerListener.socket.bind('tcp://[*]:%s') IPV6", self.port)
             self.socket.ipv6 = True
-            self.socket.bind('tcp://[*]:%s' % self.port)
+            self._prepare_datagram_socket(socket.AF_INET6)
         else:
             self.log.info("PeerListener.socket.bind('tcp://*:%s') IPV4", self.port)
-            self.socket.bind('tcp://*:%s' % self.port)
-
-        self.stream = zmqstream.ZMQStream(
-            self.socket, io_loop=ioloop.IOLoop.current()
-        )
-
-        def handle_recv(messages):
-            # FIXME: investigate if we really get more than one messages here
-            for msg in messages:
-                self._on_raw_message(msg)
-
-            if self._ok_msg:
-                self.stream.send(json.dumps(self._ok_msg))
+            # Temporary while I fix things
+            self.hostname = '0.0.0.0'
+            self._prepare_datagram_socket()
 
         self.is_listening = True
 
-        self.stream.on_recv(handle_recv)
+        def start_listening():
+            while self.is_listening:
+
+                try:
+                    data, addr = self.socket.recvfrom(2048)
+                    self.ee.emit('on_message', (data, addr))
+
+                except socket.timeout as e:
+                    err = e.args[0]
+
+                    if err == 'timed out':
+                        time.sleep(1)
+                        continue
+                    else:
+                        sys.exit(1)
+                except socket.error:
+                    # No data. This is normal.
+                    pass
+                # except AttributeError as err:
+                #     print 'Packet was jacked up: %s', err
+
+        Thread(target=start_listening).start()
 
     def _on_raw_message(self, serialized):
         self.log.info("connected %d", len(serialized))
@@ -279,12 +306,19 @@ class PeerListener(GUIDMixin):
 
         self._data_cb(msg)
 
+    def _prepare_datagram_socket(self, family=socket.AF_INET):
+        self.socket = socket.socket(family, socket.SOCK_DGRAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        #self.socket.setblocking(0)
+        self.socket.bind((self.hostname, self.port))
+
+
 
 class CryptoPeerListener(PeerListener):
 
-    def __init__(self, ip, port, pubkey, secret, ctx, guid, data_cb):
+    def __init__(self, hostname, port, pubkey, secret, guid, data_cb):
 
-        super(CryptoPeerListener, self).__init__(ip, port, ctx, guid, data_cb)
+        super(CryptoPeerListener, self).__init__(hostname, port, guid, data_cb)
 
         self.pubkey = pubkey
         self.secret = secret
@@ -302,9 +336,12 @@ class CryptoPeerListener(PeerListener):
         :param message: serialized JSON
         :return: True if proper handshake message
         """
+        if type(message) is 'dict':
+            return message.get('type')
+
         try:
             message = json.loads(message)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as e:
             return False
 
         return 'type' in message
@@ -317,31 +354,40 @@ class CryptoPeerListener(PeerListener):
         :param serialized:
         :return:
         """
+
         if not self.is_handshake(serialized):
 
-            try:
-                message = self.cryptor.decrypt(serialized)
-                message = json.loads(message)
+            if type(serialized) is dict:
+                message = serialized
+            else:
+                try:
 
-                signature = message['sig'].decode('hex')
-                signed_data = message['data']
-
-                if CryptoPeerListener.validate_signature(signature, signed_data):
-                    message = signed_data.decode('hex')
+                    message = self.cryptor.decrypt(serialized)
                     message = json.loads(message)
 
-                    if message.get('guid') != self.guid:
-                        return
+                    # self.log.debug(message)
+                    # message = json.loads(serialized)
 
-                else:
+                    signature = message['sig'].decode('hex')
+                    signed_data = message['data']
+
+                    if CryptoPeerListener.validate_signature(signature, signed_data):
+                        message = signed_data.decode('hex')
+                        message = json.loads(message)
+
+                        if message.get('guid') != self.guid:
+                            return
+
+                    else:
+                        return
+                except RuntimeError as e:
+                    self.log.error('Could not decrypt message properly %s', e)
                     return
-            except RuntimeError as err:
-                self.log.error('Could not decrypt message properly %s', err)
-                return
-            except Exception as exc:
-                self.log.error('Cannot unpack data: %s', exc)
-                return
+                except Exception as e:
+                    self.log.error('Cannot unpack data: %s', e)
+                    return
         else:
+            self.log.debug('Loading JSON')
             message = json.loads(serialized)
 
         self.log.debugv('Received message of type "%s"',

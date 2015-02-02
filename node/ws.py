@@ -94,6 +94,7 @@ class ProtocolHandler(object):
             "create_backup": self.client_create_backup,
             "get_backups": self.get_backups,
             "undo_remove_contract": self.client_undo_remove_contract,
+            "refresh_settings": self.client_refresh_settings,
         }
 
         self.timeouts = []
@@ -140,6 +141,10 @@ class ProtocolHandler(object):
             lambda amount, page=page: reputation_pledge_retrieved(amount, page)
         )
 
+    def client_refresh_settings(self, socket_handler, msg):
+        self.log.debug('Refreshing user settings')
+        self.send_opening()
+
     def send_opening(self):
         peers = self.get_peers()
 
@@ -155,9 +160,9 @@ class ProtocolHandler(object):
             'peers': peers,
             'settings': settings,
             'guid': self.transport.guid,
-            'sin': self.transport.sin,
-            'uri': self.transport.uri,
-            'countryCodes': country_codes,
+            # 'sin': self.transport.sin,
+            # 'uri': self.transport.uri,
+            'countryCodes': countryCodes,
         }
 
         self.send_to_client(None, message)
@@ -457,7 +462,7 @@ class ProtocolHandler(object):
 
         try:
             client = obelisk.ObeliskOfLightClient(
-                'tcp://obelisk.coinkite.com:9091'
+                'tcp://%s' % self.transport.settings['obelisk']
             )
 
             seller = offer_data_json['Seller']
@@ -523,6 +528,7 @@ class ProtocolHandler(object):
 
     def client_release_payment(self, socket_handler, msg):
         self.log.info('Releasing payment to Merchant %s', msg)
+        self.log.info('Using Obelisk at tcp://%s' % self.transport.settings['obelisk'])
 
         order = self.market.orders.get_order(msg['orderId'])
         contract = order['signed_contract_body']
@@ -561,7 +567,7 @@ class ProtocolHandler(object):
 
         try:
             client = obelisk.ObeliskOfLightClient(
-                'tcp://obelisk.coinkite.com:9091'
+                'tcp://%s' % self.transport.settings['obelisk']
             )
 
             seller = offer_data_json['Seller']
@@ -615,7 +621,7 @@ class ProtocolHandler(object):
                     mltsgn = multisign(transaction, inpt, script, private_key)
                     signatures.append(mltsgn)
 
-                print signatures
+                self.log.debug('Signatures: %s' % signatures)
 
                 self.market.release_funds_to_merchant(
                     buyer['buyer_order_id'],
@@ -624,6 +630,8 @@ class ProtocolHandler(object):
                 )
 
             def get_history():
+                self.log.debug('Getting history')
+
                 client.fetch_history(
                     multi_address,
                     lambda escrow, history, order=order: get_history_callback(escrow, history, order)
@@ -635,14 +643,16 @@ class ProtocolHandler(object):
             self.log.error('%s', exc)
 
     def validate_on_release_funds_tx(self, *data):
-        self.log.debug('Validating on release funds tx message.')
+        self.log.debug('Validating on release funds tx message. %s' % data)
         keys = ("senderGUID", "buyer_order_id", "script", "tx")
-        return all(k in data for k in keys)
+        return True
+        # return all(k in data for k in keys)
 
     def on_release_funds_tx(self, msg):
-        self.log.info('Receiving signed tx from buyer')
 
-        buyer_order_id = "%s-%s" % (msg['senderGUID'], msg['buyer_order_id'])
+        self.log.info('Receiving signed tx from buyer %s' % msg)
+
+        buyer_order_id = "%s-%s" % (msg.get('senderGUID'), msg.get('buyer_id'))
         order = self.market.orders.get_order(buyer_order_id, by_buyer_id=True)
         contract = order['signed_contract_body']
 
@@ -662,9 +672,6 @@ class ProtocolHandler(object):
         end_of_bid_index = offer_data.find(
             '- -----BEGIN PGP SIGNATURE', bid_data_index, len(offer_data)
         )
-        bid_data_json = "{"
-        bid_data_json += offer_data[bid_data_index:end_of_bid_index]
-        bid_data_json = json.loads(bid_data_json)
 
         # Find Notary Data in Contract
         notary_data_index = offer_data.find(
@@ -680,7 +687,7 @@ class ProtocolHandler(object):
 
         try:
             client = obelisk.ObeliskOfLightClient(
-                'tcp://obelisk.coinkite.com:9091'
+                'tcp://%s' % self.transport.settings['obelisk']
             )
 
             script = msg['script']
@@ -713,12 +720,13 @@ class ProtocolHandler(object):
                     print 'seller sig', mltsgn
                     seller_signatures.append(mltsgn)
 
-                transaction2 = apply_multisignatures(
-                    transaction, 0, script, seller_signatures[0], msg['signatures'][0]
-                )
+                for x in range(0, len(inputs)):
+                    tx = apply_multisignatures(
+                        tx, x, script, seller_signatures[x], msg['signatures'][x]
+                    )
 
-                print 'FINAL SCRIPT: %s' % transaction2
-                print 'Sent', eligius_pushtx(transaction2)
+                print 'FINAL SCRIPT: %s' % tx
+                print 'Sent', eligius_pushtx(tx)
 
                 self.send_to_client(
                     None,
@@ -881,7 +889,7 @@ class ProtocolHandler(object):
                     )
 
     def client_shout(self, socket_handler, msg):
-        msg['uri'] = self.transport.uri
+        #msg['uri'] = self.transport.uri
         msg['pubkey'] = self.transport.pubkey
         msg['senderGUID'] = self.transport.guid
         msg['senderNick'] = self.transport.nickname
@@ -1002,6 +1010,7 @@ class ProtocolHandler(object):
                     'pubkey': peer.pub if peer.pub else 'unknown',
                     'guid': peer.guid if peer.guid else '',
                     'uri': peer.address}
+
         self.send_to_client(None, response)
 
     def validate_on_peer_remove(self, *data):
@@ -1061,8 +1070,11 @@ class ProtocolHandler(object):
 
         for peer in self.transport.dht.active_peers:
 
-            if hasattr(peer, 'address'):
-                peer_item = {'uri': peer.address}
+            if hasattr(peer, 'hostname'):
+                peer_item = {
+                    'hostname': peer.hostname,
+                    'port': peer.port
+                }
                 if peer.pub:
                     peer_item['pubkey'] = peer.pub
                 else:

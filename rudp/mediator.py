@@ -9,7 +9,7 @@ class Mediator():
         #threading.Thread.__init__(self)
 
         self.log = logging.getLogger(
-            '%s' % (self.__class__.__name__)
+            '%s' % self.__class__.__name__
         )
 
         self.log.debug('Starting mediator server at port: %d', port)

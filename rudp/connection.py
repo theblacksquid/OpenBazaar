@@ -10,7 +10,7 @@ class Connection:
     def __init__(self, packet_sender):
 
         self.log = logging.getLogger(
-            '%s' % (self.__class__.__name__)
+            '%s' % self.__class__.__name__
         )
         self.log.info('Init Connection')
 
@@ -34,7 +34,7 @@ class Connection:
 
     def receive(self, packet):
         if packet._acknowledgement:
-            self._sender.verifyAcknowledgement(packet._sequenceNumber)
+            self._sender.verify_acknowledgement(packet._sequenceNumber)
         else:
             self._receiver.receive(packet)
             self.log.debug('Received a packet')
