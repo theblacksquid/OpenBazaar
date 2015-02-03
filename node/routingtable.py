@@ -336,7 +336,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
                         self.replacement_cache.pop(0)
                     self.replacement_cache[bucket_index].append(contact)
 
-
+    def find_close_nodes(self, key, count, node_id=None):
         """
         Find a number of known nodes closest to the node/value with the
         specified key.
@@ -346,10 +346,10 @@ class OptimizedTreeRoutingTable(RoutingTable):
 
         @param count: the amount of contacts to return
         @type count: int
-        @param nodeID: Used during RPC, this is the sender's Node ID.
-                       The ID passed in the paramater is excluded from
+        @param node_id: Used during RPC, this is the sender's Node ID.
+                       The ID passed in the parameter is excluded from
                        the list of contacts returned.
-        @type nodeID: str
+        @type node_id: str
 
         @return: A list of node contacts (C{guid.GUIDMixin instances})
                  closest to the specified key.
@@ -451,7 +451,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
         finally:
             self.log.datadump('Contacts: %s', self.buckets[bucket_index].contacts)
 
-    def updateContact(self, contact):
+    def update_contact(self, contact):
         """
         Replace existing contact with updated contact
 
@@ -459,7 +459,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
         :return:
         """
         bucket_index = self.kbucketIndex(contact.guid)
-        self.buckets[bucket_index].updateContact(contact)
+        self.buckets[bucket_index].update_contact(contact)
 
     def touch_kbucket(self, node_id, timestamp=None):
         """

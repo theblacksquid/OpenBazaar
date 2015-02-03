@@ -9,7 +9,7 @@ ALPHA = 3
 
 # Maximum number of contacts stored in a bucket
 # NOTE: Should be an even number.
-K = 8 # pylint: disable=invalid-name
+K = 8  # pylint: disable=invalid-name
 
 # Maximum number of contacts stored in the
 # replacement cache of a bucket

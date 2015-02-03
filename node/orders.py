@@ -241,7 +241,7 @@ class Orders(object):
         merchant_bitmessage = offer_data_json.get('Seller', '').get('seller_Bitmessage')
         buyer_bitmessage = buyer_data_json.get('Buyer', '').get('buyer_Bitmessage')
 
-        self.log.debug('Shipping Address: %s' % _order.get('shipping_address'))
+        self.log.debug('Shipping Address: %s', _order.get('shipping_address'))
         if _order.get('buyer') == self.transport.guid:
             shipping_address = self.get_shipping_address()
         else:
@@ -533,7 +533,7 @@ class Orders(object):
 
     def get_shipping_address(self):
 
-        settings = self.db.selectEntries("settings", {"market_id": self.market_id})
+        settings = self.db_connection.select_entries("settings", {"market_id": self.market_id})
         settings = settings[0]
 
         shipping_info = {
@@ -547,7 +547,7 @@ class Orders(object):
             "countryCode": settings.get('countryCode'),
             "recipient_name": settings.get('recipient_name')
         }
-        self.log.debug('Shipping Info: %s' % shipping_info)
+        self.log.debug('Shipping Info: %s', shipping_info)
         return shipping_info
 
     def new_order(self, msg):
@@ -634,9 +634,9 @@ class Orders(object):
     def handle_bid_order(self, bid):
 
         self.log.info('Bid Order: %s', bid)
-        new_peer = self.transport.dht.routingTable.getContact(bid.get('merchantGUID'))
+        new_peer = self.transport.dht.routing_table.get_contact(bid.get('merchantGUID'))
 
-        # for x in self.transport.dht.activePeers:
+        # for x in self.transport.dht.active_peers:
         #     if x.guid == bid.get('merchantGUID'):
         #         new_peer = x
         #         break
@@ -872,16 +872,9 @@ class Orders(object):
                                                          "msg": "The seller just shipped your order."})
 
     def handle_accepted_order(self, msg):
-        self.db.updateEntries(
-                "orders",
-                {
-                    'state': Orders.State.NEED_TO_PAY,
-                    "updated": time.time()
-                },
-                {
-                    'order_id': msg.get('buyer_order_id')
-                }
-            )
+        self.db_connection.updateEntries("orders", {'state': Orders.State.NEED_TO_PAY,
+                                                    "updated": time.time()},
+                                         {'order_id': msg.get('buyer_order_id')})
 
         self.transport.handler.send_to_client(None, {"type": "order_notify",
                                                      "msg": "Your order requires payment now."})

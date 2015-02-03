@@ -3,7 +3,7 @@ import socket
 import threading
 
 
-class Mediator():
+class Mediator(object):
     def __init__(self, ip, port):
 
         #threading.Thread.__init__(self)
@@ -36,7 +36,7 @@ class Mediator():
 
                         if command == 'register':
                             self.hosts[guid] = dict(address=addr[0], port=addr[1])
-                            self.log.debug('Registered %s, from host %s:%d' % (guid, addr[0], addr[1]))
+                            self.log.debug('Registered %s, from host %s:%d', guid, addr[0], addr[1])
 
                         elif command == 'talk':
                             if guid not in self.hosts:
@@ -51,7 +51,8 @@ class Mediator():
 
                             # Send to the client that is waiting for a request to talk.
                             to_send = '%s:%d' % (addr[0], addr[1])
-                            self.sock.sendto(to_send, (self.hosts[guid].get('address'), self.hosts[guid].get('port')))
+                            self.sock.sendto(to_send, (self.hosts[guid].get('address'),
+                                                       self.hosts[guid].get('port')))
 
                 except socket.error:
                     pass

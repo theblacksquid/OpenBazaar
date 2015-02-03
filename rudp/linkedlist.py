@@ -3,7 +3,7 @@ __author__ = 'brianhoffman'
 import logging
 
 
-class Node():
+class Node(object):
 
     def __init__(self, value):
         self.value = value
@@ -13,7 +13,7 @@ class Node():
 # TODO: do note that this is an ordered linked-list. Perhaps this class should
 #     be renamed to better indicate that.
 # TODO: use a generator/iterator pattern for looping through the list.
-class LinkedList():
+class LinkedList(object):
 
     insertion_result = {}
     insertion_result['INSERTED'] = 'inserted'

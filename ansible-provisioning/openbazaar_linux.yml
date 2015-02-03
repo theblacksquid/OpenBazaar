@@ -17,8 +17,7 @@
     do_system_update: True
     reqs:
       - python-pip
-      - build-essential 
-      - python-zmq
+      - build-essential
       - rng-tools 
       - python-dev
       - libjpeg-dev

@@ -1,11 +1,11 @@
-from sender import Sender
-from receiver import Receiver
+from rudp.sender import Sender
+from rudp.receiver import Receiver
 
 from pyee import EventEmitter
 import logging
 
 
-class Connection:
+class Connection(object):
 
     def __init__(self, packet_sender):
 
@@ -19,11 +19,13 @@ class Connection:
         self._sender = Sender(packet_sender)
         self._receiver = Receiver(packet_sender)
 
+        # pylint: disable=unused-variable
         @self._receiver.ee.on('data')
         def on_data(data):
             self.log.debug('Received Data: %s', data)
             self.ee.emit('data', data)
 
+        # pylint: disable=unused-variable
         @self._receiver.ee.on('_reset')
         def on_reset(data):
             self.log.debug('Received reset message')

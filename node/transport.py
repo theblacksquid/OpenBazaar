@@ -1,4 +1,4 @@
-import constants
+import node.constants
 from collections import defaultdict
 import hashlib
 import json
@@ -13,8 +13,8 @@ import gnupg
 import obelisk
 from bitcoin.main import privkey_to_pubkey, random_key
 from pysqlcipher.dbapi2 import OperationalError, DatabaseError
-from zmq.eventloop import ioloop
-from zmq.eventloop.ioloop import PeriodicCallback
+from tornado import ioloop
+from tornado.ioloop import PeriodicCallback
 
 from node import connection, network_util, trust
 from node.dht import DHT
@@ -119,9 +119,9 @@ class CryptoTransportLayer(TransportLayer):
             self.start_ip_address_checker()
 
     def start_mediation(self, guid):
-        self.log.debug('Starting mediation %s' % self.ob_ctx)
+        self.log.debug('Starting mediation %s', self.ob_ctx)
         if self.ob_ctx.mediator:
-            for peer in self.dht.activePeers:
+            for peer in self.dht.active_peers:
                 if peer.hostname == '205.186.156.31':
                     peer.send({
                         'type': 'mediate',
@@ -147,11 +147,12 @@ class CryptoTransportLayer(TransportLayer):
             self._on_message
         )
 
+        # pylint: disable=unused-variable
         @self.listener.ee.on('on_message')
         def on_message(msg):
 
             data, addr = msg[0], msg[1]
-            self.log.debug('on_message: %s %s %s' % (data, 'from', addr))
+            self.log.debug('on_message: %s %s %s', data, 'from', addr)
 
             try:
                 data_body = json.loads(data)
@@ -167,7 +168,7 @@ class CryptoTransportLayer(TransportLayer):
 
                 if inbound_peer:
 
-                    packet = Packet(data, buffer=True)
+                    packet = Packet(data, packet_buffer=True)
 
                     if packet._finish:
                         inbound_peer.reset()
@@ -179,11 +180,11 @@ class CryptoTransportLayer(TransportLayer):
 
                         receive_packet()
 
-                    self.log.debug('Updated peers: %s', self.dht.activePeers)
+                    self.log.debug('Updated peers: %s', self.dht.active_peers)
                 else:
                     self.log.debug('Did not find a peer')
             except Exception as e:
-                self.log.error('Could not deserialize message: %s' % e)
+                self.log.error('Could not deserialize message: %s', e)
 
 
         self.listener.set_ok_msg({
@@ -205,6 +206,8 @@ class CryptoTransportLayer(TransportLayer):
     def _ip_updater_periodic_callback(self):
         if self.ob_ctx.enable_ip_checker:
             new_ip = network_util.get_my_ip()
+
+            self.ip = None
 
             if not new_ip or new_ip == self.ip:
                 return
@@ -288,7 +291,7 @@ class CryptoTransportLayer(TransportLayer):
             peer1, peer2 = None, None
 
             # Send both peers a message to message each other
-            for x in self.dht.activePeers:
+            for x in self.dht.active_peers:
                 if x.guid == msg['senderGUID']:
                     self.log.debug('Found guid')
                     peer1 = x
@@ -319,14 +322,15 @@ class CryptoTransportLayer(TransportLayer):
         send_punches()
 
     def validate_on_punch(self, msg):
+        self.log.debug('Validating on punch')
         return True
 
     def on_punch(self, msg):
         self.log.debug('Got a punch request')
 
         hostname, port = msg['hostname'], msg['port']
-        sock = socket.socket(socket.AF_INET, # Internet
-             socket.SOCK_DGRAM) # UDP
+        sock = socket.socket(socket.AF_INET,  # Internet
+                             socket.SOCK_DGRAM)  # UDP
 
         def send_packet(counter=0):
             if counter < 5:
@@ -358,7 +362,7 @@ class CryptoTransportLayer(TransportLayer):
 
         self.log.info('Received Hello: %s', json.dumps(msg, ensure_ascii=False))
 
-        peer = self.dht.routingTable.getContact(msg['senderGUID'])
+        peer = self.dht.routing_table.get_contact(msg['senderGUID'])
 
         # new_peer = self.dht.add_peer(
         #     msg['hostname'],
@@ -378,7 +382,7 @@ class CryptoTransportLayer(TransportLayer):
                     'hostname': self.hostname,
                     'port': self.port,
                     'senderNick': self.nickname,
-                    'v': constants.VERSION
+                    'v': node.constants.VERSION
                 })
             )
 
@@ -537,7 +541,7 @@ class CryptoTransportLayer(TransportLayer):
                     'hostname': self.hostname,
                     'port': self.port,
                     'senderNick': self.nickname,
-                    'v': constants.VERSION
+                    'v': node.constants.VERSION
                 })
             )
 
@@ -553,12 +557,12 @@ class CryptoTransportLayer(TransportLayer):
             callback('Joined')
 
     def get_past_peers(self):
-        result = self.db.selectEntries("peers", {"market_id": self.market_id})
+        result = self.db_connection.select_entries("peers", {"market_id": self.market_id})
         return [(peer['hostname'], peer['port']) for peer in result]
 
     def search_for_my_node(self):
         self.log.info('Searching for myself')
-        self.dht._iterativeFind('0000000000000000000000000000000000000000', [], 'findNode')
+        self.dht.iterative_find('0000000000000000000000000000000000000000', [], 'findNode')
 
     def get_crypto_peer(self, guid=None, hostname=None, port=None, pubkey=None, nickname=None):
         if guid == self.guid:
@@ -582,7 +586,7 @@ class CryptoTransportLayer(TransportLayer):
                 pubkey,
                 guid=guid,
                 nickname=nickname,
-                socket=self.listener.socket
+                peer_socket=self.listener.socket
             )
         else:
             # FIXME this is wrong to do here, but it keeps this as close as
@@ -613,10 +617,10 @@ class CryptoTransportLayer(TransportLayer):
             if peer:
                 msg_type = data.get('type', 'unknown')
                 nickname = peer.nickname
-                hostname, port = peer.hostname, peer.port
+                hostname = peer.hostname
 
                 self.log.info('Sending message type "%s" to "%s" %s %s',
-                              msgType, nickname, hostname, send_to)
+                              msg_type, nickname, hostname, send_to)
                 self.log.datadump('Raw message: %s', data)
 
                 try:
@@ -656,9 +660,7 @@ class CryptoTransportLayer(TransportLayer):
         # here goes the application callbacks
         # we get a "clean" msg which is a dict holding whatever
 
-        pubkey = msg.get('pubkey')
         hostname = msg.get('hostname')
-        port = msg.get('port')
         guid = msg.get('senderGUID')
         nickname = msg.get('senderNick', '')[:120]
         msg_type = msg.get('type')
@@ -674,7 +676,7 @@ class CryptoTransportLayer(TransportLayer):
             msg['senderNamecoin'] = ''
 
         self.log.info('Received message type "%s" from "%s" %s %s',
-                      msgType, nickname, hostname, guid)
+                      msg_type, nickname, hostname, guid)
         self.log.datadump('Raw message: %s', json.dumps(msg, ensure_ascii=False))
         #self.dht.add_peer(uri, pubkey, guid, nickname)
         self.trigger_callbacks(msg['type'], msg)

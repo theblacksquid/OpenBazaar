@@ -9,7 +9,6 @@ import time
 import tornado.httpserver
 import tornado.netutil
 import tornado.web
-from zmq.eventloop import ioloop
 from threading import Thread
 from twisted.internet import reactor
 
@@ -20,13 +19,9 @@ from node.transport import CryptoTransportLayer
 from node.util import open_default_webbrowser, is_mac
 from node.ws import WebSocketHandler
 
-from rudp.mediator import Mediator
-
 if is_mac():
     from node.util import osx_check_dyld_library_path
     osx_check_dyld_library_path()
-
-ioloop.install()
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -303,7 +298,7 @@ class MarketApplication(tornado.web.Application):
         log.info("Received TERMINATE, exiting...")
 
         # Send goodbye message to connected peers
-        for peer in self.transport.dht.activePeers:
+        for peer in self.transport.dht.active_peers:
             peer.send_raw(
                 json.dumps({
                     'type': 'goodbye',
@@ -325,7 +320,7 @@ class MarketApplication(tornado.web.Application):
 
 def start_io_loop():
     if not tornado.ioloop.IOLoop.instance():
-        ioloop.install()
+        tornado.ioloop.install()
 
     try:
         tornado.ioloop.IOLoop.instance().start()

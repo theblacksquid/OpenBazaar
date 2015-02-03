@@ -2,7 +2,6 @@ __author__ = 'brianhoffman'
 
 import threading
 import math
-import logging
 
 
 def splitArrayLike(data, length):
@@ -20,10 +19,8 @@ def splitArrayLike(data, length):
 
 def set_interval(func, sec=0, times=3):
     def func_wrapper():
-        i = 1
-        if times > 0:
-            set_interval(func, sec, times-1)
-            func()
+        set_interval(func, sec, times-1)
+        func()
     func()
     t = threading.Timer(sec, func_wrapper)
     t.start()

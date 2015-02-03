@@ -1,12 +1,12 @@
 __author__ = 'brianhoffman'
 
-import constants
+import rudp.constants
 from pyee import EventEmitter
-import helpers
+import rudp.helpers
 import logging
 
 
-class PendingPacket():
+class PendingPacket(object):
 
     def __init__(self, packet, packet_sender):
 
@@ -31,10 +31,10 @@ class PendingPacket():
             self._packet_sender.send(self._packet)
 
         if self._sending_count < 0:
-            self.log.debug('Packet %s sent %d times' % (self._packet.get_sequence_number(), self._sending_count))
-            self._intervalID = helpers.set_interval(
+            self.log.debug('Packet %s sent %d times', self._packet.get_sequence_number(), self._sending_count)
+            self._intervalID = rudp.helpers.set_interval(
                 packet_send,
-                constants.TIMEOUT
+                rudp.constants.TIMEOUT
             )
         else:
             self.log.debug('Max retries hit')

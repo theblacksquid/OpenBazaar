@@ -21,7 +21,6 @@ from node.crypto_util import Cryptor
 from node.data_uri import DataURI
 from node.orders import Orders
 from node.protocol import proto_page, query_page
-import time
 
 
 class Market(object):
@@ -118,7 +117,7 @@ class Market(object):
         image = Image.open(StringIO(image_data))
         cropped_image = ImageOps.fit(image, (200, 200), centering=(0.5, 0.5))
         data = StringIO()
-        cropped_image.save(data, format='PNG')
+        cropped_image.save(data, format='PNG', quality=50)
         new_uri = DataURI.make(
             'image/png',
             charset=charset,
@@ -294,7 +293,7 @@ class Market(object):
 
     def remove_trusted_notary(self, guid):
         """Not trusted to selected notary. Dlete notary from the local list"""
-        self.log.debug('Notaries %s' % self.settings)
+        self.log.debug('Notaries %s', self.settings)
         notaries = self.settings.get('notaries')
         notaries = ast.literal_eval(notaries)
 
@@ -598,12 +597,13 @@ class Market(object):
                 self.transport.store(key, data, self.transport.guid)
 
         # Validate that the namecoin id received is well formed
-        if not re.match(r'^[a-z0-9\-]{1,39}$', msg['namecoin_id']):
-            msg['namecoin_id'] = ''
+        self.log.debug(msg)
+        if not re.match(r'^[a-z0-9\-]{1,39}$', msg['Namecoin_id']):
+            msg['Namecoin_id'] = ''
 
         # Update nickname and namecoin id
         self.transport.nickname = msg['nickname']
-        self.transport.namecoin_id = msg['namecoin_id']
+        self.transport.namecoin_id = msg['Namecoin_id']
 
         if 'burnAmount' in msg:
             del msg['burnAmount']
@@ -669,7 +669,7 @@ class Market(object):
         self.log.info("Someone is querying for your page")
         settings = self.get_settings()
 
-        peer = self.dht.routingTable.getContact(msg['senderGUID'])
+        peer = self.dht.routing_table.get_contact(msg['senderGUID'])
         def send_page_query():
             """Send a request for the local identity page"""
 

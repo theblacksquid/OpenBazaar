@@ -34,9 +34,9 @@ class TestPeerConnection(unittest.TestCase):
 
     def test_init(self):
         self.assertEqual(self.pc1.transport, self.transport)
-        self.assertEqual(self.pc1.address, self.address)
+        self.assertEqual(self.pc1.hostname, self.hostname)
         self.assertEqual(self.pc1.nickname, self.default_nickname)
-        self.assertIsNotNone(self.pc1.ctx)
+        # self.assertIsNotNone(self.pc1.ctx)
 
         self.assertEqual(self.pc2.nickname, self.nickname)
 
@@ -58,14 +58,16 @@ class TestCryptoPeerConnection(TestPeerConnection):
     def _mk_default_CPC(cls):
         return connection.CryptoPeerConnection(
             cls.transport,
-            cls.address,
+            cls.hostname,
+            cls.port
         )
 
     @classmethod
     def _mk_complete_CPC(cls):
         return connection.CryptoPeerConnection(
             cls.transport,
-            cls.address,
+            cls.hostname,
+            cls.port,
             cls.pub,
             cls.guid,
             cls.nickname,
@@ -107,16 +109,17 @@ class TestCryptoPeerConnection(TestPeerConnection):
         self.assertEqual(self.pc1, self._mk_default_CPC())
 
         other_addresses = (
-            self._mk_address("http", self.hostname, self.port),
-            self._mk_address(self.protocol, "openbazaar.org", self.port),
-            self._mk_address(self.protocol, self.hostname, 8080)
+            (self.hostname, self.port),
+            ("openbazaar.org", self.port),
+            (self.hostname, 8080)
         )
         for address in other_addresses:
             self.assertEqual(
                 self.pc1,
                 connection.CryptoPeerConnection(
                     self.transport,
-                    address
+                    address[0],
+                    address[1]
                 )
             )
 
@@ -130,7 +133,8 @@ class TestCryptoPeerConnection(TestPeerConnection):
             self.pc2,
             connection.CryptoPeerConnection(
                 self.transport,
-                self.address,
+                self.hostname,
+                self.port,
                 self.pub,
                 another_guid,
                 self.nickname,

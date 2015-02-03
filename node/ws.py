@@ -162,7 +162,7 @@ class ProtocolHandler(object):
             'guid': self.transport.guid,
             # 'sin': self.transport.sin,
             # 'uri': self.transport.uri,
-            'countryCodes': countryCodes,
+            'countryCodes': country_codes,
         }
 
         self.send_to_client(None, message)
@@ -528,7 +528,7 @@ class ProtocolHandler(object):
 
     def client_release_payment(self, socket_handler, msg):
         self.log.info('Releasing payment to Merchant %s', msg)
-        self.log.info('Using Obelisk at tcp://%s' % self.transport.settings['obelisk'])
+        self.log.info('Using Obelisk at tcp://%s', self.transport.settings['obelisk'])
 
         order = self.market.orders.get_order(msg['orderId'])
         contract = order['signed_contract_body']
@@ -621,7 +621,7 @@ class ProtocolHandler(object):
                     mltsgn = multisign(transaction, inpt, script, private_key)
                     signatures.append(mltsgn)
 
-                self.log.debug('Signatures: %s' % signatures)
+                self.log.debug('Signatures: %s', signatures)
 
                 self.market.release_funds_to_merchant(
                     buyer['buyer_order_id'],
@@ -643,16 +643,14 @@ class ProtocolHandler(object):
             self.log.error('%s', exc)
 
     def validate_on_release_funds_tx(self, *data):
-        self.log.debug('Validating on release funds tx message. %s' % data)
-        keys = ("senderGUID", "buyer_order_id", "script", "tx")
+        self.log.debug('Validating on release funds tx message. %s', data)
         return True
-        # return all(k in data for k in keys)
 
     def on_release_funds_tx(self, msg):
 
-        self.log.info('Receiving signed tx from buyer %s' % msg)
+        self.log.info('Receiving signed tx from buyer %s', msg)
 
-        buyer_order_id = "%s-%s" % (msg.get('senderGUID'), msg.get('buyer_id'))
+        buyer_order_id = "%s-%s", msg.get('senderGUID'), msg.get('buyer_id')
         order = self.market.orders.get_order(buyer_order_id, by_buyer_id=True)
         contract = order['signed_contract_body']
 
@@ -691,10 +689,12 @@ class ProtocolHandler(object):
             )
 
             script = msg['script']
-            transaction = msg['tx']
             multi_addr = scriptaddr(script)
 
             def get_history_callback(escrow, history, order):
+
+                transaction = msg['tx']
+
                 if escrow is not None:
                     self.log.error("Error fetching history: %s", escrow)
                     # TODO: Send error message to GUI
@@ -712,7 +712,7 @@ class ProtocolHandler(object):
                     )
 
                 seller_signatures = []
-                print 'private key ', self.transport.settings['privkey']
+
                 for inpt in range(0, len(inputs)):
                     mltsgn = multisign(
                         transaction, inpt, script, self.transport.settings['privkey']
@@ -721,12 +721,12 @@ class ProtocolHandler(object):
                     seller_signatures.append(mltsgn)
 
                 for x in range(0, len(inputs)):
-                    tx = apply_multisignatures(
-                        tx, x, script, seller_signatures[x], msg['signatures'][x]
+                    transaction = apply_multisignatures(
+                        transaction, x, script, seller_signatures[x], msg['signatures'][x]
                     )
 
-                print 'FINAL SCRIPT: %s' % tx
-                print 'Sent', eligius_pushtx(tx)
+                print 'FINAL SCRIPT: %s' % transaction
+                print 'Sent', eligius_pushtx(transaction)
 
                 self.send_to_client(
                     None,

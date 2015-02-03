@@ -2,8 +2,7 @@
 from distutils.util import strtobool as _bool
 # pylint: enable=import-error
 import os
-
-from zmq.eventloop import ioloop
+from tornado import ioloop
 
 from features.test_util import remove_peers_from_db
 

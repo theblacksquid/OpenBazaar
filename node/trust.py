@@ -36,7 +36,7 @@ def get_unspent(addr, callback):
         try:
             history = bitcoin.history(addr)
         except Exception as e:
-            _log.debug('Error retrieving from Blockchain.info: %s' % e)
+            _log.debug('Error retrieving from Blockchain.info: %s', e)
             callback(0)
             return
         total = sum(tx['value'] for tx in history)

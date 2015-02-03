@@ -1,18 +1,10 @@
-import errno
 import json
 import logging
-import platform
 from pprint import pformat
-from urlparse import urlparse
 from pyee import EventEmitter
 from threading import Thread
-from rudp.connection import Connection
-from rudp.packetsender import PacketSender
-from rudp.packet import Packet
-import rudp.helpers
 import sys
 import time
-import threading
 
 import obelisk
 import socket
@@ -22,11 +14,10 @@ from node.crypto_util import Cryptor
 from node.guid import GUIDMixin
 from rudp.connection import Connection
 from rudp.packetsender import PacketSender
-import base64
 
 
 class PeerConnection(object):
-    def __init__(self, transport, hostname, port=12345, nickname="", socket=None):
+    def __init__(self, transport, hostname, port=12345, nickname="", peer_socket=None):
 
         self.transport = transport
         self.hostname = hostname
@@ -40,7 +31,7 @@ class PeerConnection(object):
         self.log.info('Created a peer connection object')
 
         self.ee = EventEmitter()
-        self.sock = socket
+        self.sock = peer_socket
 
         self.init_packetsender()
 
@@ -81,10 +72,10 @@ class PeerConnection(object):
 class CryptoPeerConnection(GUIDMixin, PeerConnection):
 
     def __init__(self, transport, hostname, port, pub=None, guid=None, nickname="",
-                 sin=None, rudp_connection=None, socket=None):
+                 sin=None, rudp_connection=None, peer_socket=None):
 
         GUIDMixin.__init__(self, guid)
-        PeerConnection.__init__(self, transport, hostname, port, nickname, socket)
+        PeerConnection.__init__(self, transport, hostname, port, nickname, peer_socket)
 
         self.pub = pub
         self.sin = sin
@@ -92,7 +83,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         self.setup_emitters()
 
         @self._rudp_connection._sender.ee.on('timeout')
-        def on_timeout(data):
+        def on_timeout(data):  # pylint: disable=unused-variable
             self.log.debug('Node Sender Timed Out')
             self.transport.dht.remove_peer(self.guid)
 
@@ -103,62 +94,64 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         self.ee = EventEmitter()
 
         @self._rudp_connection.ee.on('data')
-        def handle_recv(msg):
+        def handle_recv(msg):  # pylint: disable=unused-variable
             try:
-                self.log.debug('Got the whole message: %s' % msg.get('payload'))
+                self.log.debug('Got the whole message: %s', msg.get('payload'))
                 payload = json.loads(msg.get('payload'))
                 self.transport.listener._on_raw_message(payload)
                 return
             except Exception as e:
-                self.log.debug('not yet %s' % e)
+                self.log.debug('not yet %s', e)
 
             try:
                 # payload = base64.b64decode(msg.get('payload'))
                 payload = msg.get('payload').decode('hex')
                 self.transport.listener._on_raw_message(payload)
             except Exception as e:
-                self.log.debug('not yet %s' % e)
+                self.log.debug('not yet %s', e)
                 self.transport.listener._on_raw_message(msg.get('payload'))
 
     def start_handshake(self, initial_handshake_cb=None):
-        def cb(msg, handshake_cb=None):
-            if not msg:
-                return
-
-            self.log.debugv('ALIVE PEER %s', msg[0])
-            msg = msg[0]
-            try:
-                msg = json.loads(msg)
-            except ValueError:
-                self.log.error('[start_handshake] Bad JSON response: %s', msg)
-                return
-
-            # Update Information
-            self.guid = msg['senderGUID']
-            self.sin = self.generate_sin(self.guid)
-            self.pub = msg['pubkey']
-            self.nickname = msg['senderNick']
-
-            # Add this peer to active peers list
-            for idx, peer in enumerate(self.transport.dht.activePeers):
-                if peer.guid == self.guid or \
-                                (peer.hostname, peer.port) == (self.hostname, self.port):
-                    self.transport.dht.activePeers[idx] = self
-                    self.transport.dht.add_peer(
-                        self.hostname,
-                        self.port,
-                        self.pub,
-                        self.guid,
-                        self.nickname
-                    )
-                    return
-
-            self.transport.dht.activePeers.append(self)
-            self.transport.dht.routingTable.addContact(self)
-            self.log.debug('Active Peers %s', self.transport.dht.activePeers)
-
-            if initial_handshake_cb is not None:
-                initial_handshake_cb()
+        # TODO: Think about removing completely
+        self.log.debug('Deprecated')
+        # def cb(msg, handshake_cb=None):
+        #     if not msg:
+        #         return
+        #
+        #     self.log.debugv('ALIVE PEER %s', msg[0])
+        #     msg = msg[0]
+        #     try:
+        #         msg = json.loads(msg)
+        #     except ValueError:
+        #         self.log.error('[start_handshake] Bad JSON response: %s', msg)
+        #         return
+        #
+        #     # Update Information
+        #     self.guid = msg['senderGUID']
+        #     self.sin = self.generate_sin(self.guid)
+        #     self.pub = msg['pubkey']
+        #     self.nickname = msg['senderNick']
+        #
+        #     # Add this peer to active peers list
+        #     for idx, peer in enumerate(self.transport.dht.activePeers):
+        #         if peer.guid == self.guid or \
+        #                         (peer.hostname, peer.port) == (self.hostname, self.port):
+        #             self.transport.dht.activePeers[idx] = self
+        #             self.transport.dht.add_peer(
+        #                 self.hostname,
+        #                 self.port,
+        #                 self.pub,
+        #                 self.guid,
+        #                 self.nickname
+        #             )
+        #             return
+        #
+        #     self.transport.dht.activePeers.append(self)
+        #     self.transport.dht.routing_table.addContact(self)
+        #     self.log.debug('Active Peers %s', self.transport.dht.activePeers)
+        #
+        #     if initial_handshake_cb is not None:
+        #         initial_handshake_cb()
 
     def __repr__(self):
         return '{ guid: %s, hostname: %s, port: %s, pubkey: %s }' % (
@@ -342,6 +335,7 @@ class CryptoPeerListener(PeerListener):
         try:
             message = json.loads(message)
         except (ValueError, TypeError) as e:
+            print 'Error: ', e
             return False
 
         return 'type' in message

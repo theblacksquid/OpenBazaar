@@ -39,6 +39,7 @@ class Window(object):
         # This means that the reset packet's acknowledge event thrown will be
         # different from that of the synchronization packet.
         if self._reset_packet is not self.synchronization_packet:
+            # pylint: disable=unused-variable
             @self._reset_packet.ee.on('acknowledge')
             def on_acknowledge():
                 self.log.debug('done for real')
@@ -46,8 +47,9 @@ class Window(object):
 
         # Will be used to handle the case when all non sync or reset packets have
         # been acknowledged.
+
         @self.synchronization_packet.ee.on('acknowledge')
-        def on_sync_knowledge():
+        def on_sync_knowledge():  # pylint: disable=unused-variable
 
             self.log.debug('on_sync_knowledge')
 
@@ -67,6 +69,7 @@ class Window(object):
                 self.ee.emit('done')
                 return
 
+            # pylint: disable=unused-variable
             @self.ee.on('acknowledge')
             def on_sender_acknowledge():
                 self.acknowledged = 0
@@ -80,6 +83,7 @@ class Window(object):
             for packet in pkts:
                 self.log.debug('Sending another packet')
 
+                # pylint: disable=unused-variable
                 @packet.ee.on('acknowledge')
                 def on_packet_acknowledge():
                     self.acknowledged += 1
@@ -123,16 +127,16 @@ class Sender(object):
         #     self._push()
 
         chunks = rudp.helpers.splitArrayLike(data, rudp.constants.UDP_SAFE_SEGMENT_SIZE)
-        self.log.debug('Sending %d chunks' % len(chunks))
+        self.log.debug('Sending %d chunks', len(chunks))
         windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
         self._windows = self._windows + windows
         self._windows = [x for x in self._windows if x != []]
-        self.log.debug('Windows: %s' % self._windows)
+        self.log.debug('Windows: %s', self._windows)
         self._push()
 
     def _push(self):
 
-        self.log.debug('self._sending: %s' % self._sending)
+        self.log.debug('self._sending: %s', self._sending)
 
         if not self._sending and len(self._windows):
             self._last_sent = int(time.time())
@@ -149,6 +153,7 @@ class Sender(object):
 
             self._sending = to_send
 
+            # pylint: disable=unused-variable
             @self._sending.ee.on('done')
             def on_done():
                 self.log.debug('_sending done')

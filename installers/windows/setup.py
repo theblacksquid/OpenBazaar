@@ -8,8 +8,6 @@ import sys
 # pylint: disable=unused-import
 import py2exe
 # pylint: enable=unused-import
-# pylint: enable=import-error
-import zmq
 
 
 def tree(root_dir, dest):
@@ -28,10 +26,8 @@ def tree(root_dir, dest):
 def main():
     setup_dir = os.path.dirname(os.path.realpath(__file__))
     root_dir = os.path.dirname(os.path.dirname(setup_dir))
-    zmq_dir = os.path.dirname(zmq.__file__)
 
     # py2exe depedency detection is quite problematic
-    sys.path.insert(0, zmq_dir)    # for libzmq.pyd
     sys.path.insert(0, root_dir)   # for node
     sys.path.insert(0, setup_dir)  # for local openbazaar.py
 
@@ -58,16 +54,9 @@ def main():
                 'compressed': 2,
                 'optimize': 2,
                 'includes': [
-                    "pkg_resources",
-                    "zmq.utils",
-                    "zmq.utils.jsonapi",
-                    "zmq.utils.strtypes",
-                    "zmq.backend.cython"
+                    "pkg_resources"
                 ],
-                # NOTE: py2exe copies libzmq.pyd with the wrong name
-                # zmq.libzmq.pyd. Manually excluding zmq.libzmq.pyd
-                # copies it with the right name.
-                'excludes': ['zmq.libzmq', 'pycountry'],
+                'excludes': ['pycountry'],
                 'dll_excludes': [
                     'IPHLPAPI.DLL',
                     'PSAPI.DLL',

@@ -1,16 +1,15 @@
 from pyee import EventEmitter
-import struct
-import ctypes
-import binascii
-import constants
 import json
 import logging
-import base64
 
 
-class Packet:
+class Packet(object):
 
-    def __init__(self, sequence_number, payload=None, synchronize=None, reset=None, buffer=False):
+    def __init__(self, sequence_number, payload=None, synchronize=None, reset=None, packet_buffer=False):
+
+        self.log = logging.getLogger(
+            '%s' % self.__class__.__name__
+        )
 
         self.ee = EventEmitter()
 
@@ -19,7 +18,7 @@ class Packet:
         bools = 0
         self._transmission_count = 0
 
-        if buffer:
+        if packet_buffer:
 
             try:
                 data = json.loads(sequence_number)
@@ -87,7 +86,7 @@ class Packet:
             (self._reset and 0x10)
         )
 
-        buffer = {
+        packet_buffer = {
             'bools': bools,
             'seq_num': self._sequenceNumber,
             'guid': guid,
@@ -99,4 +98,4 @@ class Packet:
             'nick': nick
         }
 
-        return json.dumps(buffer)
+        return json.dumps(packet_buffer)

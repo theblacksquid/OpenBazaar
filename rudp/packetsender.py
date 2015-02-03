@@ -1,7 +1,7 @@
 import logging
 
 
-class PacketSender:
+class PacketSender(object):
 
     def __init__(self, socket, hostname, port, transport):
         assert socket, 'No socket'

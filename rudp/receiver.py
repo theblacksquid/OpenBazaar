@@ -1,20 +1,19 @@
-from packet import Packet
-from linkedlist import LinkedList
-import constants
+from rudp.packet import Packet
+from rudp.linkedlist import LinkedList
+import rudp.constants
 import logging
-import helpers
+import rudp.helpers
 
 from pyee import EventEmitter
 
 
-class Receiver():
-
+class Receiver(object):
     def __init__(self, packet_sender):
         print 'Init Receiver'
 
         # TODO: have this be a DuplexStream instead of an EventEmitter.
         # TODO: the Receiver should never send raw packets to the end host. It should
-        #      only be acknowledgement packets. Please see [1]
+        # only be acknowledgement packets. Please see [1]
 
         self.ee = EventEmitter()
 
@@ -22,7 +21,7 @@ class Receiver():
         self._next_sequence_number = 0
         self._sync_sequence_number = None
 
-        self._packets = LinkedList(helpers.sort_by_sequence)
+        self._packets = LinkedList(rudp.helpers.sort_by_sequence)
         self._packet_sender = packet_sender
         self._closed = False
 
@@ -37,20 +36,20 @@ class Receiver():
 
     def reset(self):
         self.log.debug('Reset')
-        self.log.debug('Self Packets: %s' % self._packets.toArray())
+        self.log.debug('Self Packets: %s', self._packets.toArray())
 
         self._synced = False
         self._next_sequence_number = 0
         self._sync_sequence_number = None
 
         # try:
-        #     message = self._message
+        # message = self._message
         # except Exception as e:
         message = self._message
 
         try:
-            self.log.debug('%s %s' % (len(self._message), self._message_size))
-            self.log.debug('%s' % (len(message) == int(self._message_size)))
+            self.log.debug('%s %s', len(self._message), self._message_size)
+            self.log.debug('%s', len(message) == int(self._message_size))
 
             if len(self._message) == int(self._message_size):
                 self.log.debug('Matched up')
@@ -65,7 +64,7 @@ class Receiver():
                 self._waiting = True
 
         except Exception as e:
-            self.log.debug('Not full yet: %s' % e)
+            self.log.debug('Not full yet: %s', e)
 
     def receive(self, packet):
 
@@ -109,17 +108,17 @@ class Receiver():
                 self._packets.clear()
 
                 self.log.debug('Inserting Packet #%s', packet._sequenceNumber)
-                self.log.debug('Before Packets: %s' % self._packets)
+                self.log.debug('Before Packets: %s', self._packets)
                 self._packets.insert(packet)
 
-                self.log.debug('Before Updated Message: %s' % self._message)
+                self.log.debug('Before Updated Message: %s', self._message)
 
                 if not self._waiting:
                     self._message = packet._payload
                 else:
                     self._message += packet._payload
 
-                self.log.debug('Updated Message: %s' % self._message)
+                self.log.debug('Updated Message: %s', self._message)
 
                 self._next_sequence_number = packet._sequenceNumber + 1
                 self._synced = True
@@ -128,17 +127,17 @@ class Receiver():
                 if packet._reset:
                     self.reset()
 
-                # if packet._reset:
-                #     self.log.debug('Received Reset')
-                #     self._synced = False
-                #     self._next_sequence_number = 0
-                #     self._sync_sequence_number = None
-                #     self.ee.emit('_reset', 'test')
+                    # if packet._reset:
+                    # self.log.debug('Received Reset')
+                    #     self._synced = False
+                    #     self._next_sequence_number = 0
+                    #     self._sync_sequence_number = None
+                    #     self.ee.emit('_reset', 'test')
                     # self.log.debug('Passing Message Upstream: %s', self._message)
                     # self.ee.emit('data', {'payload': self._message, 'size': len(self._message)})
 
                 # We're done.
-                #self._packet_sender.send(Packet.createFinishPacket())
+                # self._packet_sender.send(Packet.createFinishPacket())
 
                 return
 
@@ -155,7 +154,8 @@ class Receiver():
                 print 'Troll packet'
                 return
 
-            elif packet._sequenceNumber >= (self._packets.currentValue()._sequenceNumber + constants.WINDOW_SIZE):
+            elif packet._sequenceNumber >= (self._packets.currentValue()._sequenceNumber
+                                            + rudp.constants.WINDOW_SIZE):
                 # This means that the next packet received is not within the window size.
                 self.ee.emit('_window_size_exceeded')
                 self.log.debug('Packet window exceeded')
@@ -164,9 +164,9 @@ class Receiver():
 
             elif packet._reset:
                 if self._message != '':
-                    self.log.debug('Before Updated 3 Message: %s' % self._message)
+                    self.log.debug('Before Updated 3 Message: %s', self._message)
                     self._message += packet._payload
-                    self.log.debug('After Updated Message: %s' % self._message)
+                    self.log.debug('After Updated Message: %s', self._message)
                     self._packet_sender.send(Packet.createAcknowledgementPacket(
                         packet._sequenceNumber,
                         self._packet_sender._transport.guid,
@@ -204,9 +204,9 @@ class Receiver():
 
         if packet.get_sequence_number() == self._next_sequence_number:
 
-            self.log.debug('Before Updated 2 Message: %s' % self._message)
+            self.log.debug('Before Updated 2 Message: %s', self._message)
             self._message += packet._payload
-            self.log.debug('After Updated Message: %s' % self._message)
+            self.log.debug('After Updated Message: %s', self._message)
 
             # [1] Never send packets directly!
             self._packet_sender.send(Packet.createAcknowledgementPacket(packet.get_sequence_number(),
