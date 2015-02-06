@@ -3,14 +3,14 @@
 #
 # configure.sh - Setup your OpenBazaar development environment in one step.
 #
-# If you are a Ubuntu or MacOSX user, you can try executing this script
-# and you already checked out the OpenBazaar sourcecode from the git repository
-# you can try configuring/installing OpenBazaar by simply executing this script
+# If you are a Ubuntu or MacOSX user, and you've already checked out
+# the OpenBazaar sourcecode from the git repository; you can try 
+# configuring/installing OpenBazaar by simply executing this script
 # instead of following the build instructions in the OpenBazaar Wiki
 # https://github.com/OpenBazaar/OpenBazaar/wiki/Build-Instructions
 #
-# This script will only get better as its tested on more development environments
-# if you can't modify it to make it better, please open an issue with a full
+# This script will only get better as its tested on more development environments.
+# If you can't modify it to make it better, please open an issue with a full
 # error report at https://github.com/OpenBazaar/OpenBazaar/issues/new
 #
 #
@@ -43,12 +43,13 @@ function brewDoctor {
 
 function brewUpgrade {
     echo "If your homebrew packages are outdated, we recommend upgrading them now. This may take some time."
+    echo "We will only upgrade the packages needed to run OpenBazaar"
     read -r -p "Do you want to do this? [y/N] " response
     if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]
     then
-      if ! brew upgrade; then
+      if ! brew upgrade autoenv gpg openssl sqlite3 wget; then
         echo
-        echo "There were errors when attempting to 'brew upgrade' and there could be issues with the installation of OpenBazaar."
+        echo "There were errors when attempting 'brew upgrade', there could be issues with the installation of OpenBazaar."
         echo
         read -p "Press [Enter] to continue anyway or [ctrl + c] to exit and fix those errors."
       fi
@@ -58,10 +59,10 @@ function brewUpgrade {
 function installMac {
   # Install brew if it is not installed, otherwise upgrade it.
   if ! command_exists brew ; then
-    echo "installing brew..."
+    echo "Installing brew..."
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
   else
-    echo "updating, upgrading, checking brew..."
+    echo "Updating, Upgrading and checking brew installation..."
     ORIGINAL_CPPFLAGS=$CPPFLAGS
     export CPPFLAGS=
     brew update
