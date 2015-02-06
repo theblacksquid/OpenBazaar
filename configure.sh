@@ -15,20 +15,28 @@
 #
 #
 
-#exit on error
+# exit on error
 set -e
 
 function command_exists {
-  # this should be a very portable way of checking if something is on the path
+  # POSIX-compatible way to check if a command exists.
   # usage: "if command_exists foo; then echo it exists; fi"
-  type "$1" &> /dev/null
+  command -v "$1" > /dev/null
+}
+
+function make_env {
+  # Create a virtualenv for OpenBazaar.
+  # NOTE: we get env/bin/pip by doing this.
+  if [ ! -d "./env" ]; then
+    virtualenv --python=python2.7 env
+  fi
 }
 
 function brewDoctor {
     if ! brew doctor; then
-      echo ""
+      echo
       echo "'brew doctor' did not exit cleanly! This may be okay. Read above."
-      echo ""
+      echo
       read -p "Press [Enter] to continue anyway or [ctrl + c] to exit and do what the doctor says..."
     fi
 }
@@ -39,19 +47,16 @@ function brewUpgrade {
     if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]
     then
       if ! brew upgrade; then
-        echo ""
+        echo
         echo "There were errors when attempting to 'brew upgrade' and there could be issues with the installation of OpenBazaar."
-        echo ""
+        echo
         read -p "Press [Enter] to continue anyway or [ctrl + c] to exit and fix those errors."
       fi
     fi
 }
 
 function installMac {
-  # print commands (useful for debugging)
-  # set -x # echoes the commands executed
-
-  # install brew if it is not installed, otherwise upgrade it
+  # Install brew if it is not installed, otherwise upgrade it.
   if ! command_exists brew ; then
     echo "installing brew..."
     ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
@@ -66,9 +71,11 @@ function installMac {
     export CPPFLAGS=$ORIGINAL_CPPFLAGS
   fi
 
-  # Use brew's python 2.7, even if user has a system python. The brew version comes with pip and setuptools.
+  # Use brew's python 2.7, even if user has a system python.
+  # The brew version comes with pip and setuptools.
   # If user already has brew installed python, then this won't do anything.
-  # Note we get pip for free by doing this, and can avoid future calls to sudo. brew convention abhors all things 'sudo' anyway.
+  # Note we get pip for free by doing this, and can avoid future calls to sudo.
+  # brew convention abhors all things 'sudo' anyway.
   brew install python
 
   for dep in gpg sqlite3 wget openssl zmq autoenv
@@ -78,37 +85,33 @@ function installMac {
     fi
   done
 
-  # install python's virtualenv if it is not installed
+  # Install python's virtualenv if it is not installed.
   if ! command_exists virtualenv ; then
     pip install virtualenv
   fi
 
-  # create a virtualenv for OpenBazaar. note we get env/bin/pip by doing this. We also needed pip earlier to install virtualenv.
-  if [ ! -d "./env" ]; then
-    virtualenv --python=python2.7 env
-  fi
+  make_env
 
   # "To begin using the virtual environment, it needs to be activated:"
   # http://docs.python-guide.org/en/latest/dev/virtualenvs/
-  # We have autoenv and an appropriate .env in our OB home dir, but we should activate the env just in case (e.g. for first time users).
+  # We have autoenv and an appropriate .env in our OB home dir,
+  # but we should activate the env just in case
+  # (e.g. for first time or non-Mac users).
   source env/bin/activate
 
-  # set compile flags for brew's openssl instead of using brew link --force
+  # Set compile flags for brew's openssl instead of using brew link --force
   export CFLAGS="-I$(brew --prefix openssl)/include"
   export LDFLAGS="-L$(brew --prefix openssl)/lib"
 
-  # install python deps inside our virtualenv
+  # Install python deps inside our virtualenv
   ./env/bin/pip install -r requirements.txt
-
-  # There are still pysqlcipher issues on OS X. Temporarily disable sqlite-crypt until that is resolved.
-  doneMessage "--disable-sqlite-crypt "
 }
 
 function doneMessage {
   VERSION_FROM_CHANGELOG="$(head -1 changelog | awk '/openbazaar \(.*\..*\..*\)/ { print $2 }')"
-  echo ""
-  echo ""
-  echo ""
+  echo
+  echo
+  echo
   echo '   ____                     ____                            '
   echo '  / __ \                   |  _ \                           '
   echo ' | |  | |_ __   ___ _ __   | |_) | __ _ ______ _  __ _ _ __ '
@@ -117,59 +120,44 @@ function doneMessage {
   echo '  \____/| .__/ \___|_| |_| |____/ \__,_/___\__,_|\__,_|_|   '
   echo '        | |                                                 '
   echo '        |_|                                                 '                                                                                                   ##'
-  echo ""
+  echo
   echo "                                             Release $VERSION_FROM_CHANGELOG"
-  echo ""
-  echo ""
+  echo
+  echo
   echo "OpenBazaar configuration finished!"
   echo "Run './openbazaar $1start; tail -F logs/production.log' to start OpenBazaar and output logs."
-  echo ""
-  echo ""
-  echo ""
-
+  echo
+  echo
+  echo
 }
 
 
 function installUbuntu {
-  # print commands (useful for debugging)
-  # set -x # echoes the commands executed
-
-  sudo apt-get -q update || echo 'apt-get update failed. Continuing...'
-  sudo apt-get -y install python-pip build-essential python-zmq rng-tools \
+  sudo apt-get --quiet update || echo 'apt-get update failed. Continuing...'
+  sudo apt-get --assume-yes install python-pip build-essential python-zmq rng-tools \
   python-dev libjpeg-dev sqlite3 openssl \
   alien libssl-dev python-virtualenv lintian libjs-jquery
 
-  if [ ! -d "./env" ]; then
-    virtualenv --python=python2.7 env
-  fi
+  make_env
 
   ./env/bin/pip install -r requirements.txt
-
-  doneMessage
 }
 
 function installArch {
-  # print commands (useful for debugging)
-  # set -x # echoes the commands executed
-
   echo "Some packages and dependencies may fail to install if your package list is out of date."
   echo "Would you like to upgrade your system now? "
   if confirm ; then
-    sudo pacman -Syu
+    sudo pacman --sync --refresh --sysupgrade
   else
     echo "Continuing."
   fi
-  # sudo pacman -S --needed base-devel
-  # Can conflict with multilib packages. Uncomment this line if you don't already have base-devel installed
-  sudo pacman -S --needed python2 python2-pip python2-virtualenv python2-pyzmq rng-tools libjpeg sqlite3 openssl
+  # sudo pacman --sync --needed base-devel
+  # Can conflict with multilib packages. Uncomment previous line if you don't already have base-devel installed
+  sudo pacman --sync --needed python2 python2-pip python2-virtualenv python2-pyzmq rng-tools libjpeg sqlite3 openssl
 
-  if [ ! -d "./env" ]; then
-    virtualenv2 env
-  fi
+  make_env
 
   ./env/bin/pip install -r requirements.txt
-
-  doneMessage
 }
 
 function confirm {
@@ -183,14 +171,13 @@ function confirm {
 }
 
 function installRaspiArch {
-  # pacman -S sudo
-  sudo pacman -Sy
-  sudo pacman -S --needed base-devel curl wget python2 python2-pip rng-tools libjpeg sqlite3 openssl libunistring
+  # pacman --sync sudo
+  sudo pacman --sync --refresh
+  sudo pacman --sync --needed base-devel curl wget python2 python2-pip rng-tools libjpeg sqlite3 openssl libunistring
   echo " "
   echo "Notice : pip install requires 10~30 minutes to complete."
   if confirm ; then
     pip2 install -r requirements.txt
-    doneMessage
     echo "Run OpenBazaar on Raspberry Pi Arch without HDMI/VideoOut"
     echo "Type the following shell command to start."
     echo " "
@@ -200,13 +187,12 @@ function installRaspiArch {
 }
 
 function installRaspbian {
-  sudo apt-get -y install python-pip build-essential rng-tools alien \
+  sudo apt-get --assume-yes install python-pip build-essential rng-tools alien \
   openssl libssl-dev python-dev libjpeg-dev sqlite3
   echo " "
   echo "Notice : pip install requires 2~3 hours to complete."
   if confirm ; then
-    sudo pip install -r requirements.txt
-    doneMessage
+    sudo pip install --requirement requirements.txt
     echo "Run OpenBazaar on Raspberry Pi Raspbian without HDMI/VideoOut"
     echo "Type the following shell command to start."
     echo " "
@@ -216,40 +202,26 @@ function installRaspbian {
 }
 
 function installPortage {
-  # print commands (useful for debugging)
-  # set -x # echoes the commands executed
+  sudo emerge --noreplace dev-lang/python:2.7 dev-python/pip pyzmq rng-tools gcc jpeg sqlite3 openssl dev-python/virtualenv
 
-  sudo emerge -an dev-lang/python:2.7 dev-python/pip pyzmq rng-tools gcc jpeg sqlite3 openssl dev-python/virtualenv
-  # FIXME: on gentoo install as user, because otherwise
-  # /usr/lib/python-exec/python-exec* gets overwritten by nose,
-  # killing most Python programs.
-  pip install --user -r requirements.txt
-  doneMessage
+  make_env
+
+  ./env/bin/pip install -r requirements.txt
 }
 
 function installFedora {
-  # print commands (useful for debugging)
-  # set -x # echoes the commands executed
 
-  sudo yum install -y http://linux.ringingliberty.com/bitcoin/f18/x86_64/bitcoin-release-1-4.noarch.rpm
+  sudo yum --assumeyes install kernel-devel rng-tools openssl openssl-libs openssl-devel openjpeg openjpeg-devel make alien
+  sudo yum --assumeyes install python2 python-pip python-virtualenv python-devel python-zmq zeromq3 zeromq3-devel pyOpenSSL
+  rpm --query bitcoin-release || sudo yum --assumeyes install http://linux.ringingliberty.com/bitcoin/f20/x86_64/bitcoin-release-1-6.noarch.rpm
+  sudo yum --assumeyes install openssl-compat-bitcoin-libs
 
-  sudo yum -y install python-pip python-zmq rng-tools openssl \
-  openssl-devel alien python-virtualenv make automake gcc gcc-c++ \
-  kernel-devel python-devel openjpeg-devel sqlite \
-  zeromq-devel zeromq python python-qt4 openssl-compat-bitcoin-libs
-
-  if [ ! -d "./env" ]; then
-    virtualenv env
-  fi
+  make_env
 
   ./env/bin/pip install -r requirements.txt
-
-  doneMessage
 }
 
 function installSlack {
-  # set -x # echoes the commands executed
-
   sudo /usr/sbin/slackpkg update
   if ! command_exists python; then
     sudo /usr/sbin/slackpkg install python
@@ -278,16 +250,16 @@ function installSlack {
       sudo /usr/sbin/slackpkg install libjpeg sqlite openssl
    fi
 
-  if [ ! -d "./env" ]; then
-        virtualenv env
-  fi
+   make_env
 
   ./env/bin/pip install -r requirements.txt
-  doneMessage
 }
 
 if [[ $OSTYPE == darwin* ]] ; then
   installMac
+  # There are still pysqlcipher issues on OS X.
+  # Suggest disabling sqlite-crypt until that is resolved.
+  doneMessage "--disable-sqlite-crypt "
 elif [[ $OSTYPE == linux-gnu || $OSTYPE == linux-gnueabihf ]]; then
   UNAME=$(uname -a)
   if [ -f /etc/arch-release ]; then
@@ -312,4 +284,5 @@ elif [[ $OSTYPE == linux-gnu || $OSTYPE == linux-gnueabihf ]]; then
   else
     installUbuntu
   fi
+  doneMessage
 fi

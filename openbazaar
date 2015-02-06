@@ -2,6 +2,8 @@
 
 if [ "$(uname)" = Darwin ] ; then
   export DYLD_LIBRARY_PATH=$(brew --prefix openssl)/lib:$DYLD_LIBRARY_PATH
+elif [ -f /etc/fedora-release ]; then
+  export LD_LIBRARY_PATH=/opt/openssl-compat-bitcoin/lib:$LD_LIBRARY_PATH
 fi
 
 # if being executed from installation into some base directory,
