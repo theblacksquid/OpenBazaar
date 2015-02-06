@@ -598,12 +598,12 @@ class Market(object):
 
         # Validate that the namecoin id received is well formed
         self.log.debug(msg)
-        if not re.match(r'^[a-z0-9\-]{1,39}$', msg['Namecoin_id']):
-            msg['Namecoin_id'] = ''
+        if not re.match(r'^[a-z0-9\-]{1,39}$', msg['namecoin_id']):
+            msg['namecoin_id'] = ''
 
         # Update nickname and namecoin id
         self.transport.nickname = msg['nickname']
-        self.transport.namecoin_id = msg['Namecoin_id']
+        self.transport.namecoin_id = msg['namecoin_id']
 
         if 'burnAmount' in msg:
             del msg['burnAmount']
