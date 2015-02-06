@@ -117,7 +117,7 @@ class Market(object):
         image = Image.open(StringIO(image_data))
         cropped_image = ImageOps.fit(image, (200, 200), centering=(0.5, 0.5))
         data = StringIO()
-        cropped_image.save(data, format='PNG', quality=50)
+        cropped_image.save(data, format='PNG', quality=75, optimize=True)
         new_uri = DataURI.make(
             'image/png',
             charset=charset,
