@@ -471,7 +471,7 @@ class DHT(object):
     def find_listings_by_keyword(self, keyword, listing_filter=None, callback=None):
 
         hashvalue = hashlib.new('ripemd160')
-        keyword_key = 'keyword-%s', keyword
+        keyword_key = 'keyword-%s' % keyword
         hashvalue.update(keyword_key.encode('utf-8'))
         listing_index_key = hashvalue.hexdigest()
 
