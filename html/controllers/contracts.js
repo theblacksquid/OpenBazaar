@@ -168,9 +168,12 @@ angular.module('app')
                             }
                         });
 
-                        console.log(document.getElementById('image-thumb'));
-                        product_image = document.getElementById('image-thumb').src;
-                        contract.Contract.item_images.image1 = product_image;
+                        image_thumb = document.getElementById('image-thumb');
+                        if(image_thumb) {
+                            console.log(image_thumb);
+                            product_image = image_thumb.src;
+                            contract.Contract.item_images.image1 = product_image;
+                        }
 
                         Connection.send("create_contract", contract);
                         Notifier.success('Success', 'Contract saved successfully.');
