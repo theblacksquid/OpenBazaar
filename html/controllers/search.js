@@ -39,11 +39,14 @@ angular.module('app')
             var url_json = getJsonFromUrl();
             $scope.search = url_json.searchterm;
 
+            $scope.search = $scope.search.replace("+", " ");
+            console.log('Search term: ', $scope.search);
+
             $scope.searchNetwork = function() {
 
                 var query = {
                     'type': 'search',
-                    'key': url_json.searchterm
+                    'key': $scope.search
                 };
                 $scope.searching = $scope.search;
 
