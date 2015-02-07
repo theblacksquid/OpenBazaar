@@ -135,7 +135,7 @@ function doneMessage {
 
 function installUbuntu {
   sudo apt-get --quiet update || echo 'apt-get update failed. Continuing...'
-  sudo apt-get --assume-yes install python-pip build-essential rng-tools \
+  sudo apt-get --assume-yes install python-pip build-essential rng-tools python-dev \
 
   python-dev libjpeg-dev sqlite3 openssl \
   alien libssl-dev python-virtualenv lintian libjs-jquery
