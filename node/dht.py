@@ -673,7 +673,7 @@ class DHT(object):
         self.iterative_find(key, [], callback=callback)
 
     @_synchronized
-    def iterative_find(self, key, startup_shortlist=None, call='findNode', callback=None):
+    def iterative_find(self, key, startup_shortlist=[], call='findNode', callback=None):
         """
         - Create a new DHTSearch object and add the key and call back to it
         - Add the search to our search queue (self.searches)
@@ -813,7 +813,7 @@ class DHT(object):
 
     @_synchronized
     def iterative_find_value(self, key, callback=None):
-        self._iterativeFind(key, call='findValue', callback=callback)
+        self.iterative_find(key, call='findValue', callback=callback)
 
     @staticmethod
     def dedupe(lst):

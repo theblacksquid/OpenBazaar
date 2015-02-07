@@ -321,8 +321,15 @@ class Market(object):
             )
 
             # Push keyword index out again
-            contract = listing.get('Contract')
+            contract_body = json.loads(listing.get('contract_body'))
+            self.log.debug('Listing: %s' % listing)
+            self.log.debug('Contract: %s' % contract_body)
+
+
+            contract = contract_body.get('Contract')
+
             keywords = contract.get('item_keywords') if contract is not None else []
+            self.log.debug('Found keywords to republish: %s' % keywords)
 
             self.update_keywords_on_network(listing.get('key'), keywords)
 
