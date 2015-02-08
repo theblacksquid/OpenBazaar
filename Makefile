@@ -8,7 +8,7 @@ all: test
 test: check unittest
 
 unittest:
-	nosetests --with-coverage --cover-package=node --cover-package=db --cover-inclusive $(TESTPATH)
+	nosetests --with-coverage --cover-package=node --cover-package=rudp --cover-package=db --cover-inclusive $(TESTPATH)
 
 check: execcheck nlcheck jscheck pycheck banditcheck
 
