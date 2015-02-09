@@ -92,6 +92,9 @@ _SCHEMA = (
             'text TEXT',
             'contract_key TEXT',
             'signed_contract_body TEXT',
+            'merchant_sigs TEXT',
+            'merchant_script TEXT',
+            'merchant_tx TEXT',
             'updated INT',
             'created INT',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
@@ -121,6 +124,7 @@ _SCHEMA = (
             'nickname TEXT',
             'namecoin_id TEXT',
             'secret TEXT',
+            'bip32_seed TEXT',
             'sin TEXT',
             'pubkey TEXT',
             'guid TEXT',
@@ -181,6 +185,17 @@ _SCHEMA = (
             'originalPublisherID TEXT',
             'value TEXT',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
+        )
+    ),
+    (
+        'keystore',
+        (
+            'id INTEGER PRIMARY KEY AUTOINCREMENT',
+            'key_id INT',
+            'order_id INT',
+            'public TEXT',
+            'private TEXT',
+            'FOREIGN KEY(order_id) REFERENCES orders(order_id)'
         )
     )
 )
