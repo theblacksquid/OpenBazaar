@@ -32,9 +32,13 @@ angular.module('app')
              */
             $scope.$evalAsync( function( $scope ) {
 
+                var listeners = Connection.$$listeners;
+                if(!listeners.hasOwnProperty('order_notify')) {
+                    Connection.$on('order_notify', function(e, msg){ $scope.order_notify(msg); });
+                }
+
                 Connection.$on('peer', function(e, msg){ $scope.add_peer(msg); });
                 Connection.$on('goodbye', function(e, msg){ $scope.goodbye(msg); });
-                Connection.$on('order_notify', function(e, msg){ $scope.order_notify(msg); });
                 Connection.$on('peers', function(e, msg){ $scope.update_peers(msg); });
                 Connection.$on('peer_remove', function(e, msg){ $scope.remove_peer(msg); });
                 Connection.$on('myself', function(e, msg){ $scope.parse_myself(msg); });
@@ -177,7 +181,6 @@ angular.module('app')
                 $scope.orders_current_page = msg.page + 1;
 
             };
-
 
             $scope.parse_contracts = function(msg) {
 
