@@ -55,8 +55,6 @@ class PeerConnection(object):
 
     def send_raw(self, serialized, callback=None):
         data_encoded = serialized
-        # data = "{0}|{1}".format(len(data_encoded), data_encoded)
-        print type(data_encoded)
         data_encoded = data_encoded.encode('hex')
         data = str(len(data_encoded)) + '|' + data_encoded
         self._rudp_connection.send(data)
@@ -163,8 +161,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         return obelisk.EncodeBase58Check('\x0F\x02%s' + guid.decode('hex'))
 
     def sign(self, data):
-        cryptor = Cryptor(privkey_hex=self.transport.settings['secret'])
-        return cryptor.sign(data)
+        return self.transport.cryptor.sign(data)
 
     def encrypt(self, data):
         """

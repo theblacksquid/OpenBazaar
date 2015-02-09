@@ -447,6 +447,7 @@ class Market(object):
 
         contract = json.loads(contract['contract_body'])
         contract_keywords = contract['Contract']['item_keywords']
+        self.log.debug('Keywords to remove: %s' % contract_keywords)
 
         for keyword in contract_keywords:
             # Remove keyword from index
@@ -643,10 +644,6 @@ class Market(object):
             value = settings.get(key) or '[]'
             settings[key] = ast.literal_eval(value)
 
-        if 'secret' not in settings:
-            settings['privkey'] = ''
-
-        settings['btc_pubkey'] = privkey_to_pubkey(settings.get('privkey'))
         settings['secret'] = settings.get('secret')
 
         if settings:

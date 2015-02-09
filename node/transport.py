@@ -11,7 +11,7 @@ import xmlrpclib
 
 import gnupg
 import obelisk
-from bitcoin.main import privkey_to_pubkey, random_key
+import bitcoin
 from pysqlcipher.dbapi2 import OperationalError, DatabaseError
 from tornado import ioloop
 from tornado.ioloop import PeriodicCallback
@@ -20,6 +20,7 @@ from node import connection, network_util, trust
 from node.dht import DHT
 from rudp.packet import Packet
 import socket
+from crypto_util import Cryptor
 
 
 class TransportLayer(object):
@@ -457,11 +458,11 @@ class CryptoTransportLayer(TransportLayer):
         self.namecoin_id = self.settings.get('namecoin_id', '')
         self.secret = self.settings.get('secret', '')
         self.pubkey = self.settings.get('pubkey', '')
-        self.privkey = self.settings.get('privkey')
-        self.btc_pubkey = privkey_to_pubkey(self.privkey)
         self.guid = self.settings.get('guid', '')
         self.sin = self.settings.get('sin', '')
         self.bitmessage = self.settings.get('bitmessage', '')
+
+        self.cryptor = Cryptor(pubkey_hex=self.pubkey, privkey_hex=self.secret)
 
         if not self.settings.get('bitmessage'):
             # Generate Bitmessage address
@@ -475,12 +476,24 @@ class CryptoTransportLayer(TransportLayer):
             self._connect_to_bitmessage()
 
     def _generate_new_keypair(self):
-        secret = str(random.randrange(2 ** 256))
-        self.secret = hashlib.sha256(secret).hexdigest()
-        self.pubkey = privkey_to_pubkey(self.secret)
-        self.privkey = random_key()
-        self.btc_pubkey = privkey_to_pubkey(self.privkey)
-        print 'PUBLIC KEY: ', self.btc_pubkey
+
+        seed = str(random.randrange(2 ** 256))
+
+        # Deprecated (pre-BIP32)
+        # self.secret = hashlib.sha256(secret).hexdigest()
+        # self.pubkey = privkey_to_pubkey(self.secret)
+        # self.log.debug('Keys %s %s', self.secret, self.pubkey)
+
+        # Move to BIP32 keys m/0/0/0
+        wallet = bitcoin.bip32_ckd(bitcoin.bip32_master_key(seed), 0)
+        wallet_chain = bitcoin.bip32_ckd(wallet, 0)
+        bip32_identity_priv = bitcoin.bip32_ckd(wallet_chain, 0)
+        identity_priv = bitcoin.bip32_extract_key(bip32_identity_priv)
+        bip32_identity_pub = bitcoin.bip32_privtopub(bip32_identity_priv)
+        identity_pub = bitcoin.encode_pubkey(bitcoin.bip32_extract_key(bip32_identity_pub), 'hex')
+
+        self.pubkey = identity_pub
+        self.secret = identity_priv
 
         # Generate SIN
         sha_hash = hashlib.sha256()
@@ -494,9 +507,9 @@ class CryptoTransportLayer(TransportLayer):
         newsettings = {
             "secret": self.secret,
             "pubkey": self.pubkey,
-            "privkey": self.privkey,
             "guid": self.guid,
-            "sin": self.sin
+            "sin": self.sin,
+            "bip32_seed": seed
         }
         self.db_connection.update_entries("settings", newsettings, {"market_id": self.market_id})
         self.settings.update(newsettings)
