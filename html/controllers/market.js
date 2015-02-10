@@ -36,6 +36,9 @@ angular.module('app')
                 if(!listeners.hasOwnProperty('order_notify')) {
                     Connection.$on('order_notify', function(e, msg){ $scope.order_notify(msg); });
                 }
+                if(!listeners.hasOwnProperty('republish_notify')) {
+                    Connection.$on('republish_notify', function(e, msg){ $scope.republish_notify(msg); });
+                }
 
                 Connection.$on('peer', function(e, msg){ $scope.add_peer(msg); });
                 Connection.$on('goodbye', function(e, msg){ $scope.goodbye(msg); });
@@ -362,6 +365,9 @@ angular.module('app')
             $scope.order_notify = function(msg) {
                 console.log(msg);
                 Notifier.info('Order Update', msg.msg);
+            };
+            $scope.republish_notify = function(msg) {
+                Notifier.info('Network Update', msg.msg);
             };
 
             // Create a new order and send to the network
