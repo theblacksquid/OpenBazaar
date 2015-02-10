@@ -7,11 +7,23 @@ import qrcode
 import random
 import time
 import urllib
-from bitcoin import mk_multisig_script, privkey_to_pubkey, scriptaddr
+from bitcoin import (
+    apply_multisignatures,
+    eligius_pushtx,
+    privkey_to_pubkey,
+    mk_multisig_script,
+    mktx,
+    multisign,
+    scriptaddr
+)
 
 from decimal import Decimal
 from node import trust
 from node.multisig import Multisig
+import obelisk
+from twisted.internet import reactor
+import bitcoin
+
 
 
 class Orders(object):
@@ -267,6 +279,9 @@ class Orders(object):
                  "item_title": offer_data_json['Contract']['item_title'],
                  "signed_contract_body": _order.get('signed_contract_body'),
                  "note_for_merchant": _order.get('note_for_merchant'),
+                 "merchant_tx": _order.get('merchant_tx'),
+                 "merchant_sigs": _order.get('merchant_sigs'),
+                 "merchant_script": _order.get('merchant_script'),
                  "updated": _order.get('updated')}
 
         if 'item_images' in offer_data_json['Contract'] and offer_data_json['Contract']['item_images'] != {}:
@@ -380,6 +395,28 @@ class Orders(object):
 
         return {"total": total_orders, "orders": orders}
 
+    def get_signing_key(self, contract_id):
+        # Get BIP32 child signing key for this order id
+        rows = self.db_connection.select_entries("keystore", {
+            'contract_id': contract_id
+        })
+
+        if len(rows):
+            key_id = rows[0]['id']
+
+            settings = self.get_settings()
+
+            wallet = bitcoin.bip32_ckd(bitcoin.bip32_master_key(settings.get('bip32_seed')), 1)
+            wallet_chain = bitcoin.bip32_ckd(wallet, 0)
+            bip32_identity_priv = bitcoin.bip32_ckd(wallet_chain, key_id)
+            # bip32_identity_pub = bitcoin.bip32_privtopub(bip32_identity_priv)
+            return bitcoin.encode_privkey(bitcoin.bip32_extract_key(bip32_identity_priv), 'wif')
+
+        else:
+            self.log.error('No keys found for that contract id: #%s', contract_id)
+            return
+
+
     def ship_order(self, order, order_id, payment_address):
         self.log.info('Shipping order')
 
@@ -393,10 +430,8 @@ class Orders(object):
 
         order['state'] = Orders.State.SHIPPED
         order['payment_address'] = payment_address
-        self.db_connection.update_entries("orders", order, {"order_id": order_id})
-
         order['type'] = 'order'
-        order['payment_address'] = payment_address
+        self.db_connection.update_entries("orders", order, {"order_id": order_id})
 
         # Find Seller Data in Contract
         offer_data = ''.join(order['signed_contract_body'].split('\n')[8:])
@@ -413,7 +448,101 @@ class Orders(object):
         bid_data_json = json.loads(bid_data_json)
         self.log.info('Bid Data: %s', bid_data_json)
 
-        self.transport.send(order, bid_data_json['Buyer']['buyer_GUID'])
+        # Find Notary Data in Contract
+        notary_data_index = offer_data.find(
+            '"Notary"', end_of_bid_index, len(offer_data)
+        )
+        end_of_notary_index = offer_data.find(
+            '-----BEGIN PGP SIGNATURE', notary_data_index, len(offer_data)
+        )
+        notary_data_json = "{"
+        notary_data_json += offer_data[notary_data_index:end_of_notary_index]
+        notary_data_json = json.loads(notary_data_json)
+        self.log.info('Notary Data: %s', notary_data_json)
+
+        # TODO: Check to ensure the OBelisk server is listening first
+
+
+        try:
+            client = obelisk.ObeliskOfLightClient(
+                'tcp://%s' % self.transport.settings['obelisk']
+            )
+
+            seller = offer_data_json['Seller']
+            buyer = bid_data_json['Buyer']
+            notary = notary_data_json['Notary']
+
+            pubkeys = [
+                seller['seller_BTC_uncompressed_pubkey'],
+                buyer['buyer_BTC_uncompressed_pubkey'],
+                notary['notary_BTC_uncompressed_pubkey']
+            ]
+
+            script = mk_multisig_script(pubkeys, 2, 3)
+            multi_address = scriptaddr(script)
+
+            def cb(ec, history, order):
+
+                self.log.debug('Callback for history %s' % history)
+
+                private_key = self.get_signing_key(seller['seller_contract_id'])
+                self.log.debug('private key %s', private_key)
+
+                if ec is not None:
+                    self.log.error("Error fetching history: %s", ec)
+                    # TODO: Send error message to GUI
+                    return
+
+                # Create unsigned transaction
+                unspent = [row[:4] for row in history if row[4] is None]
+
+                # Send all unspent outputs (everything in the address) minus
+                # the fee
+                total_amount = 0
+                inputs = []
+                for row in unspent:
+                    assert len(row) == 4
+                    inputs.append(
+                        str(row[0].encode('hex')) + ":" + str(row[1])
+                    )
+                    value = row[3]
+                    total_amount += value
+
+                # Constrain fee so we don't get negative amount to send
+                fee = min(total_amount, 10000)
+                send_amount = total_amount - fee
+
+                payment_output = order['payment_address']
+                tx = mktx(
+                    inputs, [str(payment_output) + ":" + str(send_amount)]
+                )
+
+                # Sign all the inputs
+                signatures = []
+                for x in range(0, len(inputs)):
+                    ms = multisign(tx, x, script, private_key)
+                    signatures.append(ms)
+
+                self.log.debug('Merchant TX Signatures: %s' % signatures)
+
+                order['merchant_tx'] = tx
+                order['merchant_script'] = script
+                order['buyer_order_id'] = buyer['buyer_order_id']
+                order['merchant_sigs'] = signatures
+
+                self.transport.send(order, bid_data_json['Buyer']['buyer_GUID'])
+
+            def get_history():
+                self.log.debug('Getting history')
+
+                client.fetch_history(
+                    multi_address,
+                    lambda ec, history, order=order: cb(ec, history, order)
+                )
+
+            reactor.callFromThread(get_history)
+        except Exception as e:
+            self.log.debug('Error: %s' % e)
 
     def accept_order(self, new_order):
 
@@ -531,10 +660,14 @@ class Orders(object):
         self.db_connection.insert_entry("orders", new_order)
         self.transport.send(new_order, new_order['seller'].decode('hex'))
 
-    def get_shipping_address(self):
-
+    def get_settings(self):
         settings = self.db_connection.select_entries("settings", {"market_id": self.market_id})
         settings = settings[0]
+        return settings
+
+    def get_shipping_address(self):
+
+        settings = self.get_settings()
 
         shipping_info = {
             "street1": settings['street1'],
@@ -550,6 +683,31 @@ class Orders(object):
         self.log.debug('Shipping Info: %s', shipping_info)
         return shipping_info
 
+    def generate_new_order_pubkey(self, order_id):
+        self.log.debug('Generating new pubkey for order')
+
+        settings = self.get_settings()
+
+        # Retrieve next key id from DB
+        next_key_id = len(self.db_connection.select_entries("keystore", select_fields="id")) + 1
+
+        # Store updated key in DB
+        self.db_connection.insert_entry(
+            "keystore",
+            {
+                'order_id': order_id
+            }
+        )
+
+        # Generate new child key (m/1/0/n)
+        wallet = bitcoin.bip32_ckd(bitcoin.bip32_master_key(settings.get('bip32_seed')), 1)
+        wallet_chain = bitcoin.bip32_ckd(wallet, 0)
+        bip32_identity_priv = bitcoin.bip32_ckd(wallet_chain, next_key_id)
+        bip32_identity_pub = bitcoin.bip32_privtopub(bip32_identity_priv)
+        pubkey = bitcoin.encode_pubkey(bitcoin.bip32_extract_key(bip32_identity_pub), 'hex')
+
+        return pubkey
+
     def new_order(self, msg):
 
         self.log.debug('New Order: %s', msg)
@@ -564,7 +722,7 @@ class Orders(object):
         buyer = {}
         buyer['Buyer'] = {}
         buyer['Buyer']['buyer_GUID'] = self.transport.guid
-        buyer['Buyer']['buyer_BTC_uncompressed_pubkey'] = msg['btc_pubkey']
+        buyer['Buyer']['buyer_BTC_uncompressed_pubkey'] = self.generate_new_order_pubkey(order_id)
         buyer['Buyer']['buyer_pgp'] = self.transport.settings['PGPPubKey']
         #buyer['Buyer']['buyer_Bitmessage'] = self.transport.settings['bitmessage']
         buyer['Buyer']['buyer_deliveryaddr'] = seller.encrypt(json.dumps(self.get_shipping_address())).encode(
@@ -675,10 +833,11 @@ class Orders(object):
             self.log.info('Sellers contract verified')
 
         notary_section = {}
+        notary_pubkey = self.generate_new_order_pubkey(order_id)
 
         notary_section['Notary'] = {
             'notary_GUID': self.transport.guid,
-            'notary_BTC_uncompressed_pubkey': privkey_to_pubkey(self.transport.settings['privkey']),
+            'notary_BTC_uncompressed_pubkey': notary_pubkey,
             'notary_pgp': self.transport.settings['PGPPubKey'],
             'notary_fee': "",
             'notary_order_id': order_id
@@ -690,7 +849,7 @@ class Orders(object):
         pubkeys = [
             offer_data_json['Seller']['seller_BTC_uncompressed_pubkey'],
             bid_data_json['Buyer']['buyer_BTC_uncompressed_pubkey'],
-            privkey_to_pubkey(self.transport.settings['privkey'])
+            notary_pubkey
         ]
 
         script = mk_multisig_script(pubkeys, 2, 3)
@@ -756,7 +915,7 @@ class Orders(object):
         pubkeys = [
             offer_data_json['Seller']['seller_BTC_uncompressed_pubkey'],
             bid_data_json['Buyer']['buyer_BTC_uncompressed_pubkey'],
-            privkey_to_pubkey(self.transport.settings['privkey'])
+            notary_pubkey
         ]
 
         script = mk_multisig_script(pubkeys, 2, 3)
@@ -860,7 +1019,10 @@ class Orders(object):
             {
                 'state': Orders.State.SHIPPED,
                 'updated': time.time(),
-                'payment_address': msg['payment_address']
+                'payment_address': msg['payment_address'],
+                'merchant_tx': msg['merchant_tx'],
+                'merchant_sigs': json.dumps(msg['merchant_sigs']),
+                'merchant_script': msg['merchant_script']
             },
             {
                 'order_id': bid_data_json['Buyer']['buyer_order_id']
@@ -872,7 +1034,7 @@ class Orders(object):
                                                          "msg": "The seller just shipped your order."})
 
     def handle_accepted_order(self, msg):
-        self.db_connection.updateEntries("orders", {'state': Orders.State.NEED_TO_PAY,
+        self.db_connection.update_entries("orders", {'state': Orders.State.NEED_TO_PAY,
                                                     "updated": time.time()},
                                          {'order_id': msg.get('buyer_order_id')})
 
@@ -945,6 +1107,13 @@ class Orders(object):
                 'buyer_order_id': bid_data_json['Buyer']['buyer_order_id'],
             }, bid_data_json['Buyer']['buyer_GUID'])
 
+            # Decrypt shipping address
+
+            if self.transport.cryptor:
+                shipping_address = self.transport.cryptor.decrypt(bid_data_json['Buyer']['buyer_deliveryaddr'].decode('hex'))
+            else:
+                shipping_address = ''
+
             self.db_connection.insert_entry(
                 "orders",
                 {
@@ -958,8 +1127,7 @@ class Orders(object):
                     'buyer': bid_data_json['Buyer']['buyer_GUID'],
                     'notary': notary_data_json['Notary']['notary_GUID'],
                     'address': multisig_address,
-                    'shipping_address': self.transport.cryptor.decrypt(
-                        bid_data_json['Buyer']['buyer_deliveryaddr'].decode('hex')),
+                    'shipping_address': shipping_address,
                     'item_price': offer_data_json['Contract'].get('item_price', 0),
                     'shipping_price': offer_data_json['Contract']['item_delivery'].get('shipping_price', 0),
                     'note_for_merchant': bid_data_json['Buyer']['note_for_seller'],

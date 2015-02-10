@@ -18,6 +18,7 @@ import tornado.websocket
 from twisted.internet import reactor
 from node import protocol, trust, constants
 from node.backuptool import BackupTool, Backup, BackupJSONEncoder
+import bitcoin
 
 
 class ProtocolHandler(object):
@@ -526,6 +527,27 @@ class ProtocolHandler(object):
         except Exception as exc:
             self.log.error('%s', exc)
 
+    def get_signing_key(self, order_id):
+        # Get BIP32 child signing key for this order id
+        rows = self.db_connection.select_entries("keystore", {
+            'order_id': order_id
+        })
+
+        if len(rows):
+            key_id = rows[0]['id']
+
+            settings = self.transport.settings
+
+            wallet = bitcoin.bip32_ckd(bitcoin.bip32_master_key(settings.get('bip32_seed')), 1)
+            wallet_chain = bitcoin.bip32_ckd(wallet, 0)
+            bip32_identity_priv = bitcoin.bip32_ckd(wallet_chain, key_id)
+            # bip32_identity_pub = bitcoin.bip32_privtopub(bip32_identity_priv)
+            return bitcoin.encode_privkey(bitcoin.bip32_extract_key(bip32_identity_priv), 'wif')
+
+        else:
+            self.log.error('No keys found for that contract id: #%s', order_id)
+            return
+
     def client_release_payment(self, socket_handler, msg):
         self.log.info('Releasing payment to Merchant %s', msg)
         self.log.info('Using Obelisk at tcp://%s', self.transport.settings['obelisk'])
@@ -579,13 +601,15 @@ class ProtocolHandler(object):
                 buyer['buyer_BTC_uncompressed_pubkey'],
                 notary['notary_BTC_uncompressed_pubkey']
             ]
+            self.log.debug('Pubkeys: %s', pubkeys)
 
             script = mk_multisig_script(pubkeys, 2, 3)
             multi_address = scriptaddr(script)
 
             def get_history_callback(escrow, history, order):
-                settings = self.market.get_settings()
-                private_key = settings.get('privkey')
+
+                private_key = self.get_signing_key(msg['orderId'])
+                self.log.debug('private key %s', msg)
 
                 if escrow is not None:
                     self.log.error("Error fetching history: %s", escrow)
@@ -611,23 +635,37 @@ class ProtocolHandler(object):
                 fee = min(total_amount, 10000)
                 send_amount = total_amount - fee
 
-                payment_output = order['payment_address']
-                transaction = mktx(
-                    inputs, [str(payment_output) + ":" + str(send_amount)]
-                )
+                if send_amount == 0:
+                    self.log.debug('No money in this address any longer.')
+                    return
 
-                signatures = []
-                for inpt in range(len(inputs)):
-                    mltsgn = multisign(transaction, inpt, script, private_key)
-                    signatures.append(mltsgn)
+                self.log.debug('Total amount to release to merchant: %s ', total_amount)
 
-                self.log.debug('Signatures: %s', signatures)
+                # Get buyer signatures on inputs
+                buyer_signatures = []
+                for x in range(0, len(inputs)):
+                    ms = multisign(order['merchant_tx'], x, order['merchant_script'], private_key)
+                    buyer_signatures.append(ms)
 
-                self.market.release_funds_to_merchant(
-                    buyer['buyer_order_id'],
-                    transaction, script, signatures,
-                    order.get('merchant')
-                )
+                merchant_sigs = order['merchant_sigs']
+                merchant_sigs = merchant_sigs.encode('ascii')
+                merchant_sigs = json.loads(merchant_sigs)
+
+                # Apply signatures to mulsignature tx script
+                self.log.debug('TX: %s', order)
+                self.log.debug('Buyer Sigs: %s', buyer_signatures)
+                self.log.debug('Merchant Sigs: %s', order['merchant_sigs'])
+                self.log.debug('Script: %s', script)
+
+                transaction = order['merchant_tx']
+
+                for x in range(0, len(inputs)):
+                    transaction = apply_multisignatures(
+                        transaction, x, order['merchant_script'], merchant_sigs[x], buyer_signatures[x]
+                    )
+
+                self.log.debug('Broadcast TX to network: %s', transaction)
+                bitcoin.pushtx(transaction)
 
             def get_history():
                 self.log.debug('Getting history')

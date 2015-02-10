@@ -191,11 +191,10 @@ _SCHEMA = (
         'keystore',
         (
             'id INTEGER PRIMARY KEY AUTOINCREMENT',
-            'key_id INT',
             'order_id INT',
-            'public TEXT',
-            'private TEXT',
-            'FOREIGN KEY(order_id) REFERENCES orders(order_id)'
+            'contract_id INT',
+            'FOREIGN KEY(order_id) REFERENCES orders(order_id)',
+            'FOREIGN KEY(contract_id) REFERENCES contracts(id)'
         )
     )
 )

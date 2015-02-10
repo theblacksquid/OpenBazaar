@@ -21,6 +21,7 @@ from node.crypto_util import Cryptor
 from node.data_uri import DataURI
 from node.orders import Orders
 from node.protocol import proto_page, query_page
+import bitcoin
 
 
 class Market(object):
@@ -191,6 +192,29 @@ class Market(object):
                 self.transport.guid
             )
 
+    def generate_new_pubkey(self, contract_id):
+        self.log.debug('Generating new pubkey for contract')
+
+        # Retrieve next key id from DB
+        next_key_id = len(self.db_connection.select_entries("keystore", select_fields="id")) + 1
+
+        # Store updated key in DB
+        self.db_connection.insert_entry(
+            "keystore",
+            {
+                'contract_id': contract_id
+            }
+        )
+
+        # Generate new child key (m/1/0/n)
+        wallet = bitcoin.bip32_ckd(bitcoin.bip32_master_key(self.settings.get('bip32_seed')), 1)
+        wallet_chain = bitcoin.bip32_ckd(wallet, 0)
+        bip32_identity_priv = bitcoin.bip32_ckd(wallet_chain, next_key_id)
+        bip32_identity_pub = bitcoin.bip32_privtopub(bip32_identity_priv)
+        pubkey = bitcoin.encode_pubkey(bitcoin.bip32_extract_key(bip32_identity_pub), 'hex')
+
+        return pubkey
+
     def save_contract(self, msg):
         """Sign, store contract in the database and update the keyword in the
         network
@@ -202,7 +226,8 @@ class Market(object):
 
         seller = msg['Seller']
         seller['seller_PGP'] = self.gpg.export_keys(self.settings['PGPPubkeyFingerprint'])
-        seller['seller_BTC_uncompressed_pubkey'] = self.settings['btc_pubkey']
+        seller['seller_BTC_uncompressed_pubkey'] = self.generate_new_pubkey(contract_id)
+        seller['seller_contract_id'] = contract_id
         seller['seller_GUID'] = self.settings['guid']
         seller['seller_Bitmessage'] = self.settings['bitmessage']
 
@@ -511,7 +536,7 @@ class Market(object):
             self.log.error(traceback.format_exc())
             return {}
 
-    def get_contracts(self, page=0):
+    def get_contracts(self, page=0, remote=False):
         """Select contracts for market from database"""
         self.log.info(
             "Getting contracts for market: %s", self.transport.market_id)
@@ -710,7 +735,7 @@ class Market(object):
     def on_query_listings(self, peer, page=0):
         """Run if someone is querying your listings"""
         self.log.info("Someone is querying your listings: %s", peer)
-        contracts = self.get_contracts(page)
+        contracts = self.get_contracts(page, remote=True)
 
         if len(contracts['contracts']) == 0:
             self.transport.send(
