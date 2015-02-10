@@ -116,23 +116,26 @@
 
       <table class="table table-striped" style="margin-top:10px;">
             <tr>
+                <td width="40"><identicon icon-size="40" hash="Market.modalOrder.buyer" title="{{Market.modalOrder.buyer}}"></identicon></td>
                 <td><strong>Buyer:</strong></td>
                 <td style="word-break:break-all">{{Market.modalOrder.buyer}}</td>
             </tr>
             <tr>
+                <td><identicon icon-size="40" hash="Market.modalOrder.merchant" title="{{Market.modalOrder.merchant}}"></identicon></td>
                 <td><strong>Merchant:</strong></td>
                 <td style="word-break:break-all">{{Market.modalOrder.merchant}}</td>
             </tr>
             <tr data-ng-show="Market.modalOrder.notary">
+                <td><identicon icon-size="40" hash="Market.modalOrder.notary" title="{{Market.modalOrder.notary}}"></identicon></td>
                 <td><strong>Notary:</strong></td>
                 <td style="word-break:break-all">{{Market.modalOrder.notary}}</td>
             </tr>
             <tr data-ng-show="Market.modalOrder.address">
-                <td><strong>Payment Address:</strong></td>
+                <td colspan="2"><strong>Payment Address:</strong></td>
                 <td style="word-break:break-all"><a href="https://blockchain.info/address/{{Market.modalOrder.address}}" target="_blank">{{Market.modalOrder.address}}</a></td>
             </tr>
             <tr>
-                <td><strong>Raw Contract:</strong></td>
+                <td colspan="2"><strong>Raw Contract:</strong></td>
                 <td><pre style="word-wrap:break-word;font-size:12px;height:250px;">{{Market.modalOrder.signed_contract_body}}</pre></td>
             </tr>
         </table>
