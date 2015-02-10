@@ -20,7 +20,7 @@ from node import connection, network_util, trust
 from node.dht import DHT
 from rudp.packet import Packet
 import socket
-from crypto_util import Cryptor
+from node.crypto_util import Cryptor
 
 
 class TransportLayer(object):

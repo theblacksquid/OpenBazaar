@@ -12,8 +12,6 @@ import random
 from StringIO import StringIO
 import traceback
 import re
-
-from bitcoin.main import privkey_to_pubkey
 import tornado
 
 from node import constants
@@ -347,14 +345,14 @@ class Market(object):
 
             # Push keyword index out again
             contract_body = json.loads(listing.get('contract_body'))
-            self.log.debug('Listing: %s' % listing)
-            self.log.debug('Contract: %s' % contract_body)
+            self.log.debug('Listing: %s', listing)
+            self.log.debug('Contract: %s', contract_body)
 
 
             contract = contract_body.get('Contract')
 
             keywords = contract.get('item_keywords') if contract is not None else []
-            self.log.debug('Found keywords to republish: %s' % keywords)
+            self.log.debug('Found keywords to republish: %s', keywords)
 
             self.update_keywords_on_network(listing.get('key'), keywords)
 
@@ -472,7 +470,7 @@ class Market(object):
 
         contract = json.loads(contract['contract_body'])
         contract_keywords = contract['Contract']['item_keywords']
-        self.log.debug('Keywords to remove: %s' % contract_keywords)
+        self.log.debug('Keywords to remove: %s', contract_keywords)
 
         for keyword in contract_keywords:
             # Remove keyword from index

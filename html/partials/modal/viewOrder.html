@@ -23,7 +23,7 @@
                         </div>
                     </div>
 
-                    <div data-ng-show="Market.modalOrder.waitingForShipment"  class="alert alert-warning">
+                    <div data-ng-show="Market.modalOrder.state == 'Buyer Paid' || (Market.modalOrder.state == 'Shipped' && Market.modalOrder.merchant == settings.guid)"  class="alert alert-warning">
                         <h3>Shipping & Payment</h3>
                         <form name="releasePaymentForm" novalidate>
 

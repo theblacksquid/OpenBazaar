@@ -8,9 +8,6 @@ import random
 import time
 import urllib
 from bitcoin import (
-    apply_multisignatures,
-    eligius_pushtx,
-    privkey_to_pubkey,
     mk_multisig_script,
     mktx,
     multisign,
@@ -483,10 +480,9 @@ class Orders(object):
 
             def cb(ec, history, order):
 
-                self.log.debug('Callback for history %s' % history)
+                self.log.debug('Callback for history %s', history)
 
                 private_key = self.get_signing_key(seller['seller_contract_id'])
-                self.log.debug('private key %s', private_key)
 
                 if ec is not None:
                     self.log.error("Error fetching history: %s", ec)
@@ -523,7 +519,7 @@ class Orders(object):
                     ms = multisign(tx, x, script, private_key)
                     signatures.append(ms)
 
-                self.log.debug('Merchant TX Signatures: %s' % signatures)
+                self.log.debug('Merchant TX Signatures: %s', signatures)
 
                 order['merchant_tx'] = tx
                 order['merchant_script'] = script
@@ -542,7 +538,7 @@ class Orders(object):
 
             reactor.callFromThread(get_history)
         except Exception as e:
-            self.log.debug('Error: %s' % e)
+            self.log.debug('Error: %s', e)
 
     def accept_order(self, new_order):
 
@@ -1034,9 +1030,9 @@ class Orders(object):
                                                          "msg": "The seller just shipped your order."})
 
     def handle_accepted_order(self, msg):
-        self.db_connection.update_entries("orders", {'state': Orders.State.NEED_TO_PAY,
-                                                    "updated": time.time()},
-                                         {'order_id': msg.get('buyer_order_id')})
+        self.db_connection.update_entries('orders', {'state': Orders.State.NEED_TO_PAY,
+                                                     'updated': time.time()},
+                                          {'order_id': msg.get('buyer_order_id')})
 
         self.transport.handler.send_to_client(None, {"type": "order_notify",
                                                      "msg": "Your order requires payment now."})
@@ -1110,7 +1106,9 @@ class Orders(object):
             # Decrypt shipping address
 
             if self.transport.cryptor:
-                shipping_address = self.transport.cryptor.decrypt(bid_data_json['Buyer']['buyer_deliveryaddr'].decode('hex'))
+                shipping_address = self.transport.cryptor.decrypt(
+                    bid_data_json['Buyer']['buyer_deliveryaddr'].decode('hex')
+                )
             else:
                 shipping_address = ''
 

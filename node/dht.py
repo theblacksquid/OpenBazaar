@@ -673,7 +673,7 @@ class DHT(object):
         self.iterative_find(key, [], callback=callback)
 
     @_synchronized
-    def iterative_find(self, key, startup_shortlist=[], call='findNode', callback=None):
+    def iterative_find(self, key, startup_shortlist=None, call='findNode', callback=None):
         """
         - Create a new DHTSearch object and add the key and call back to it
         - Add the search to our search queue (self.searches)
@@ -681,6 +681,9 @@ class DHT(object):
         -
 
         """
+        if not startup_shortlist:
+            startup_shortlist = []
+
         # Create a new search object
         self.log.debug('Startup short list: %s', startup_shortlist)
 

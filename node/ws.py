@@ -665,7 +665,18 @@ class ProtocolHandler(object):
                     )
 
                 self.log.debug('Broadcast TX to network: %s', transaction)
-                bitcoin.pushtx(transaction)
+                result = bitcoin.pushtx(transaction)
+                self.log.debug('BCI result: %s', result)
+
+                if result == 'Transaction Submitted':
+
+                    # Update database
+                    self.db_connection.update_entries("orders", {
+                        'state': 'Completed'
+                    }, {
+                        'order_id': msg['orderId']
+                    })
+
 
             def get_history():
                 self.log.debug('Getting history')
