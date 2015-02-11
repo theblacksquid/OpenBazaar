@@ -305,19 +305,19 @@ class CryptoTransportLayer(TransportLayer):
             if peer1 and peer2:
                 self.log.debug('Sending Punches')
 
-                peer1.send_raw(json.dumps({
+                peer1.send({
                     'type': 'punch',
                     'guid': peer2.guid,
                     'hostname': peer2.hostname,
                     'port': peer2.port
-                }))
+                })
 
-                peer2.send_raw(json.dumps({
+                peer2.send({
                     'type': 'punch',
                     'guid': peer1.guid,
                     'hostname': peer2.hostname,
                     'port': peer2.port
-                }))
+                })
             else:
                 ioloop.IOLoop.instance().call_later(1, send_punches)
         send_punches()
