@@ -309,14 +309,20 @@ class CryptoTransportLayer(TransportLayer):
                     'type': 'punch',
                     'guid': peer2.guid,
                     'hostname': peer2.hostname,
-                    'port': peer2.port
+                    'port': peer2.port,
+                    'pubkey': peer2.pubkey,
+                    'senderGUID': peer2.guid,
+                    'senderNick': peer2.nickname,
                 })
 
                 peer2.send({
                     'type': 'punch',
                     'guid': peer1.guid,
-                    'hostname': peer2.hostname,
-                    'port': peer2.port
+                    'hostname': peer1.hostname,
+                    'port': peer1.port,
+                    'pubkey': peer1.pubkey,
+                    'senderGUID': peer1.guid,
+                    'senderNick': peer1.nickname
                 })
             else:
                 ioloop.IOLoop.instance().call_later(1, send_punches)
