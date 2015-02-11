@@ -310,7 +310,7 @@ class CryptoTransportLayer(TransportLayer):
                     'guid': peer2.guid,
                     'hostname': peer2.hostname,
                     'port': peer2.port,
-                    'pubkey': peer2.pubkey,
+                    'pubkey': peer2.pub,
                     'senderGUID': peer2.guid,
                     'senderNick': peer2.nickname,
                 })
@@ -320,12 +320,12 @@ class CryptoTransportLayer(TransportLayer):
                     'guid': peer1.guid,
                     'hostname': peer1.hostname,
                     'port': peer1.port,
-                    'pubkey': peer1.pubkey,
+                    'pubkey': peer1.pub,
                     'senderGUID': peer1.guid,
                     'senderNick': peer1.nickname
                 })
             else:
-                ioloop.IOLoop.instance().call_later(1, send_punches)
+                ioloop.IOLoop.instance().call_later(5, send_punches)
         send_punches()
 
     def validate_on_punch(self, msg):
