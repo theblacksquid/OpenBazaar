@@ -8,6 +8,8 @@ import random
 import sys
 import traceback
 import xmlrpclib
+import time
+from select import select
 
 import gnupg
 import obelisk
@@ -97,11 +99,6 @@ class CryptoTransportLayer(TransportLayer):
         self.nickname = ""
         self.dev_mode = ob_ctx.dev_mode
 
-        self.punch_socket = socket.socket(
-            socket.AF_INET,
-            socket.SOCK_DGRAM
-        )
-
         self._connections = {}
 
         self.all_messages = (
@@ -128,7 +125,7 @@ class CryptoTransportLayer(TransportLayer):
         self.log.debug('Starting mediation %s', self.ob_ctx)
         if self.ob_ctx.mediator:
             for peer in self.dht.active_peers:
-                if peer.hostname == '205.186.156.31':
+                if peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
                     peer.send({
                         'type': 'mediate',
                         'guid': self.guid,
@@ -340,21 +337,56 @@ class CryptoTransportLayer(TransportLayer):
     def on_punch(self, msg):
         self.log.debug('Got a punch request')
 
-        hostname, port = msg['hostname'], msg['port']
+        my_token = str(random.random())
+        remote_token = "_"
 
-        def send_packet(counter=0):
-            if counter < 5:
-                self.log.debug('Punching a hole...')
-                self.punch_socket.sendto(json.dumps({}), (hostname, port))
-                ioloop.IOLoop.instance().call_later(.5, send_packet, (counter+1,))
+        self.listener.socket.setblocking(0)
+        self.listener.socket.settimeout(5)
 
-        send_packet()
+        remote_knows_our_token = False
 
-        def looping_packet():
-            self.log.debug('Keeping hole punch open...')
-            self.punch_socket.sendto(json.dumps({}), (hostname, port))
-            ioloop.IOLoop.instance().call_later(5, looping_packet)
-        looping_packet()
+        for i in range(60):
+            r, w, x = select([self.listener.socket], [self.listener.socket], [], 0)
+
+            if remote_token != "_" and remote_knows_our_token:
+                self.log.debug("we are done - hole was punched from both ends")
+                break
+
+            if r:
+                data, addr = self.listener.socket.recvfrom(1024)
+                if remote_token == "_":
+                    remote_token = data.split()[0]
+                    self.log.debug("remote_token is now %s", remote_token)
+                if len(data.split()) == 3:
+                    self.log.debug("remote end signals it knows our token")
+                    remote_knows_our_token = True
+
+            if w:
+                data = "%s %s" % (my_token, remote_token)
+                if remote_token != "_": data += " ok"
+                self.log.debug("sending: %s", data)
+                self.listener.socket.sendto(data, (msg['hostname'], msg['port']))
+                self.log.debug("sent %s", i)
+            time.sleep(0.5)
+
+        self.log.debug("done")
+
+
+        # hostname, port = msg['hostname'], msg['port']
+        #
+        # def send_packet(counter=0):
+        #     if counter < 5:
+        #         self.log.debug('Punching a hole...')
+        #         self.punch_socket.sendto(json.dumps({}), (hostname, port))
+        #         ioloop.IOLoop.instance().call_later(.5, send_packet, (counter+1,))
+        #
+        # send_packet()
+        #
+        # def looping_packet():
+        #     self.log.debug('Keeping hole punch open...')
+        #     self.punch_socket.sendto(json.dumps({}), (hostname, port))
+        #     ioloop.IOLoop.instance().call_later(5, looping_packet)
+        # looping_packet()
 
     def validate_on_register(self, msg):
         self.log.debug('Validating register message.')
