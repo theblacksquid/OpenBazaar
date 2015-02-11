@@ -734,6 +734,10 @@ class DHT(object):
         # Update slow nodes count
         new_search.slow_node_count[0] = len(new_search.active_probes)
 
+        for i, x in enumerate(self.active_peers):
+            if not x.guid:
+                del self.active_peers[i]
+
         # Sort shortlist from closest to farthest
         self.active_peers.sort(lambda firstNode, secondNode, targetKey=new_search.key: cmp(
             self.routing_table.distance(firstNode.guid, targetKey),
