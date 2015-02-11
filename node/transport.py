@@ -97,6 +97,11 @@ class CryptoTransportLayer(TransportLayer):
         self.nickname = ""
         self.dev_mode = ob_ctx.dev_mode
 
+        self.punch_socket = socket.socket(
+            socket.AF_INET,
+            socket.SOCK_DGRAM
+        )
+
         self._connections = {}
 
         self.all_messages = (
@@ -305,7 +310,7 @@ class CryptoTransportLayer(TransportLayer):
             if peer1 and peer2:
                 self.log.debug('Sending Punches')
 
-                peer1.send({
+                peer1.send_raw(json.dumps({
                     'type': 'punch',
                     'guid': peer2.guid,
                     'hostname': peer2.hostname,
@@ -313,9 +318,9 @@ class CryptoTransportLayer(TransportLayer):
                     'pubkey': peer2.pub,
                     'senderGUID': peer2.guid,
                     'senderNick': peer2.nickname,
-                })
+                }))
 
-                peer2.send({
+                peer2.send_raw(json.dumps({
                     'type': 'punch',
                     'guid': peer1.guid,
                     'hostname': peer1.hostname,
@@ -323,7 +328,7 @@ class CryptoTransportLayer(TransportLayer):
                     'pubkey': peer1.pub,
                     'senderGUID': peer1.guid,
                     'senderNick': peer1.nickname
-                })
+                }))
             else:
                 ioloop.IOLoop.instance().call_later(5, send_punches)
         send_punches()
@@ -336,15 +341,20 @@ class CryptoTransportLayer(TransportLayer):
         self.log.debug('Got a punch request')
 
         hostname, port = msg['hostname'], msg['port']
-        sock = socket.socket(socket.AF_INET,  # Internet
-                             socket.SOCK_DGRAM)  # UDP
 
         def send_packet(counter=0):
             if counter < 5:
-                sock.sendto(json.dumps({}), (hostname, port))
+                self.log.debug('Punching a hole...')
+                self.punch_socket.sendto(json.dumps({}), (hostname, port))
                 ioloop.IOLoop.instance().call_later(.5, send_packet, (counter+1,))
 
         send_packet()
+
+        def looping_packet():
+            self.log.debug('Keeping hole punch open...')
+            self.punch_socket.sendto(json.dumps({}), (hostname, port))
+            ioloop.IOLoop.instance().call_later(5, looping_packet)
+        looping_packet()
 
     def validate_on_register(self, msg):
         self.log.debug('Validating register message.')
