@@ -96,7 +96,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             def try_to_mediate():
                 if not self.reachable and self.waiting:
                     self.log.debug('Cannot reach peer normally. Trying mediation.')
-                    self.transport.start_mediation(guid)
+                    #self.transport.start_mediation(guid)
             ioloop.IOLoop.instance().call_later(5, try_to_mediate)
 
     def send_ping(self):
@@ -411,7 +411,11 @@ class CryptoPeerListener(PeerListener):
 
         self.log.debugv('Received message of type "%s"',
                         message.get('type', 'unknown'))
-        self._data_cb(message)
+        if self._data_cb:
+            self.log.debug('DATA CB: %s', self._data_cb)
+            self._data_cb(message)
+        else:
+            self.log.debugv('Callbacks not ready yet')
 
     @staticmethod
     def validate_signature(signature, data):

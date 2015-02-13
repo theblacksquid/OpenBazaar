@@ -59,6 +59,7 @@ class TransportLayer(object):
 
     def trigger_callbacks(self, section, *data):
         """Run all callbacks in specified section."""
+        self.log.debug('Callbacks %s', self.callbacks)
         for cb in self.callbacks[section]:
             if cb['validator_cb'](*data):
                 cb['cb'](*data)
@@ -109,6 +110,8 @@ class CryptoTransportLayer(TransportLayer):
             'mediate',
             'register',
             'punch',
+            'ping',
+            'pong'
         )
 
         self._setup_settings()
@@ -383,6 +386,35 @@ class CryptoTransportLayer(TransportLayer):
             'hostname': msg['hostname'],
             'port': msg['port']
         })
+
+    def validate_on_ping(self, *data):
+        self.log.debug('Validating on ping message.')
+        return True
+
+    def on_ping(self, msg):
+        self.log.debug('Got a ping message')
+        peer = self.dht.routing_table.get_contact(msg['senderGUID'])
+        if peer:
+            pong_msg = {
+                'type': 'pong',
+                'senderGUID': self.guid,
+                'hostname': self.hostname,
+                'port': self.port,
+                'senderNICK': self.nickname
+            }
+            peer.send_raw(json.dumps(pong_msg))
+        else:
+            self.log.error('No peer found yet.')
+
+    def validate_on_pong(self, *data):
+        self.log.debug('Validating on pong message.')
+        return True
+
+    def on_pong(self, msg):
+        self.log.debug('Got a pong message')
+        peer = self.dht.routing_table.get_contact(msg['senderGUID'])
+        peer.waiting = False
+        peer.reachable = True
 
     def validate_on_hello(self, msg):
         self.log.debug('Validating hello message.')
@@ -701,12 +733,12 @@ class CryptoTransportLayer(TransportLayer):
 
         # here goes the application callbacks
         # we get a "clean" msg which is a dict holding whatever
-
         hostname = msg.get('hostname')
         guid = msg.get('senderGUID')
-        nickname = msg.get('senderNick', '')[:120]
+        nickname = msg.get('senderNick', '')
+        nickname = nickname[:120] if nickname else ''
         msg_type = msg.get('type')
-        namecoin = msg.get('senderNamecoin')
+        namecoin = msg.get('senderNamecoin', '')
 
         # Checking for malformed URIs
         # if not network_util.is_valid_uri(uri):
