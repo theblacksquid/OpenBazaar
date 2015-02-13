@@ -34,7 +34,7 @@ class ProtocolHandler(object):
 
         self.all_messages = (
             'ping',
-            # 'pong',
+            'pong',
             'peer',
             'page',
             'peer_remove',

@@ -94,7 +94,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             self.send_ping()
 
             def try_to_mediate():
-                if self.waiting:
+                if not self.reachable and self.waiting:
                     self.log.debug('Cannot reach peer normally. Trying mediation.')
                     self.transport.start_mediation(guid)
             ioloop.IOLoop.instance().call_later(5, try_to_mediate)
@@ -111,7 +111,6 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         self.send_raw(json.dumps(msg))
         return True
 
-
     def setup_emitters(self):
         self.log.debug('Setting up emitters')
         self.ee = EventEmitter()
@@ -124,7 +123,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
                 self.transport.listener._on_raw_message(payload)
                 return
             except Exception as e:
-                self.log.debug('not yet %s', e)
+                self.log.debug('Problem with serializing: %s', e)
 
             try:
                 # payload = base64.b64decode(msg.get('payload'))
@@ -408,6 +407,7 @@ class CryptoPeerListener(PeerListener):
         else:
             self.log.debug('Loading JSON')
             message = json.loads(serialized)
+            self.log.debug('Message: %s', message)
 
         self.log.debugv('Received message of type "%s"',
                         message.get('type', 'unknown'))
