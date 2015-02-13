@@ -363,6 +363,11 @@ def start(arguments):
     if not arguments.disable_stun_check:
         print "Checking NAT Status..."
         nat_status = network_util.get_NAT_status()
+        if nat_status.get('nat_type') == 'Blocked':
+            print "openbazaar: Could not start. The network you are on currently blocks usage",
+            print "of OpenBazaar."
+            print "(We currently do not support usage on completely closed networks.)"
+            sys.exit(1)
     elif not arguments.dev_mode and network_util.is_private_ip_address(arguments.server_ip):
         print "openbazaar: Could not start. The given/default server IP address",
         print arguments.server_ip, "is not a public ip address."

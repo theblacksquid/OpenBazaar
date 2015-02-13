@@ -79,7 +79,7 @@ def is_ipv6_address(ip):
 
 def get_peer_url(address, port, protocol='tcp'):
     """
-    Return a URL which can be used by ZMQ.
+    Return a URL.
 
     @param address: An IPv4 address, an IPv6 address or a DNS name.
     @type address: str
