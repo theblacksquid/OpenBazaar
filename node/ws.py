@@ -202,15 +202,17 @@ class ProtocolHandler(object):
     def on_ping(self, msg):
         self.log.debug('Got a ping message')
         peer = self.transport.dht.routing_table.get_contact(msg['senderGUID'])
-
-        pong_msg = {
-            'type': 'pong',
-            'senderGUID': self.transport.guid,
-            'hostname': self.transport.hostname,
-            'port': self.transport.port,
-            'senderNICK': self.transport.nickname
-        }
-        peer.send_raw(json.dumps(pong_msg))
+        if peer:
+            pong_msg = {
+                'type': 'pong',
+                'senderGUID': self.transport.guid,
+                'hostname': self.transport.hostname,
+                'port': self.transport.port,
+                'senderNICK': self.transport.nickname
+            }
+            peer.send_raw(json.dumps(pong_msg))
+        else:
+            self.log.error('No peer found yet.')
 
     def validate_on_pong(self, *data):
         self.log.debug('Validating on pong message.')
