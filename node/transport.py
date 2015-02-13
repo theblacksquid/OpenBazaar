@@ -167,7 +167,7 @@ class CryptoTransportLayer(TransportLayer):
                 nickname = data_body.get('nick')
 
                 inbound_peer = self.dht.add_peer(hostname, port, pubkey, guid, nickname)
-                # inbound_peer.reachable = True
+                inbound_peer.reachable = True
 
                 if inbound_peer:
 
