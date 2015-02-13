@@ -95,6 +95,7 @@ class RoutingTable(object):
                 )
             )
 
+        print key1, key2, type(key1), type(key2)
         val_key1 = int(key1, base=16)
         val_key2 = int(key2, base=16)
         return val_key1 ^ val_key2

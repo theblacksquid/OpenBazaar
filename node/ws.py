@@ -33,6 +33,8 @@ class ProtocolHandler(object):
         self.transport.set_websocket_handler(self)
 
         self.all_messages = (
+            'ping',
+            # 'pong',
             'peer',
             'page',
             'peer_remove',
@@ -192,6 +194,33 @@ class ProtocolHandler(object):
     def line_from_nettail(self, data):
         self.send_to_client(None, {"type": "log_output", "line": data})
         self.stream.read_until("\n", self.line_from_nettail)
+
+    def validate_on_ping(self, *data):
+        self.log.debug('Validating on ping message.')
+        return True
+
+    def on_ping(self, msg):
+        self.log.debug('Got a ping message')
+        peer = self.transport.dht.routing_table.get_contact(msg['senderGUID'])
+
+        pong_msg = {
+            'type': 'pong',
+            'senderGUID': self.transport.guid,
+            'hostname': self.transport.hostname,
+            'port': self.transport.port,
+            'senderNICK': self.transport.nickname
+        }
+        peer.send_raw(json.dumps(pong_msg))
+
+    def validate_on_pong(self, *data):
+        self.log.debug('Validating on pong message.')
+        return True
+
+    def on_pong(self, msg):
+        self.log.debug('Got a pong message')
+        peer = self.transport.dht.routing_table.get_contact(msg['senderGUID'])
+        peer.waiting = False
+        peer.reachable = True
 
     def validate_on_listing_results(self, *data):
         self.log.debug('Validating on listing results message.')

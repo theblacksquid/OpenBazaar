@@ -118,23 +118,6 @@ class DHT(object):
             self.log.error('Could not create a new peer.')
             return None
 
-            # self.log.debug('Sending hello message')
-
-
-            # if not new_peer.hello:
-            # new_peer.send_raw(
-            #     json.dumps({
-            #         'type': 'hello',
-            #         'pubkey': self.transport.pubkey,
-            #         'senderGUID': self.transport.guid,
-            #         'hostname': self.transport.hostname,
-            #         'port': self.transport.port,
-            #         'senderNick': self.transport.nickname,
-            #         'v': constants.VERSION
-            #     })
-            # )
-            # new_peer.hello = True
-
     @_synchronized
     def _add_known_node(self, node):
         """ Accept a peer tuple and add it to known nodes list
@@ -688,10 +671,6 @@ class DHT(object):
 
         # Create a new search object
         self.log.debug('Startup short list: %s', startup_shortlist)
-
-        for i, x in enumerate(startup_shortlist):
-            if not x[2]:
-                del startup_shortlist[i]
 
         new_search = DHTSearch(self.market_id, key, call, callback=callback)
         self.searches.append(new_search)

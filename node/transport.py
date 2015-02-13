@@ -9,7 +9,6 @@ import sys
 import traceback
 import xmlrpclib
 import time
-from select import select
 
 import gnupg
 import obelisk
@@ -21,7 +20,6 @@ from tornado.ioloop import PeriodicCallback
 from node import connection, network_util, trust
 from node.dht import DHT
 from rudp.packet import Packet
-import socket
 from node.crypto_util import Cryptor
 
 
@@ -100,6 +98,7 @@ class CryptoTransportLayer(TransportLayer):
         self.dev_mode = ob_ctx.dev_mode
 
         self._connections = {}
+        self._punches = {}
 
         self.all_messages = (
             'hello',
@@ -125,7 +124,7 @@ class CryptoTransportLayer(TransportLayer):
         self.log.debug('Starting mediation %s', self.ob_ctx)
         if self.ob_ctx.mediator:
             for peer in self.dht.active_peers:
-                if peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
+                if peer.hostname == '127.0.0.1' or peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
                     peer.send({
                         'type': 'mediate',
                         'guid': self.guid,
@@ -168,6 +167,7 @@ class CryptoTransportLayer(TransportLayer):
                 nickname = data_body.get('nick')
 
                 inbound_peer = self.dht.add_peer(hostname, port, pubkey, guid, nickname)
+                # inbound_peer.reachable = True
 
                 if inbound_peer:
 
@@ -338,39 +338,20 @@ class CryptoTransportLayer(TransportLayer):
         self.log.debug('Got a punch request')
 
         my_token = str(random.random())
-        remote_token = "_"
+        host_id = "%s:%s" % (msg['hostname'], msg['port'])
 
-        self.listener.socket.setblocking(0)
-        self.listener.socket.settimeout(5)
+        self._punches[host_id] = {
+            'token': my_token,
+            'rtoken': '_'
+        }
 
-        remote_knows_our_token = False
+        data = 'punch %s' % my_token
 
         for i in range(60):
-            r, w, x = select([self.listener.socket], [self.listener.socket], [], 0)
-
-            if remote_token != "_" and remote_knows_our_token:
-                self.log.debug("we are done - hole was punched from both ends")
-                break
-
-            if r:
-                data, addr = self.listener.socket.recvfrom(1024)
-                if remote_token == "_":
-                    remote_token = data.split()[0]
-                    self.log.debug("remote_token is now %s", remote_token)
-                if len(data.split()) == 3:
-                    self.log.debug("remote end signals it knows our token")
-                    remote_knows_our_token = True
-
-            if w:
-                data = "%s %s" % (my_token, remote_token)
-                if remote_token != "_": data += " ok"
-                self.log.debug("sending: %s", data)
+            if self._punches[host_id]:
                 self.listener.socket.sendto(data, (msg['hostname'], msg['port']))
-                self.log.debug("sent %s", i)
-            time.sleep(0.5)
-
-        self.log.debug("done")
-
+                # self.log.debug("sent %s", i)
+                time.sleep(0.5)
 
         # hostname, port = msg['hostname'], msg['port']
         #

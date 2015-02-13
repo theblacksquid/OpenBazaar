@@ -381,6 +381,7 @@ def node_starter(ob_ctxs):
             name="Process::openbazaar_daemon::target(start_node)")
         process.daemon = False  # python has to wait for this user thread to end.
         process.start()
+        time.sleep(5)
 
 
 def start_node(ob_ctx):

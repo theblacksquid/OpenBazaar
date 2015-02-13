@@ -14,6 +14,7 @@ from node.crypto_util import Cryptor
 from node.guid import GUIDMixin
 from rudp.connection import Connection
 from rudp.packetsender import PacketSender
+from tornado import ioloop
 
 
 class PeerConnection(object):
@@ -23,6 +24,7 @@ class PeerConnection(object):
         self.hostname = hostname
         self.port = port
         self.nickname = nickname
+        self.reachable = False
 
         self.log = logging.getLogger(
             '[%s] %s' % (self.transport.market_id, self.__class__.__name__)
@@ -77,6 +79,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
 
         self.pub = pub
         self.sin = sin
+        self.waiting = False # Waiting for ping-pong
 
         self.setup_emitters()
 
@@ -85,7 +88,29 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             self.log.debug('Node Sender Timed Out')
             self.transport.dht.remove_peer(self.guid)
 
-        self.transport.start_mediation(guid)
+        if not self.reachable:
+            # Test connectivity to peer
+            self.waiting = True
+            self.send_ping()
+
+            def try_to_mediate():
+                if self.waiting:
+                    self.log.debug('Cannot reach peer normally. Trying mediation.')
+                    self.transport.start_mediation(guid)
+            ioloop.IOLoop.instance().call_later(5, try_to_mediate)
+
+    def send_ping(self):
+        # Send ping over to peer and see if we get a quick response
+        msg = {
+            'type': 'ping',
+            'senderGUID': self.transport.guid,
+            'hostname': self.hostname,
+            'port': self.port,
+            'senderNick': self.nickname
+        }
+        self.send_raw(json.dumps(msg))
+        return True
+
 
     def setup_emitters(self):
         self.log.debug('Setting up emitters')
@@ -152,8 +177,8 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         #         initial_handshake_cb()
 
     def __repr__(self):
-        return '{ guid: %s, hostname: %s, port: %s, pubkey: %s }' % (
-            self.guid, self.hostname, self.port, self.pub
+        return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s}' % (
+            self.guid, self.hostname, self.port, self.pub, self.reachable
         )
 
     @staticmethod
@@ -268,7 +293,11 @@ class PeerListener(GUIDMixin):
 
                 try:
                     data, addr = self.socket.recvfrom(2048)
-                    self.ee.emit('on_message', (data, addr))
+
+                    if data[:5] == 'punch':
+                        self.log.debug('We just received a hole punch.')
+                    else:
+                        self.ee.emit('on_message', (data, addr))
 
                 except socket.timeout as e:
                     err = e.args[0]
@@ -301,7 +330,6 @@ class PeerListener(GUIDMixin):
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         #self.socket.setblocking(0)
         self.socket.bind((self.hostname, self.port))
-
 
 
 class CryptoPeerListener(PeerListener):
