@@ -315,8 +315,10 @@ class DHT(object):
         replication/republishing as necessary """
         self._refresh_routing_table()
         self._republish_data()
-        self.transport.handler.send_to_client(None, {"type": "republish_notify",
-                                                     "msg": "P2P Data Republished"})
+
+        if self.transport.handler:
+            self.transport.handler.send_to_client(None, {"type": "republish_notify",
+                                                         "msg": "P2P Data Republished"})
 
     @_synchronized
     def _refresh_routing_table(self):
