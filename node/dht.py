@@ -72,6 +72,10 @@ class DHT(object):
                 del self.active_peers[i]
         self.routing_table.remove_contact(guid)
 
+        # Refresh GUI peer list
+        if self.transport.handler:
+            self.transport.handler.refresh_peers()
+
     @_synchronized
     def add_peer(self, hostname, port, pubkey=None, guid=None, nickname=None, dump=False):
         """ This takes a tuple (pubkey, hostname, port, guid) and adds it to the active

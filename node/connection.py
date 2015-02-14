@@ -53,13 +53,18 @@ class PeerConnection(object):
         self.hello = False
 
     def send(self, data, callback):
-        self.send_raw(json.dumps(data), callback)
+        def send_out():
+            if self.reachable:
+                self.send_raw(json.dumps(data), callback)
+            ioloop.IOLoop.instance().call_later(0.5, send_out)
+        send_out()
 
     def send_raw(self, serialized, callback=None):
         data_encoded = serialized
         data_encoded = data_encoded.encode('hex')
         data = str(len(data_encoded)) + '|' + data_encoded
         self._rudp_connection.send(data)
+
 
     def reset(self):
         self.log.debug('Reset 2')
@@ -79,7 +84,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
 
         self.pub = pub
         self.sin = sin
-        self.waiting = False # Waiting for ping-pong
+        self.waiting = False  # Waiting for ping-pong
 
         self.setup_emitters()
 
@@ -94,9 +99,10 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             self.send_ping()
 
             def try_to_mediate():
+                print 'trying', self.reachable, self.waiting, id(self)
                 if not self.reachable and self.waiting:
                     self.log.debug('Cannot reach peer normally. Trying mediation.')
-                    #self.transport.start_mediation(guid)
+                    self.transport.start_mediation(guid)
             ioloop.IOLoop.instance().call_later(5, try_to_mediate)
 
     def send_ping(self):

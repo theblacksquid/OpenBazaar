@@ -59,7 +59,6 @@ class TransportLayer(object):
 
     def trigger_callbacks(self, section, *data):
         """Run all callbacks in specified section."""
-        self.log.debug('Callbacks %s', self.callbacks)
         for cb in self.callbacks[section]:
             if cb['validator_cb'](*data):
                 cb['cb'](*data)
@@ -292,6 +291,9 @@ class CryptoTransportLayer(TransportLayer):
     def on_mediate(self, msg):
         self.log.info('Received Mediate Message: %s', json.dumps(msg, ensure_ascii=False))
 
+        if msg['guid2'] == self.guid:
+            return
+
         def send_punches():
 
             peer1, peer2 = None, None
@@ -411,7 +413,7 @@ class CryptoTransportLayer(TransportLayer):
         return True
 
     def on_pong(self, msg):
-        self.log.debug('Got a pong message')
+        self.log.debug('Got a pong message from: %s', msg['senderGUID'])
         peer = self.dht.routing_table.get_contact(msg['senderGUID'])
         peer.waiting = False
         peer.reachable = True
