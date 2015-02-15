@@ -112,7 +112,8 @@ class CryptoTransportLayer(TransportLayer):
             'punch',
             'ping',
             'pong',
-            'get_nat_type'
+            'get_nat_type',
+            'nat_type'
         )
 
         self._setup_settings()
@@ -420,11 +421,27 @@ class CryptoTransportLayer(TransportLayer):
                 'hostname': self.hostname,
                 'port': self.port,
                 'senderNICK': self.nickname,
-                'nat_type': peer.nat_type
+                'nat_type': peer.nat_type,
+                'peer_guid': peer.guid
             }
             peer.send_raw(json.dumps(nat_type_msg))
         else:
             self.log.error('No peer found for this GUID.')
+
+    def validate_on_nat_type(self, msg):
+        self.log.debug('Validating %s', msg['type'])
+        return True
+
+    def on_nat_type(self, msg):
+        self.log.debug('Received nat type for user: %s', msg['peer_guid'])
+
+        for x in self.dht.active_peers:
+            if x.guid == msg['peer_guid']:
+                x.nat_type = msg['nat_type']
+                self.log.debug(x)
+                return
+
+        self.log.error('No peer found for this GUID.')
 
     def validate_on_ping(self, *data):
         self.log.debug('Validating on ping message.')

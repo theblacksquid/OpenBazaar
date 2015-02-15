@@ -95,11 +95,8 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             def try_to_mediate():
                 print 'Trying to reach peer', self.reachable, self.waiting, id(self)
 
-                if not self.reachable and self.waiting:
-                    self.log.debug('Cannot reach peer normally. Trying mediation.')
-                    #self.transport.start_mediation(guid)
-                    if guid is not None:
-                        self.transport.get_nat_type(guid)
+                if guid is not None:
+                    self.transport.get_nat_type(guid)
 
             ioloop.IOLoop.instance().call_later(5, try_to_mediate)
 
