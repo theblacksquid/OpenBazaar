@@ -226,7 +226,7 @@ def create_openbazaar_contexts(arguments, nat_status):
     # market port
     server_port = arguments.server_port
 
-    if nat_status is not None:
+    if nat_status is not None and not arguments.disable_stun_check:
         # unless --disable-stun-check has been passed
         # override the server ip and port for p2p communications with the ones
         # obtained from the STUN server.
@@ -360,6 +360,7 @@ def start(arguments):
 
     # Try to get NAT escape UDP port
     nat_status = network_util.get_NAT_status()
+
     if not arguments.disable_stun_check:
         print "Checking NAT Status..."
         if nat_status.get('nat_type') == 'Blocked':
