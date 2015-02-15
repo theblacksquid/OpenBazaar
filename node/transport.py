@@ -32,6 +32,7 @@ class TransportLayer(object):
         self.timeouts = []
         self.port = ob_ctx.server_port
         self.hostname = ob_ctx.server_ip
+        self.nat_type = ob_ctx.nat_status['nat_type']
         self.guid = guid
         self.market_id = ob_ctx.market_id
         self.nickname = nickname

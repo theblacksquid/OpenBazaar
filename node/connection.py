@@ -25,6 +25,7 @@ class PeerConnection(object):
         self.port = port
         self.nickname = nickname
         self.reachable = False
+        self.nat_type = None
 
         self.log = logging.getLogger(
             '[%s] %s' % (self.transport.market_id, self.__class__.__name__)
@@ -112,7 +113,8 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
             'senderGUID': self.transport.guid,
             'hostname': self.hostname,
             'port': self.port,
-            'senderNick': self.nickname
+            'senderNick': self.nickname,
+            'nat_type': self.transport.nat_type
         }
         self.send_raw(json.dumps(msg))
         return True
