@@ -359,10 +359,9 @@ def start(arguments):
         arguments.disable_upnp = True
 
     # Try to get NAT escape UDP port
-    nat_status = None
+    nat_status = network_util.get_NAT_status()
     if not arguments.disable_stun_check:
         print "Checking NAT Status..."
-        nat_status = network_util.get_NAT_status()
         if nat_status.get('nat_type') == 'Blocked':
             print "openbazaar: Could not start. The network you are on currently blocks usage",
             print "of OpenBazaar."
