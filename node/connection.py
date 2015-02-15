@@ -66,13 +66,11 @@ class PeerConnection(object):
         data = str(len(data_encoded)) + '|' + data_encoded
         self._rudp_connection.send(data)
 
-
     def reset(self):
         self.log.debug('Reset 2')
         self._rudp_connection._sender._sending = None
         self._rudp_connection._sender._push()
         self.is_listening = False
-
 
 
 class CryptoPeerConnection(GUIDMixin, PeerConnection):
@@ -89,21 +87,19 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
 
         self.setup_emitters()
 
-        @self._rudp_connection._sender.ee.on('timeout')
-        def on_timeout(data):  # pylint: disable=unused-variable
-            self.log.debug('Node Sender Timed Out')
-            self.transport.dht.remove_peer(self.guid)
-
         if not self.reachable:
             # Test connectivity to peer
             self.waiting = True
             self.send_ping()
 
             def try_to_mediate():
-                print 'trying', self.reachable, self.waiting, id(self)
+                print 'Trying to reach peer', self.reachable, self.waiting, id(self)
+
                 if not self.reachable and self.waiting:
                     self.log.debug('Cannot reach peer normally. Trying mediation.')
-                    self.transport.start_mediation(guid)
+                    #self.transport.start_mediation(guid)
+                    self.transport.get_nat_type(self.guid)
+
             ioloop.IOLoop.instance().call_later(5, try_to_mediate)
 
     def send_ping(self):
@@ -122,6 +118,11 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
     def setup_emitters(self):
         self.log.debug('Setting up emitters')
         self.ee = EventEmitter()
+
+        @self._rudp_connection._sender.ee.on('timeout')
+        def on_timeout(data):  # pylint: disable=unused-variable
+            self.log.debug('Node Sender Timed Out')
+            self.transport.dht.remove_peer(self.guid)
 
         @self._rudp_connection.ee.on('data')
         def handle_recv(msg):  # pylint: disable=unused-variable

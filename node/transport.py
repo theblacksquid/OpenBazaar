@@ -111,7 +111,8 @@ class CryptoTransportLayer(TransportLayer):
             'register',
             'punch',
             'ping',
-            'pong'
+            'pong',
+            'get_nat_type'
         )
 
         self._setup_settings()
@@ -133,6 +134,15 @@ class CryptoTransportLayer(TransportLayer):
                         'guid': self.guid,
                         'guid2': guid
                     })
+
+    def get_nat_type(self, guid):
+        self.log.debug('Requesting nat type for user: %s', self.ob_ctx)
+        for peer in self.dht.active_peers:
+            if peer.hostname in ('127.0.0.1', '205.186.156.31', 'seed2.openbazaar.org'):
+                peer.send({
+                    'type': 'get_nat_type',
+                    'peer_guid': guid
+                })
 
     def start_listener(self):
         self.add_callbacks([
@@ -389,6 +399,32 @@ class CryptoTransportLayer(TransportLayer):
             'hostname': msg['hostname'],
             'port': msg['port']
         })
+
+    def validate_on_get_nat_type(self, msg):
+        self.log.debug('Validating %s', msg['type'])
+        return True
+
+    def on_get_nat_type(self, msg):
+        self.log.debug('Finding nat type for user: %s', msg['peer_guid'])
+
+        if msg['peer_guid'] == self.guid:
+            self.log.debug('get_nat_type requested for yourself')
+            return
+
+        peer = self.dht.routing_table.get_contact(msg['peer_guid'])
+
+        if peer:
+            nat_type_msg = {
+                'type': 'nat_type',
+                'senderGUID': self.guid,
+                'hostname': self.hostname,
+                'port': self.port,
+                'senderNICK': self.nickname,
+                'nat_type': peer.nat_type
+            }
+            peer.send_raw(json.dumps(nat_type_msg))
+        else:
+            self.log.error('No peer found for this GUID.')
 
     def validate_on_ping(self, *data):
         self.log.debug('Validating on ping message.')
