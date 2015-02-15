@@ -184,8 +184,8 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         #         initial_handshake_cb()
 
     def __repr__(self):
-        return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s}' % (
-            self.guid, self.hostname, self.port, self.pub, self.reachable
+        return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s nat: %s}' % (
+            self.guid, self.hostname, self.port, self.pub, self.reachable, self.nat_type
         )
 
     @staticmethod

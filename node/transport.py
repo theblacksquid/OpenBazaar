@@ -396,18 +396,21 @@ class CryptoTransportLayer(TransportLayer):
 
     def on_ping(self, msg):
         self.log.debug('Got a ping message')
+
         peer = self.dht.routing_table.get_contact(msg['senderGUID'])
+
         if peer:
             pong_msg = {
                 'type': 'pong',
                 'senderGUID': self.guid,
                 'hostname': self.hostname,
                 'port': self.port,
-                'senderNICK': self.nickname
+                'senderNICK': self.nickname,
+                'nat_type': self.nat_type
             }
             peer.send_raw(json.dumps(pong_msg))
         else:
-            self.log.error('No peer found yet.')
+            self.log.error('No peer found.')
 
     def validate_on_pong(self, *data):
         self.log.debug('Validating on pong message.')
@@ -416,8 +419,10 @@ class CryptoTransportLayer(TransportLayer):
     def on_pong(self, msg):
         self.log.debug('Got a pong message from: %s', msg['senderGUID'])
         peer = self.dht.routing_table.get_contact(msg['senderGUID'])
+        peer.nat_type = msg['nat_type']
         peer.waiting = False
         peer.reachable = True
+        self.log.debug('Updated peer object: %s', peer)
 
     def validate_on_hello(self, msg):
         self.log.debug('Validating hello message.')
