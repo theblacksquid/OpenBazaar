@@ -136,7 +136,7 @@ class CryptoTransportLayer(TransportLayer):
                     })
 
     def get_nat_type(self, guid):
-        self.log.debug('Requesting nat type for user: %s', self.ob_ctx)
+        self.log.debug('Requesting nat type for user: %s', guid)
         for peer in self.dht.active_peers:
             if peer.hostname in ('127.0.0.1', '205.186.156.31', 'seed2.openbazaar.org'):
                 peer.send({
