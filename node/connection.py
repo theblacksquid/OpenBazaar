@@ -30,6 +30,7 @@ class PeerConnection(GUIDMixin, object):
         self.nat_type = None
         self.relaying = False
         self.seed = False
+        self.punching = False
 
         self.log = logging.getLogger(
             '[%s] %s' % (self.transport.market_id, self.__class__.__name__)
@@ -56,7 +57,6 @@ class PeerConnection(GUIDMixin, object):
         self.message_size = 0
         self.is_listening = True
         self.hello = False
-        self.checking_punch = False
 
     def send(self, data, callback):
         self.send_raw(json.dumps(data), callback)
@@ -77,7 +77,7 @@ class PeerConnection(GUIDMixin, object):
                     self.transport.relay_message(serialized)
                     return
             else:
-                if self.nat_type == 'Restric NAT':
+                if self.nat_type == 'Restric NAT' and not self.punching:
                     self.log.debug('Found restricted NAT client')
                     self.transport.start_mediation(self.guid)
 

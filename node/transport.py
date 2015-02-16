@@ -101,10 +101,10 @@ class CryptoTransportLayer(TransportLayer):
 
         self._connections = {}
         self._punches = {}
-        self.punching = False
 
         self.all_messages = (
             'hello',
+            'hello_response',
             'goodbye',
             'findNode',
             'findNodeResponse',
@@ -353,6 +353,7 @@ class CryptoTransportLayer(TransportLayer):
                     'senderGUID': peer1.guid,
                     'senderNick': peer1.nickname
                 }))
+                return
             else:
                 ioloop.IOLoop.instance().call_later(5, send_punches)
         send_punches()
@@ -368,20 +369,22 @@ class CryptoTransportLayer(TransportLayer):
             msg['hostname'], msg['port'], msg['pubkey'], msg['guid'], msg['senderNick']
         )
 
-        def send(count):
-            # Send raw socket punch
-            peer.sock.sendto('punch', (peer.hostname, peer.port))
-            self.log.debug('Sending punch to %s:%d', peer.hostname, peer.port)
-            self.log.debug("UDP punching package {0} sent".format(count))
-            if self.punching:
-                ioloop.IOLoop.instance().call_later(0.5, send, count + 1)
-            if count > 25:
-                self.log.debug('Falling back to relaying.')
-                peer.relaying = True
-                return
+        if not peer.punching:
+            def send(count):
+                # Send raw socket punch
+                peer.sock.sendto('punch', (peer.hostname, peer.port))
+                self.log.debug('Sending punch to %s:%d', peer.hostname, peer.port)
+                self.log.debug("UDP punching package {0} sent".format(count))
+                if peer.punching:
+                    ioloop.IOLoop.instance().call_later(0.5, send, count + 1)
+                if count > 25:
+                    self.log.debug('Falling back to relaying.')
+                    peer.relaying = True
+                    peer.punching = False
+                    return
 
-        self.punching = True
-        send(0)
+            peer.punching = True
+            send(0)
 
     def validate_on_register(self, msg):
         self.log.debug('Validating register message.')
@@ -485,6 +488,8 @@ class CryptoTransportLayer(TransportLayer):
 
         peer = self.dht.routing_table.get_contact(msg['senderGUID'])
 
+        peer.nat_type = msg['nat_type']
+
         # new_peer = self.dht.add_peer(
         #     msg['hostname'],
         #     msg['port'],
@@ -497,15 +502,25 @@ class CryptoTransportLayer(TransportLayer):
         if peer:
             peer.send_raw(
                 json.dumps({
-                    'type': 'helloResponse',
+                    'type': 'hello_response',
                     'pubkey': self.pubkey,
                     'senderGUID': self.guid,
                     'hostname': self.hostname,
+                    'nat_type': self.nat_type,
                     'port': self.port,
                     'senderNick': self.nickname,
                     'v': node.constants.VERSION
                 })
             )
+
+    def validate_on_hello_response(self, msg):
+        self.log.debug('Validating hello response message.')
+        return True
+
+    def on_hello_response(self, msg):
+        self.log.info('Received Hello Response: %s', json.dumps(msg, ensure_ascii=False))
+        peer = self.dht.routing_table.get_contact(msg['senderGUID'])
+        peer.nat_type = msg['nat_type']
 
     def validate_on_store(self, msg):
         self.log.debugv('Validating store value message.')
@@ -675,6 +690,7 @@ class CryptoTransportLayer(TransportLayer):
                     'pubkey': self.pubkey,
                     'senderGUID': self.guid,
                     'hostname': self.hostname,
+                    'nat_type': self.nat_type,
                     'port': self.port,
                     'senderNick': self.nickname,
                     'v': node.constants.VERSION
