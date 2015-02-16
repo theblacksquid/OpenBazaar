@@ -366,6 +366,10 @@ class CryptoTransportLayer(TransportLayer):
             self.log.debug("UDP punching package {0} sent".format(count))
             if self.punching:
                 ioloop.IOLoop.instance().call_later(0.5, send, count + 1)
+            if count > 25:
+                self.log.debug('Falling back to relaying.')
+                peer.relaying = True
+                return
 
         self.punching = True
         send(0)

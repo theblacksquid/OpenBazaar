@@ -28,6 +28,7 @@ class PeerConnection(GUIDMixin, object):
         self.nickname = nickname
         self.reachable = False
         self.nat_type = None
+        self.relaying = False
 
         self.log = logging.getLogger(
             '[%s] %s' % (self.transport.market_id, self.__class__.__name__)
@@ -68,10 +69,17 @@ class PeerConnection(GUIDMixin, object):
             self.log.debug('Found restricted NAT client')
             self.transport.start_mediation(self.guid)
 
-        data_encoded = serialized
-        data_encoded = data_encoded.encode('hex')
-        data = str(len(data_encoded)) + '|' + data_encoded
-        self._rudp_connection.send(data)
+        def sending_out():
+            if self.reachable:
+                data_encoded = serialized
+                data_encoded = data_encoded.encode('hex')
+                data = str(len(data_encoded)) + '|' + data_encoded
+                self._rudp_connection.send(data)
+            elif self.relaying:
+                self.log.debug('Trying to relay message through seed server.')
+
+            ioloop.IOLoop.instance().call_later(0.5, sending_out)
+        sending_out()
 
     def reset(self):
         self.log.debug('Reset 2')
