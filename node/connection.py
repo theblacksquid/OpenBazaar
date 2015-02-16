@@ -29,6 +29,7 @@ class PeerConnection(GUIDMixin, object):
         self.reachable = False
         self.nat_type = None
         self.relaying = False
+        self.seed = False
 
         self.log = logging.getLogger(
             '[%s] %s' % (self.transport.market_id, self.__class__.__name__)
@@ -63,7 +64,7 @@ class PeerConnection(GUIDMixin, object):
     def send_raw(self, serialized, callback=None):
         def sending_out():
             if self.reachable:
-                if self.nat_type == 'Full Cone':
+                if self.nat_type == 'Full Cone' or self.seed:
                     self.send_to_rudp(serialized)
                     return
                 elif self.relaying:

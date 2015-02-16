@@ -665,6 +665,7 @@ class CryptoTransportLayer(TransportLayer):
             hostname, port = known_peer[0], known_peer[1]
             peer_obj = self.get_crypto_peer(None, hostname, port)
 
+            peer_obj.seed = True
             peer_obj.reachable = True  # Seeds should be reachable always
 
             peer_obj.send_raw(
