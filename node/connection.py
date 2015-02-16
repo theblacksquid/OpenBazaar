@@ -58,28 +58,32 @@ class PeerConnection(GUIDMixin, object):
         self.checking_punch = False
 
     def send(self, data, callback):
-        def send_out():
-            if self.reachable:
-                self.send_raw(json.dumps(data), callback)
-            ioloop.IOLoop.instance().call_later(0.5, send_out)
-        send_out()
+        self.send_raw(json.dumps(data), callback)
 
     def send_raw(self, serialized, callback=None):
-        if not self.reachable and self.nat_type == 'Restric NAT':
-            self.log.debug('Found restricted NAT client')
-            self.transport.start_mediation(self.guid)
-
         def sending_out():
             if self.reachable:
-                data_encoded = serialized
-                data_encoded = data_encoded.encode('hex')
-                data = str(len(data_encoded)) + '|' + data_encoded
-                self._rudp_connection.send(data)
-            elif self.relaying:
-                self.log.debug('Trying to relay message through seed server.')
+                if self.nat_type == 'Full Cone':
+                    self.send_to_rudp(serialized)
+                    return
+                elif self.relaying:
+                    # Relay through seed server
+                    self.log.debug('Relay through seed')
+                    self.transport.relay_message(serialized)
+                    return
+            else:
+                if self.nat_type == 'Restric NAT':
+                    self.log.debug('Found restricted NAT client')
+                    self.transport.start_mediation(self.guid)
 
             ioloop.IOLoop.instance().call_later(0.5, sending_out)
         sending_out()
+
+    def send_to_rudp(self, data):
+        data_encoded = data
+        data_encoded = data_encoded.encode('hex')
+        data = str(len(data_encoded)) + '|' + data_encoded
+        self._rudp_connection.send(data)
 
     def reset(self):
         self.log.debug('Reset 2')

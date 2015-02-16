@@ -126,6 +126,14 @@ class CryptoTransportLayer(TransportLayer):
         if ob_ctx.enable_ip_checker and not ob_ctx.seed_mode and not ob_ctx.dev_mode:
             self.start_ip_address_checker()
 
+    def relay_message(self, data):
+        for peer in self.dht.active_peers:
+            if peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
+                peer.send({
+                    'type': 'relay_msg',
+                    'data': data
+                })
+
     def start_mediation(self, guid):
         self.log.debug('Starting mediation %s', self.ob_ctx)
         if self.ob_ctx.mediator:
