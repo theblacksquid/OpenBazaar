@@ -128,23 +128,28 @@ class CryptoTransportLayer(TransportLayer):
             self.start_ip_address_checker()
 
     def relay_message(self, data):
+        # print type(data), data
+        self.log.debug('data is: %s', type(data))
+        # self.log.debug('Relaying message: {0}'.format(data))
         for peer in self.dht.active_peers:
             if peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
-                peer.send({
+                peer.send_raw(json.dumps({
                     'type': 'relay_msg',
-                    'data': data
-                })
+                    'data': data.encode('hex'),
+                    'senderGUID': self.guid
+                }))
 
     def start_mediation(self, guid):
         self.log.debug('Starting mediation %s', self.ob_ctx)
         if self.ob_ctx.mediator:
             for peer in self.dht.active_peers:
                 if peer.hostname == '127.0.0.1' or peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
-                    peer.send({
+                    peer.send_raw(json.dumps({
                         'type': 'mediate',
                         'guid': self.guid,
-                        'guid2': guid
-                    })
+                        'guid2': guid,
+                        'senderGUID': self.guid
+                    }))
 
     def get_nat_type(self, guid):
         self.log.debug('Requesting nat type for user: %s', guid)
@@ -358,6 +363,21 @@ class CryptoTransportLayer(TransportLayer):
                 ioloop.IOLoop.instance().call_later(5, send_punches)
         send_punches()
 
+    def validate_on_relay_msg(self, msg):
+        self.log.debug('Validating relay msg')
+        return True
+
+    def on_relay_msg(self, msg):
+        self.log.debug('Relaying message to peer')
+        peer = self.dht.routing_table.get_contact(msg['guid'])
+        if peer:
+            peer.send_raw(json.dumps({
+                'type': 'relayed_msg',
+                'data': msg['data']
+            }), relay=True)
+        else:
+            self.log.debug('Could not find peer to relay to.')
+
     def validate_on_punch(self, msg):
         self.log.debug('Validating on punch')
         return True
@@ -380,6 +400,7 @@ class CryptoTransportLayer(TransportLayer):
                 if count > 25:
                     self.log.debug('Falling back to relaying.')
                     peer.relaying = True
+                    peer.reachable = True
                     peer.punching = False
                     return
 
