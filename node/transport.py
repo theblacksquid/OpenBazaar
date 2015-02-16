@@ -413,6 +413,7 @@ class CryptoTransportLayer(TransportLayer):
             return
 
         peer = self.dht.routing_table.get_contact(msg['peer_guid'])
+        requester = self.dht.routing_table.get_contact(msg['senderGUID'])
 
         if peer:
             nat_type_msg = {
@@ -424,7 +425,7 @@ class CryptoTransportLayer(TransportLayer):
                 'nat_type': peer.nat_type,
                 'peer_guid': peer.guid
             }
-            peer.send_raw(json.dumps(nat_type_msg))
+            requester.send_raw(json.dumps(nat_type_msg))
         else:
             self.log.error('No peer found for this GUID.')
 
