@@ -100,6 +100,7 @@ class CryptoTransportLayer(TransportLayer):
 
         self._connections = {}
         self._punches = {}
+        self.punching = False
 
         self.all_messages = (
             'hello',
@@ -354,37 +355,20 @@ class CryptoTransportLayer(TransportLayer):
     def on_punch(self, msg):
         self.log.debug('Got a punch request')
 
-        my_token = str(random.random())
-        host_id = "%s:%s" % (msg['hostname'], msg['port'])
+        peer = self.dht.add_peer(
+            msg['hostname'], msg['port'], msg['pubkey'], msg['guid'], msg['senderNick']
+        )
 
-        self._punches[host_id] = {
-            'token': my_token,
-            'rtoken': '_'
-        }
+        def send(count):
+            # Send raw socket punch
+            peer.sock.sendto('punch', (peer.hostname, peer.port))
+            self.log.debug('Sending punch to %s:%d', peer.hostname, peer.port)
+            self.log.debug("UDP punching package {0} sent".format(count))
+            if self.punching:
+                ioloop.IOLoop.instance().call_later(0.5, send, count + 1)
 
-        data = 'punch %s' % my_token
-
-        for i in range(60):
-            if self._punches[host_id]:
-                self.listener.socket.sendto(data, (msg['hostname'], msg['port']))
-                # self.log.debug("sent %s", i)
-                time.sleep(0.5)
-
-        # hostname, port = msg['hostname'], msg['port']
-        #
-        # def send_packet(counter=0):
-        #     if counter < 5:
-        #         self.log.debug('Punching a hole...')
-        #         self.punch_socket.sendto(json.dumps({}), (hostname, port))
-        #         ioloop.IOLoop.instance().call_later(.5, send_packet, (counter+1,))
-        #
-        # send_packet()
-        #
-        # def looping_packet():
-        #     self.log.debug('Keeping hole punch open...')
-        #     self.punch_socket.sendto(json.dumps({}), (hostname, port))
-        #     ioloop.IOLoop.instance().call_later(5, looping_packet)
-        # looping_packet()
+        self.punching = True
+        send(0)
 
     def validate_on_register(self, msg):
         self.log.debug('Validating register message.')

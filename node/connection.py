@@ -17,8 +17,10 @@ from rudp.packetsender import PacketSender
 from tornado import ioloop
 
 
-class PeerConnection(object):
-    def __init__(self, transport, hostname, port=12345, nickname="", peer_socket=None):
+class PeerConnection(GUIDMixin, object):
+    def __init__(self, guid, transport, hostname, port=12345, nickname="", peer_socket=None):
+
+        GUIDMixin.__init__(self, guid)
 
         self.transport = transport
         self.hostname = hostname
@@ -52,6 +54,7 @@ class PeerConnection(object):
         self.message_size = 0
         self.is_listening = True
         self.hello = False
+        self.checking_punch = False
 
     def send(self, data, callback):
         def send_out():
@@ -61,6 +64,10 @@ class PeerConnection(object):
         send_out()
 
     def send_raw(self, serialized, callback=None):
+        if not self.reachable and self.nat_type == 'Restric NAT':
+            self.log.debug('Found restricted NAT client')
+            self.transport.start_mediation(self.guid)
+
         data_encoded = serialized
         data_encoded = data_encoded.encode('hex')
         data = str(len(data_encoded)) + '|' + data_encoded
@@ -73,20 +80,31 @@ class PeerConnection(object):
         self.is_listening = False
 
 
-class CryptoPeerConnection(GUIDMixin, PeerConnection):
+class CryptoPeerConnection(PeerConnection):
 
     def __init__(self, transport, hostname, port, pub=None, guid=None, nickname="",
                  sin=None, rudp_connection=None, peer_socket=None):
 
-        GUIDMixin.__init__(self, guid)
-        PeerConnection.__init__(self, transport, hostname, port, nickname, peer_socket)
+        PeerConnection.__init__(self, guid, transport, hostname, port, nickname, peer_socket)
 
         self.pub = pub
         self.sin = sin
         self.waiting = False  # Waiting for ping-pong
 
         self.setup_emitters()
-        self.transport.get_nat_type(guid)
+
+        if not self.reachable:
+            # Test connectivity to peer
+            self.waiting = True
+            self.send_ping()
+
+            def try_to_mediate():
+                print 'Trying to reach peer', self.reachable, self.waiting, id(self)
+
+                if guid is not None:
+                    self.transport.get_nat_type(guid)
+
+            ioloop.IOLoop.instance().call_later(5, try_to_mediate)
 
     def send_ping(self):
         # Send ping over to peer and see if we get a quick response
@@ -108,7 +126,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         @self._rudp_connection._sender.ee.on('timeout')
         def on_timeout(data):  # pylint: disable=unused-variable
             self.log.debug('Node Sender Timed Out')
-            self.transport.dht.remove_peer(self.guid)
+            #self.transport.dht.remove_peer(self.guid)
 
         @self._rudp_connection.ee.on('data')
         def handle_recv(msg):  # pylint: disable=unused-variable
