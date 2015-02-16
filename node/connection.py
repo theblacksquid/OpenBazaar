@@ -62,6 +62,10 @@ class PeerConnection(GUIDMixin, object):
         self.send_raw(json.dumps(data), callback)
 
     def send_raw(self, serialized, callback=None):
+        if self.transport.seed_mode:
+            self.send_to_rudp(serialized)
+            return
+
         def sending_out():
             if self.reachable:
                 if self.nat_type == 'Full Cone' or self.seed:

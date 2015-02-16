@@ -97,6 +97,7 @@ class CryptoTransportLayer(TransportLayer):
         self.hostname = ob_ctx.server_ip
         self.nickname = ""
         self.dev_mode = ob_ctx.dev_mode
+        self.seed_mode = ob_ctx.seed_mode
 
         self._connections = {}
         self._punches = {}
