@@ -86,19 +86,7 @@ class CryptoPeerConnection(GUIDMixin, PeerConnection):
         self.waiting = False  # Waiting for ping-pong
 
         self.setup_emitters()
-
-        if not self.reachable:
-            # Test connectivity to peer
-            self.waiting = True
-            self.send_ping()
-
-            def try_to_mediate():
-                print 'Trying to reach peer', self.reachable, self.waiting, id(self)
-
-                if guid is not None:
-                    self.transport.get_nat_type(guid)
-
-            ioloop.IOLoop.instance().call_later(5, try_to_mediate)
+        self.transport.get_nat_type(guid)
 
     def send_ping(self):
         # Send ping over to peer and see if we get a quick response
