@@ -77,7 +77,7 @@ class Packet(object):
     def get_sequence_number(self):
         return self._sequenceNumber
 
-    def to_buffer(self, guid, pubkey, hostname, port, nick='Default'):
+    def to_buffer(self, guid, pubkey, hostname, port, nick='Default', nat_type=None):
 
         bools = 0 + (
             (self._acknowledgement and 0x80) |
@@ -92,6 +92,7 @@ class Packet(object):
             'guid': guid,
             'hostname': hostname,
             'port': port,
+            'nat_type': nat_type,
             'pubkey': pubkey,
             'size': len(self._payload),
             'payload': self._payload.encode('utf-8'),

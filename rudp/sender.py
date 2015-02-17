@@ -8,6 +8,7 @@ import logging
 
 from pyee import EventEmitter
 import time
+from tornado import ioloop
 
 
 class Window(object):
@@ -90,6 +91,7 @@ class Window(object):
                     if self.acknowledged == len(pkts):
                         self.log.debug('ackd all packets')
                         self.ee.emit('acknowledge')
+                        self.ee.emit('done')
                         #self._reset_packet.send()
 
                 packet.send()
@@ -97,11 +99,13 @@ class Window(object):
         self.synchronization_packet.send()
 
     def verify_acknowledgement(self, sequence_number):
-
+        self.log.debug('Ack #%s in %s', sequence_number, len(self._packets))
         for i in range(0, len(self._packets)):
-            #self.log.debug('Check if %s matches %s' % (self._packets[i].get_sequence_number(), sequence_number))
+            self.log.debug('Check if %s matches %s' % (self._packets[i].get_sequence_number(), sequence_number))
             if self._packets[i].get_sequence_number() == sequence_number:
+                self.log.debug('Found packet to ack')
                 self._packets[i].acknowledge()
+                return
 
 
 class Sender(object):
@@ -121,22 +125,28 @@ class Sender(object):
 
     def send(self, data):
 
-        # while len(self._windows) > 0:
-        #     time.sleep(1)
-        #     self.log.debug('Waiting for windows')
-        #     self._push()
+        data_encoded = data.encode('hex')
+        data_size = str(len(data_encoded))
 
-        chunks = rudp.helpers.splitArrayLike(data, rudp.constants.UDP_SAFE_SEGMENT_SIZE)
-        self.log.debug('Sending %d chunks', len(chunks))
+        # Unique message ID
+        message_id = random.randint(0, 99999)
+
+        chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE, message_id, data_size)
+        self.log.debug('Sending %s chunks', chunks)
+
         windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
         self._windows = self._windows + windows
         self._windows = [x for x in self._windows if x != []]
+
         self.log.debug('Windows: %s', self._windows)
         self._push()
 
     def _push(self):
 
         self.log.debug('self._sending: %s', self._sending)
+
+        if len(self._windows) == 0:
+            return
 
         if not self._sending and len(self._windows):
             self._last_sent = int(time.time())
@@ -156,21 +166,25 @@ class Sender(object):
             # pylint: disable=unused-variable
             @self._sending.ee.on('done')
             def on_done():
-                self.log.debug('_sending done')
+                self.log.debug('_sending done: %s', len(self._sending._packets))
+                for x in self._sending._packets:
+                    x._sending = False
                 self._sending = None
                 self._last_sent = 0
                 self._push()
 
             to_send.send()
 
-        elif self._last_sent != 0 and int(time.time()) - self._last_sent > 30:
-            self._last_sent = 0
-            self._sending = None
-            self._windows = []
-            self.log.info('Peer may have timed out or be unreachable.')
-            self.ee.emit('timeout', {})
+        # elif self._last_sent != 0 and int(time.time()) - self._last_sent > 300:
+        #     self._last_sent = 0
+        #     self._sending = None
+        #     self._windows = []
+        #     self.log.info('Peer may have timed out or be unreachable.')
+        #     self.ee.emit('timeout', {})
 
         else:
+            # if self._sending:
+            #     self._sending.send()
             self.log.debug('None of the above')
 
     def verify_acknowledgement(self, sequence_number):

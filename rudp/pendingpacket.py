@@ -1,9 +1,8 @@
-__author__ = 'brianhoffman'
-
 import rudp.constants
 from pyee import EventEmitter
 import rudp.helpers
 import logging
+from tornado import ioloop
 
 
 class PendingPacket(object):
@@ -15,6 +14,7 @@ class PendingPacket(object):
         self._packet_sender = packet_sender
         self._packet = packet
         self._intervalID = None
+        self._sending = False
         self._sending_count = 0
 
         self.log = logging.getLogger(
@@ -25,28 +25,34 @@ class PendingPacket(object):
 
     def send(self):
 
-        self._sending_count += 1
+        self._sending = True
 
-        def packet_send():
-            self._packet_sender.send(self._packet)
+        #self._packet_sender.send(self._packet)
 
-        if self._sending_count < 0:
-            self.log.debug('Packet %s sent %d times', self._packet.get_sequence_number(), self._sending_count)
-            self._intervalID = rudp.helpers.set_interval(
-                packet_send,
-                rudp.constants.TIMEOUT
-            )
-        else:
-            self.log.debug('Max retries hit')
+        def packet_send(counter):
+            if self._sending and counter < 10:
+                self.log.debug('Sending #%s: %s', self._packet.get_sequence_number(), self._sending)
+                self._packet_sender.send(self._packet)
+                ioloop.IOLoop.instance().call_later(rudp.constants.TIMEOUT, packet_send, counter+1)
 
-        self._packet_sender.send(self._packet)
+        packet_send(0)
+
+        # self._intervalID = rudp.helpers.set_interval(
+        #     packet_send,
+        #     rudp.constants.TIMEOUT
+        # )
+
+        # self.log.debug('Packet %s sent %d times', self._packet.get_sequence_number(), self._sending_count)
 
     def get_sequence_number(self):
         return self._packet.get_sequence_number()
 
     def acknowledge(self):
         self.log.debug('Pending Packet Acknowledged: %s', self._packet.get_sequence_number())
+        self._sending = None
+
         if self._intervalID:
             self._intervalID.cancel()
-            # self._intervalID = None
+            self._intervalID = None
+
         self.ee.emit('acknowledge')

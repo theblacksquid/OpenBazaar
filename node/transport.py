@@ -182,7 +182,7 @@ class CryptoTransportLayer(TransportLayer):
         def on_message(msg):
 
             data, addr = msg[0], msg[1]
-            self.log.debug('on_message: %s %s %s', data, 'from', addr)
+            self.log.debug('Got Packet: %s from %s', data, addr)
 
             try:
                 data_body = json.loads(data)
@@ -193,8 +193,9 @@ class CryptoTransportLayer(TransportLayer):
                 port = addr[1]
                 hostname = addr[0]
                 nickname = data_body.get('nick')
+                nat_type = data_body.get('nat_type')
 
-                inbound_peer = self.dht.add_peer(hostname, port, pubkey, guid, nickname)
+                inbound_peer = self.dht.add_peer(hostname, port, pubkey, guid, nickname, nat_type)
                 inbound_peer.reachable = True
 
                 if inbound_peer:
@@ -206,10 +207,7 @@ class CryptoTransportLayer(TransportLayer):
                         return
                         # del self._connections[address_key]
                     else:
-                        def receive_packet():
-                            inbound_peer._rudp_connection.receive(packet)
-
-                        receive_packet()
+                        inbound_peer._rudp_connection.receive(packet)
 
                     self.log.debug('Updated peers: %s', self.dht.active_peers)
                 else:
@@ -411,12 +409,11 @@ class CryptoTransportLayer(TransportLayer):
                 self.log.debug("UDP punching package {0} sent".format(count))
                 if peer.punching:
                     ioloop.IOLoop.instance().call_later(0.5, send, count + 1)
-                if count > 25:
+                if count >= 25:
                     self.log.debug('Falling back to relaying.')
                     peer.relaying = True
                     peer.reachable = True
                     peer.punching = False
-
                     return
 
             peer.punching = True
@@ -475,6 +472,9 @@ class CryptoTransportLayer(TransportLayer):
         for x in self.dht.active_peers:
             if x.guid == msg['peer_guid']:
                 x.nat_type = msg['nat_type']
+                if x.nat_type == 'Symmetric NAT':
+                    x.relaying = True
+                    x.reachable = True
                 self.log.debug(x)
                 return
 
@@ -752,7 +752,7 @@ class CryptoTransportLayer(TransportLayer):
         self.log.info('Searching for myself')
         self.dht.iterative_find('0000000000000000000000000000000000000000', [], 'findNode')
 
-    def get_crypto_peer(self, guid=None, hostname=None, port=None, pubkey=None, nickname=None):
+    def get_crypto_peer(self, guid=None, hostname=None, port=None, pubkey=None, nickname=None, nat_type=None):
         if guid == self.guid:
             self.log.error('Cannot get CryptoPeerConnection for your own node')
             return
@@ -774,7 +774,8 @@ class CryptoTransportLayer(TransportLayer):
                 pubkey,
                 guid=guid,
                 nickname=nickname,
-                peer_socket=self.listener.socket
+                peer_socket=self.listener.socket,
+                nat_type=nat_type
             )
         else:
             # FIXME this is wrong to do here, but it keeps this as close as
@@ -787,6 +788,8 @@ class CryptoTransportLayer(TransportLayer):
                 self.peers[guid].pub = pubkey
             if nickname:
                 self.peers[guid].nickname = nickname
+            if nat_type:
+                self.peers[guid].nat_type = nat_type
 
         return self.peers[guid]
 

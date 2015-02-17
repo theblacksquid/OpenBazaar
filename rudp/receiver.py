@@ -7,6 +7,51 @@ import rudp.helpers
 from pyee import EventEmitter
 
 
+class IncomingMessage(object):
+    def __init__(self, im_id, size):
+        self.log = logging.getLogger(
+            '%s' % self.__class__.__name__
+        )
+
+        self.log.debug('New IncomingMessage Created')
+
+        self.im_id = im_id
+        self.size = size
+
+        self.ee = EventEmitter()
+
+        self.synced = False
+        self._next_sequence_number = 0
+        self._sync_sequence_number = None
+        self._packets = LinkedList(rudp.helpers.sort_by_sequence)
+
+        self.body = ''
+        self.waiting = False
+
+    def reset(self):
+        self.log.debug('IncomingMessage Reset')
+        self.log.debug('Self Packets: %s', self._packets.toArray())
+
+        self.synced = False
+        self._next_sequence_number = 0
+        self._sync_sequence_number = None
+
+        try:
+            self.log.debug('Downloaded (%s) | Total Size (%s)', len(self.body), self.size)
+
+            if len(self.body) == int(self.size):
+                self.log.debug('Download Complete')
+                self.ee.emit('complete', {'body': self.body})
+                return
+            else:
+                # print self._message, self._message_size
+                self.log.debug('Still downloading...')
+                self.waiting = True
+
+        except Exception as e:
+            self.log.debug('Problem with resetting IncomingMessage: %s', e)
+
+
 class Receiver(object):
     def __init__(self, packet_sender):
         print 'Init Receiver'
@@ -17,6 +62,8 @@ class Receiver(object):
 
         self.ee = EventEmitter()
 
+        self.incoming_messages = {}
+
         self._synced = False
         self._next_sequence_number = 0
         self._sync_sequence_number = None
@@ -26,6 +73,7 @@ class Receiver(object):
         self._closed = False
 
         self._message = ''
+        self._message_id = None
         self._fullmessage = ''
         self._message_size = 0
         self._waiting = False
@@ -41,6 +89,7 @@ class Receiver(object):
         self._synced = False
         self._next_sequence_number = 0
         self._sync_sequence_number = None
+        self._message_id = None
 
         # try:
         # message = self._message
@@ -49,7 +98,6 @@ class Receiver(object):
 
         try:
             self.log.debug('%s %s', len(self._message), self._message_size)
-            self.log.debug('%s', len(message) == int(self._message_size))
 
             if len(self._message) == int(self._message_size):
                 self.log.debug('Matched up')
@@ -69,111 +117,172 @@ class Receiver(object):
     def receive(self, packet):
 
         try:
-            if self._closed:
-                # Since this is closed, don't do anything.
-                return
+
+            packet_data = packet._payload.split('|')
+
+            message_id = packet_data[0]
+            message_size = packet_data[1]
+            payload = packet_data[2]
+
+            self._packet_sender.send(Packet.createAcknowledgementPacket(
+                packet._sequenceNumber,
+                self._packet_sender._transport.guid,
+                self._packet_sender._transport.pubkey
+            ))
+
+            if message_id not in self.incoming_messages:
+                message = IncomingMessage(message_id, message_size)
+                self.incoming_messages[message_id] = message
+
+                # pylint: disable=unused-variable
+                @message.ee.on('complete')
+                def on_complete(body):
+                    self.log.debug('IncomingMessage Complete')
+                    self.ee.emit('data', {'payload': message.body, 'size': message.size})
+            else:
+                message = self.incoming_messages[message_id]
+
+            # Process Packet Contents
+            if packet._synchronize:
+                if not message.synced:
+                    self.log.debug('Receive Sync Packet')
+                    if packet._sequenceNumber == message._sync_sequence_number:
+                        return
+
+                    self.log.debug('Inserting Packet #%s', packet._sequenceNumber)
+                    message._packets.insert(packet)
+
+                    if not message.waiting:
+                        message.body = payload
+                    else:
+                        self.log.debug('Appending to Waiting Message: %s', self._message)
+                        message.body += payload
+
+                    message._next_sequence_number = packet._sequenceNumber + 1
+                    message.synced = True
+                    message._sync_sequence_number = packet._sequenceNumber
+
+                    if packet._reset:
+                        message.reset()
+
+                    return
+
+            elif packet._reset:
+                self.log.debug('Receive Reset Packet')
+
+                if message._next_sequence_number == packet.get_sequence_number():
+                    message.body += payload
+                    self.log.debug('Message Updated: %s', message.body)
+                    message.reset()
+                    return
+            else:
+                self.log.debug('Receive Inside Packet')
+
+                result = message._packets.insert(packet)
+
+                if result is LinkedList.insertion_result.get('INSERTED'):
+                    if packet.get_sequence_number() == message._next_sequence_number:
+                        message.body += payload
+                        message._next_sequence_number += 1
+                        # message._packets.seek()
+                        # if message._packets.hasNext():
+                        #     self._push_if_expected_sequence(self._packets.nextValue())
+                elif result is LinkedList.insertion_result.get('EXISTS'):
+                    self.log.debug('Already have this packet')
+                    return
+
 
             # Ignores packets that have a sequence number less than the next sequence
             # number
-            if not packet._synchronize and packet._sequenceNumber < self._sync_sequence_number:
-                self.log.debug('Just returning')
-                return
+            # if not packet._synchronize and packet._sequenceNumber < self._sync_sequence_number:
+            #     self.log.debug('Just ignoring this packet')
+            #     return
 
-            self.log.debug('Incoming Packet #%s', packet._sequenceNumber)
-            self.log.debug('Synced: %s, Sync Packet: %s', self._synced, packet._synchronize)
-
-            if packet._synchronize and not self._synced:
-
-                # This is the beginning of the stream.
-                self.log.debug('Beginning of stream %s %s', packet._sequenceNumber, self._sync_sequence_number)
-
-                data = packet._payload.split('|', 1)
-
-                if len(data) > 1:
-                    self._message_size = data[0]
-                    packet._payload = data[1]
-
-                self.log.debug('Send Ack Packet')
-                self._packet_sender.send(Packet.createAcknowledgementPacket(
-                    packet._sequenceNumber,
-                    self._packet_sender._transport.guid,
-                    self._packet_sender._transport.pubkey
-                ))
-
-                if packet._sequenceNumber == self._sync_sequence_number:
-                    return
-
-                # Send the packet upstream, send acknowledgement packet to end host, and
-                # increment the next expected packet.
-                self._packets.clear()
-
-                self.log.debug('Inserting Packet #%s', packet._sequenceNumber)
-                self.log.debug('Before Packets: %s', self._packets)
-                self._packets.insert(packet)
-
-                self.log.debug('Before Updated Message: %s', self._message)
-
-                if not self._waiting:
-                    self._message = packet._payload
-                else:
-                    self._message += packet._payload
-
-                self.log.debug('Updated Message: %s', self._message)
-
-                self._next_sequence_number = packet._sequenceNumber + 1
-                self._synced = True
-                self._sync_sequence_number = packet._sequenceNumber
-
-                if packet._reset:
-                    self.reset()
-
-                    # if packet._reset:
-                    # self.log.debug('Received Reset')
-                    #     self._synced = False
-                    #     self._next_sequence_number = 0
-                    #     self._sync_sequence_number = None
-                    #     self.ee.emit('_reset', 'test')
-                    # self.log.debug('Passing Message Upstream: %s', self._message)
-                    # self.ee.emit('data', {'payload': self._message, 'size': len(self._message)})
-
-                # We're done.
-                # self._packet_sender.send(Packet.createFinishPacket())
-
-                return
-
-            elif not self._synced:
-                # If we are not synchronized with sender, then this means that we should
-                # wait for the end host to send a synchronization packet.
-
-                # We are done.
-                self.log.debug('Waiting for sync packet first.')
-                return
-
-            elif packet._sequenceNumber < self._sync_sequence_number:
-                # This is a troll packet. Ignore it.
-                print 'Troll packet'
-                return
-
-            elif packet._sequenceNumber >= (self._packets.currentValue()._sequenceNumber
-                                            + rudp.constants.WINDOW_SIZE):
-                # This means that the next packet received is not within the window size.
-                self.ee.emit('_window_size_exceeded')
-                self.log.debug('Packet window exceeded')
-
-                return
-
-            elif packet._reset:
-                if self._message != '':
-                    self.log.debug('Before Updated 3 Message: %s', self._message)
-                    self._message += packet._payload
-                    self.log.debug('After Updated Message: %s', self._message)
-                    self._packet_sender.send(Packet.createAcknowledgementPacket(
-                        packet._sequenceNumber,
-                        self._packet_sender._transport.guid,
-                        self._packet_sender._transport.pubkey
-                    ))
-                    self.reset()
-                    return
+            # if packet._synchronize and not self._synced:
+            #
+            #     # This is the beginning of the stream.
+            #     self.log.debug('Beginning of stream %s %s', packet._sequenceNumber, self._sync_sequence_number)
+            #
+            #     data = packet._payload.split('|', 2)
+            #
+            #     if len(data) > 1:
+            #         self._message_id = data[0]
+            #         self._message_size = data[1]
+            #         packet._payload = data[2]
+            #         self.log.debug('Message #%s (%s bytes): %s', self._message_id, self._message_size, packet._payload)
+            #
+            #     self._packet_sender.send(Packet.createAcknowledgementPacket(
+            #         packet._sequenceNumber,
+            #         self._packet_sender._transport.guid,
+            #         self._packet_sender._transport.pubkey
+            #     ))
+            #
+            #     if packet._sequenceNumber == self._sync_sequence_number:
+            #         return
+            #
+            #     # Send the packet upstream, send acknowledgement packet to end host, and
+            #     # increment the next expected packet.
+            #     self._packets.clear()
+            #
+            #     self.log.debug('Inserting Packet #%s', packet._sequenceNumber)
+            #     # self.log.debug('Before Packets: %s', self._packets)
+            #     self._packets.insert(packet)
+            #
+            #     if not self._waiting:
+            #         self._message = packet._payload
+            #     else:
+            #         self.log.debug('Appending to Waiting Message: %s', self._message)
+            #         self._message += packet._payload
+            #
+            #     self.log.debug('Updated Message: %s', self._message)
+            #
+            #     self._next_sequence_number = packet._sequenceNumber + 1
+            #     self._synced = True
+            #     self._sync_sequence_number = packet._sequenceNumber
+            #
+            #     if packet._reset:
+            #         self.reset()
+            #
+            #     return
+            #
+            # elif not self._synced:
+            #     # If we are not synchronized with sender, then this means that we should
+            #     # wait for the end host to send a synchronization packet.
+            #
+            #     # We are done.
+            #     self.log.debug('Got an out of order packet.')
+            #     return
+            #
+            # elif packet._sequenceNumber < self._sync_sequence_number:
+            #     # This is a troll packet. Ignore it.
+            #     self.log.debug('Ignoring packet out of the current window.')
+            #     return
+            #
+            # elif packet._sequenceNumber >= (self._packets.currentValue()._sequenceNumber
+            #                                 + rudp.constants.WINDOW_SIZE):
+            #     # This means that the next packet received is not within the window size.
+            #     self.ee.emit('_window_size_exceeded')
+            #     self.log.debug('Ignoring packet out of the current window.')
+            #
+            #     return
+            #
+            # elif packet._reset:
+            #
+            #     data = packet._payload.split('|')
+            #     payload = data[1]
+            #
+            #     self.log.debug(data)
+            #     if self._message != '' and data[0] == self._message_id:
+            #         self.log.debug('Message Before Appending: %s', self._message)
+            #         self._message += payload
+            #         self.log.debug('After Updated Message: %s', self._message)
+            #         self._packet_sender.send(Packet.createAcknowledgementPacket(
+            #             packet._sequenceNumber,
+            #             self._packet_sender._transport.guid,
+            #             self._packet_sender._transport.pubkey
+            #         ))
+            #         self.reset()
+            #         return
 
         except Exception as e:
             self.log.error(e)
@@ -187,25 +296,27 @@ class Receiver(object):
         # packet is the expected packet number. If it is, then start the
         # acknowledgement process anew.
 
-        self.log.debug('Inserting Packet #%s', packet._sequenceNumber)
-
-        result = self._packets.insert(packet)
-
-        if result is LinkedList.insertion_result.get('INSERTED'):
-            self._push_if_expected_sequence(packet)
-        elif result is LinkedList.insertion_result.get('EXISTS'):
-            self._packet_sender.send(Packet.createAcknowledgementPacket(
-                packet._sequenceNumber,
-                self._packet_sender._transport.guid,
-                self._packet_sender._transport.pubkey
-            ))
+        # self.log.debug('Inserting Packet #%s', packet._sequenceNumber)
+        #
+        # result = self._packets.insert(packet)
+        #
+        # if result is LinkedList.insertion_result.get('INSERTED'):
+        #     self._push_if_expected_sequence(packet)
+        # elif result is LinkedList.insertion_result.get('EXISTS'):
+        #     self._packet_sender.send(Packet.createAcknowledgementPacket(packet.get_sequence_number(),
+        #                                                                 self._packet_sender._transport.guid,
+        #                                                                 self._packet_sender._transport.pubkey))
+        #     return
 
     def _push_if_expected_sequence(self, packet):
 
         if packet.get_sequence_number() == self._next_sequence_number:
 
+            data = packet._payload.split('|')
+            payload = data[1]
+
             self.log.debug('Before Updated 2 Message: %s', self._message)
-            self._message += packet._payload
+            self._message += payload
             self.log.debug('After Updated Message: %s', self._message)
 
             # [1] Never send packets directly!

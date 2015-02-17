@@ -18,7 +18,7 @@ from tornado import ioloop
 
 
 class PeerConnection(GUIDMixin, object):
-    def __init__(self, guid, transport, hostname, port=12345, nickname="", peer_socket=None):
+    def __init__(self, guid, transport, hostname, port=12345, nickname="", peer_socket=None, nat_type=None):
 
         GUIDMixin.__init__(self, guid)
 
@@ -27,8 +27,13 @@ class PeerConnection(GUIDMixin, object):
         self.port = port
         self.nickname = nickname
         self.reachable = False
-        self.nat_type = None
-        self.relaying = False
+        self.nat_type = nat_type
+
+        if nat_type == 'Symmetric NAT':
+            self.relaying = True
+        else:
+            self.relaying = False
+
         self.seed = False
         self.punching = False
 
@@ -48,7 +53,8 @@ class PeerConnection(GUIDMixin, object):
             self.sock,
             self.hostname,
             self.port,
-            self.transport
+            self.transport,
+            self.nat_type
         )
 
         self._rudp_connection = Connection(self._packet_sender)
@@ -71,7 +77,7 @@ class PeerConnection(GUIDMixin, object):
                 if self.nat_type == 'Full Cone' or self.seed:
                     self.send_to_rudp(serialized)
                     return
-                elif self.relaying:
+                elif self.relaying or self.nat_type == 'Symmetric NAT' or self.transport.nat_type == 'Symmetric NAT':
                     # Relay through seed server
                     self.log.debug('Relay through seed')
                     self.transport.relay_message(serialized, self.guid)
@@ -80,14 +86,13 @@ class PeerConnection(GUIDMixin, object):
                 if self.nat_type == 'Restric NAT' and not self.punching and not self.relaying:
                     self.log.debug('Found restricted NAT client')
                     self.transport.start_mediation(self.guid)
+                if self.nat_type == 'Full Cone':
+                    self.send_to_rudp(serialized)
 
             ioloop.IOLoop.instance().call_later(0.5, sending_out)
         sending_out()
 
     def send_to_rudp(self, data):
-        data_encoded = data
-        data_encoded = data_encoded.encode('hex')
-        data = str(len(data_encoded)) + '|' + data_encoded
         self._rudp_connection.send(data)
 
     def reset(self):
@@ -100,9 +105,9 @@ class PeerConnection(GUIDMixin, object):
 class CryptoPeerConnection(PeerConnection):
 
     def __init__(self, transport, hostname, port, pub=None, guid=None, nickname="",
-                 sin=None, rudp_connection=None, peer_socket=None):
+                 sin=None, rudp_connection=None, peer_socket=None, nat_type=None):
 
-        PeerConnection.__init__(self, guid, transport, hostname, port, nickname, peer_socket)
+        PeerConnection.__init__(self, guid, transport, hostname, port, nickname, peer_socket, nat_type)
 
         self.pub = pub
         self.sin = sin
@@ -111,14 +116,16 @@ class CryptoPeerConnection(PeerConnection):
         self.setup_emitters()
 
         if not self.reachable:
+            self.log.debug('Peer is not reachable. Trying to ping.')
+
             # Test connectivity to peer
             self.waiting = True
             self.send_ping()
 
             def try_to_mediate():
-                print 'Trying to reach peer', self.reachable, self.waiting, id(self)
+                self.log.debug('Trying to reach peer: %s %s %s', self.reachable, self.waiting, id(self))
 
-                if guid is not None:
+                if guid is not None and not self.nat_type:
                     self.transport.get_nat_type(guid)
 
             ioloop.IOLoop.instance().call_later(5, try_to_mediate)
@@ -321,6 +328,7 @@ class PeerListener(GUIDMixin):
 
                 try:
                     data, addr = self.socket.recvfrom(2048)
+                    self.log.debug('Got data from socket: %s', data[:50])
 
                     if data[:5] == 'punch':
                         self.log.debug('We just received a hole punch.')

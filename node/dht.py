@@ -77,7 +77,7 @@ class DHT(object):
             self.transport.handler.refresh_peers()
 
     @_synchronized
-    def add_peer(self, hostname, port, pubkey=None, guid=None, nickname=None, dump=False):
+    def add_peer(self, hostname, port, pubkey=None, guid=None, nickname=None, nat_type=None):
         """ This takes a tuple (pubkey, hostname, port, guid) and adds it to the active
         peers list if it doesn't already reside there.
 
@@ -95,6 +95,11 @@ class DHT(object):
                 if hostname != peer.hostname or port != peer.port:
                     peer.hostname = hostname
                     peer.port = port
+                    peer.nat_type = nat_type
+
+                    if nat_type == 'Full Cone':
+                        peer.reachable = True
+
                     peer.init_packetsender()
                     peer.setup_emitters()
                     self.routing_table.add_contact(peer)
@@ -108,7 +113,7 @@ class DHT(object):
 
                 return peer
 
-        new_peer = self.transport.get_crypto_peer(guid, hostname, port, pubkey, nickname)
+        new_peer = self.transport.get_crypto_peer(guid, hostname, port, pubkey, nickname, nat_type)
 
         if new_peer:
             #if new_peer.guid:
@@ -195,7 +200,14 @@ class DHT(object):
         contact_list = []
         for contact in contacts:
             self.log.debug('Contact: %s', contact)
-            contact_list.append((contact.guid, contact.hostname, contact.port, contact.pub, contact.nickname))
+            contact_list.append((
+                contact.guid,
+                contact.hostname,
+                contact.port,
+                contact.pub,
+                contact.nickname,
+                contact.nat_type
+            ))
 
         return self.dedupe(contact_list)
 
@@ -266,19 +278,26 @@ class DHT(object):
                                 or not node[2] == self.transport.port:
 
                             self.log.debug('Adding a findNode peer')
-                            new_node = self.add_peer(node[1], node[2], node[3], node[0], node[4])
-                            new_node.send_raw(
-                                json.dumps({
-                                    'type': 'hello',
-                                    'pubkey': self.transport.pubkey,
-                                    'senderGUID': self.transport.guid,
-                                    'nat_type': self.transport.nat_type,
-                                    'hostname': self.transport.hostname,
-                                    'port': self.transport.port,
-                                    'senderNick': self.transport.nickname,
-                                    'v': constants.VERSION
-                                })
+                            new_node = self.add_peer(
+                                node[1],
+                                node[2],
+                                node[3],
+                                node[0],
+                                node[4],
+                                node[5]
                             )
+                            # new_node.send_raw(
+                            #     json.dumps({
+                            #         'type': 'hello',
+                            #         'pubkey': self.transport.pubkey,
+                            #         'senderGUID': self.transport.guid,
+                            #         'nat_type': self.transport.nat_type,
+                            #         'hostname': self.transport.hostname,
+                            #         'port': self.transport.port,
+                            #         'senderNick': self.transport.nickname,
+                            #         'v': constants.VERSION
+                            #     })
+                            # )
                             nodes_to_extend.append(node)
 
                     self.extend_shortlist(msg['findID'], nodes_to_extend)
@@ -722,6 +741,7 @@ class DHT(object):
 
         for i, x in enumerate(self.active_peers):
             if not x.guid:
+                self.log.debug('Deleting active peer with no GUID')
                 del self.active_peers[i]
 
         # Sort shortlist from closest to farthest

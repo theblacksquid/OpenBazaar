@@ -4,7 +4,7 @@ import threading
 import math
 
 
-def splitArrayLike(data, length):
+def splitArrayLike(data, length, message_id=None, data_size=None):
     length = length or 1
     retval = []
 
@@ -12,7 +12,10 @@ def splitArrayLike(data, length):
     blocks += 1
 
     for i in range(0, blocks):
-        retval.append(data[i*length:i*length + length])
+        if message_id and data_size:
+            retval.append('%s|%s|%s' % (message_id, data_size, data[i*length:i*length + length]))
+        else:
+            retval.append(data[i*length:i*length + length])
 
     return retval
 

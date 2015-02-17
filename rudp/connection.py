@@ -22,7 +22,7 @@ class Connection(object):
         # pylint: disable=unused-variable
         @self._receiver.ee.on('data')
         def on_data(data):
-            self.log.debug('Received Data: %s', data)
+            self.log.debug('Received IncomingMessage: %s', data)
             self.ee.emit('data', data)
 
         # pylint: disable=unused-variable
@@ -39,4 +39,3 @@ class Connection(object):
             self._sender.verify_acknowledgement(packet._sequenceNumber)
         else:
             self._receiver.receive(packet)
-            self.log.debug('Received a packet')

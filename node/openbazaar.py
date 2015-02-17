@@ -359,7 +359,12 @@ def start(arguments):
         arguments.disable_upnp = True
 
     # Try to get NAT escape UDP port
-    nat_status = network_util.get_NAT_status()
+    if not arguments.dev_mode:
+        nat_status = network_util.get_NAT_status()
+    else:
+        nat_status = {
+            'nat_type': 'Full Cone'
+        }
 
     if not arguments.disable_stun_check:
         print "Checking NAT Status..."
