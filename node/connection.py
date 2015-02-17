@@ -74,7 +74,7 @@ class PeerConnection(GUIDMixin, object):
                 elif self.relaying:
                     # Relay through seed server
                     self.log.debug('Relay through seed')
-                    self.transport.relay_message(serialized)
+                    self.transport.relay_message(serialized, self.guid)
                     return
             else:
                 if self.nat_type == 'Restric NAT' and not self.punching and not self.relaying:
@@ -156,7 +156,6 @@ class CryptoPeerConnection(PeerConnection):
                 self.log.debug('Problem with serializing: %s', e)
 
             try:
-                # payload = base64.b64decode(msg.get('payload'))
                 payload = msg.get('payload').decode('hex')
                 self.transport.listener._on_raw_message(payload)
             except Exception as e:
@@ -375,8 +374,7 @@ class CryptoPeerListener(PeerListener):
         # soon all crypto code will be refactored and this will be removed
         self.cryptor = Cryptor(pubkey_hex=self.pubkey, privkey_hex=self.secret)
 
-    @staticmethod
-    def is_handshake(message):
+    def is_plaintext_message(self, message):
         """
         Return whether message is a plaintext handshake
 
@@ -389,7 +387,7 @@ class CryptoPeerListener(PeerListener):
         try:
             message = json.loads(message)
         except (ValueError, TypeError) as e:
-            print 'Error: ', e
+            self.log.debug('Error: %s ', e)
             return False
 
         return 'type' in message
@@ -403,49 +401,54 @@ class CryptoPeerListener(PeerListener):
         :return:
         """
 
-        if not self.is_handshake(serialized):
-
-            if type(serialized) is dict:
-                message = serialized
-            else:
-                try:
-
-                    message = self.cryptor.decrypt(serialized)
-                    message = json.loads(message)
-
-                    # self.log.debug(message)
-                    # message = json.loads(serialized)
-
-                    signature = message['sig'].decode('hex')
-                    signed_data = message['data']
-
-                    if CryptoPeerListener.validate_signature(signature, signed_data):
-                        message = signed_data.decode('hex')
-                        message = json.loads(message)
-
-                        if message.get('guid') != self.guid:
-                            return
-
-                    else:
-                        return
-                except RuntimeError as e:
-                    self.log.error('Could not decrypt message properly %s', e)
-                    return
-                except Exception as e:
-                    self.log.error('Cannot unpack data: %s', e)
-                    return
+        if not self.is_plaintext_message(serialized):
+            message = self.process_encrypted_message(serialized)
         else:
-            self.log.debug('Loading JSON')
             message = json.loads(serialized)
-            self.log.debug('Message: %s', message)
+
+            # If relayed then unwrap and process again
+            if message['type'] == 'relayed_msg':
+                self._on_raw_message(message['data'].decode('hex'))
+                return
 
         self.log.debugv('Received message of type "%s"',
                         message.get('type', 'unknown'))
+
+        # Execute callback on message type
         if self._data_cb:
-            self.log.debug('DATA CB: %s', self._data_cb)
             self._data_cb(message)
         else:
             self.log.debugv('Callbacks not ready yet')
+
+    def process_encrypted_message(self, encrypted_message):
+        if type(encrypted_message) is dict:
+            message = encrypted_message
+        else:
+            try:
+
+                message = self.cryptor.decrypt(encrypted_message)
+                message = json.loads(message)
+
+                signature = message['sig'].decode('hex')
+                signed_data = message['data']
+
+                if CryptoPeerListener.validate_signature(signature, signed_data):
+                    message = signed_data.decode('hex')
+                    message = json.loads(message)
+
+                    if message.get('guid') != self.guid:
+                        return False
+
+                else:
+                    return
+            except RuntimeError as e:
+                self.log.error('Could not decrypt message properly %s', e)
+                return False
+            except Exception as e:
+                self.log.error('Cannot unpack data: %s', e)
+                return False
+
+        return message
 
     @staticmethod
     def validate_signature(signature, data):

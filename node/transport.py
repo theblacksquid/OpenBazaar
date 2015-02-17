@@ -128,17 +128,15 @@ class CryptoTransportLayer(TransportLayer):
         if ob_ctx.enable_ip_checker and not ob_ctx.seed_mode and not ob_ctx.dev_mode:
             self.start_ip_address_checker()
 
-    def relay_message(self, data):
-        # print type(data), data
-        self.log.debug('data is: %s', type(data))
-        # self.log.debug('Relaying message: {0}'.format(data))
+    def relay_message(self, data, guid):
         for peer in self.dht.active_peers:
             if peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
                 peer.send_raw(json.dumps({
                     'type': 'relay_msg',
                     'data': data.encode('hex'),
+                    'guid': guid,
                     'senderGUID': self.guid
-                }))
+                }), True)
 
     def start_mediation(self, guid):
         self.log.debug('Starting mediation %s', self.ob_ctx)
@@ -379,6 +377,21 @@ class CryptoTransportLayer(TransportLayer):
         else:
             self.log.debug('Could not find peer to relay to.')
 
+    def validate_on_relayed_msg(self, msg):
+        self.log.debug('Validating relayed msg')
+        return True
+
+    def on_relayed_msg(self, msg):
+        self.log.debug('Received relayed message to peer')
+        peer = self.dht.routing_table.get_contact(msg['guid'])
+        if peer:
+            peer.send_raw(json.dumps({
+                'type': 'relayed_msg',
+                'data': msg['data']
+            }), relay=True)
+        else:
+            self.log.debug('Could not find peer to relay to.')
+
     def validate_on_punch(self, msg):
         self.log.debug('Validating on punch')
         return True
@@ -403,6 +416,7 @@ class CryptoTransportLayer(TransportLayer):
                     peer.relaying = True
                     peer.reachable = True
                     peer.punching = False
+
                     return
 
             peer.punching = True
