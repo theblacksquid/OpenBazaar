@@ -115,7 +115,8 @@ class CryptoTransportLayer(TransportLayer):
             'ping',
             'pong',
             'get_nat_type',
-            'nat_type'
+            'nat_type',
+            'relay_msg'
         )
 
         self._setup_settings()
