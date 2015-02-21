@@ -88,6 +88,10 @@ class PeerConnection(GUIDMixin, object):
                     self.transport.start_mediation(self.guid)
                 if self.nat_type == 'Full Cone':
                     self.send_to_rudp(serialized)
+                if self.relaying:
+                    self.log.debug('Relay through seed')
+                    self.transport.relay_message(serialized, self.guid)
+                    return
 
             ioloop.IOLoop.instance().call_later(0.5, sending_out)
         sending_out()
