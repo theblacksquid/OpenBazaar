@@ -24,10 +24,14 @@
 
                 <div class="alert alert-info">Fields in red are required.</div>
 
-                    <input type="hidden" id="preview-thumb" value=""/>
                     <div class="row">
                         <div class="col-sm-3">
-                            <div class="fileinput fileinput-new" data-provides="fileinput">
+
+                            <div data-ng-show="edit" style="background:url('{{contract.productImage}}') 80%; width:180px;height:180px;">
+
+                            </div>
+
+                            <div data-ng-show="!edit || updateImage" class="fileinput fileinput-new" data-provides="fileinput">
                                 <div class="fileinput-preview thumbnail" data-trigger="fileinput"></div>
                                 <div class="text-center">
                                     <span class="btn btn-info btn-file">
@@ -121,9 +125,9 @@
 </div>
 
 <div class="modal-footer">
-    <button class="btn btn-default" ng-click="cancel()">Cancel</button>
+    <button class="btn btn-default" data-ng-click="cancel()">Cancel</button>
     <!--<button class="btn btn-primary" ng-click="saveProduct()">Save</button>-->
-    <button class="btn btn-primary {{!newContractForm.$valid ? 'disabled': ''}}" ng-click="createContract()">Save</button>
+    <button class="btn btn-primary {{!newContractForm.$valid ? 'disabled': ''}}" data-ng-click="saveContract()">Save</button>
 </div>
 
 

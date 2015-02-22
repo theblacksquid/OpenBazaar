@@ -22,26 +22,12 @@ angular.module('app')
             $scope.$evalAsync( function( $scope ) {
 
                     Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
-
-
                     Connection.$on('store_contracts', function(e, msg){ $scope.parse_store_listings(msg); });
-
-
                     Connection.$on('store_contract', function(e, msg){ $scope.parse_store_contract(msg); });
-
-
-                Connection.$on('page', function(e, msg){ $scope.parse_page(msg); });
-
-
+                    Connection.$on('page', function(e, msg){ $scope.parse_page(msg); });
                     Connection.$on('store_products', function(e, msg){ $scope.parse_store_products(msg); });
-
-
-                Connection.$on('new_listing', function(e, msg){ $scope.parse_new_listing(msg); });
-
-
-                Connection.$on('no_listings_found', function(e, msg){ $scope.handle_no_listings(); });
-
-
+                    Connection.$on('new_listing', function(e, msg){ $scope.parse_new_listing(msg); });
+                    Connection.$on('no_listings_found', function(e, msg){ $scope.handle_no_listings(); });
                     Connection.$on('reputation_pledge_update', function(e, msg){ $scope.parse_reputation_pledge_update(msg); });
 
             });
@@ -98,41 +84,42 @@ angular.module('app')
                         $scope.page_unreachable = true;
                         $scope.$apply();
                     }
-                }, 5000);
+                }, 15000);
 
                 var query = {
                     'type': 'query_store_listings',
                     'findGUID': guid
                 };
 
-                Connection.send('query_page', query);
-
+                setTimeout(function() {
+                    Connection.send('query_page', query);
+                }, 5000);
             };
 
             $scope.parse_page = function(msg) {
 
-                        $scope.page_loading = false;
+                $scope.page_loading = false;
 
-                        console.log('Parsing Store Page: ', msg);
+                console.log('Parsing Store Page: ', msg);
 
-                        msg.senderNick = msg.senderNick.substring(0, 120);
-                        msg.text = msg.text.substring(0, 2048);
+                msg.senderNick = msg.senderNick.substring(0, 120);
+                msg.text = msg.text.substring(0, 2048);
 
-                        if (!$scope.reviews.hasOwnProperty(msg.pubkey)) {
-                            $scope.reviews[msg.pubkey] = [];
-                        }
+                if (!$scope.reviews.hasOwnProperty(msg.pubkey)) {
+                    $scope.reviews[msg.pubkey] = [];
+                }
 
-                        $.each($scope.settings.notaries, function(idx, val) {
-                            if (val.guid == msg.senderGUID) {
-                               msg.isTrustedNotary = true;
-                            }
-                        });
+                $.each($scope.settings.notaries, function(idx, val) {
+                    if (val.guid == msg.senderGUID) {
+                       msg.isTrustedNotary = true;
+                    }
+                });
 
-                        if (!$scope.dashboard) {
-                            $scope.currentReviews = $scope.reviews[msg.pubkey];
-                            $scope.page = msg;
-                            $scope.page.reputation_pledge = 0;
-                        }
+                if (!$scope.dashboard) {
+                    $scope.currentReviews = $scope.reviews[msg.pubkey];
+                    $scope.page = msg;
+                    $scope.page.reputation_pledge = 0;
+                }
 
             };
 

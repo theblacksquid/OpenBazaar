@@ -80,6 +80,8 @@ angular.module('app')
 
                     backdrop = backdrop ? backdrop : true;
 
+                    $scope.edit = false;
+
                     var modalInstance = $modal.open({
                         templateUrl: 'partials/modal/addContract.html',
                         controller: ProductModalInstance,
@@ -90,6 +92,9 @@ angular.module('app')
                                 return {
                                     "contract": $scope.contract
                                 };
+                            },
+                            edit: function() {
+                                return false;
                             }
                         }
                     });
@@ -102,19 +107,71 @@ angular.module('app')
 
                 };
 
+                $scope.editContract = function(contract) {
+                    console.log('Editing Contract #' + contract.id);
+                    console.log(contract);
+                    backdrop = true;
+                    size = 'lg';
+                    $scope.edit = true;
+
+                    var modalInstance = $modal.open({
+                        templateUrl: 'partials/modal/addContract.html',
+                        controller: ProductModalInstance,
+                        size: size,
+                        backdrop: backdrop,
+                        resolve: {
+                            contract: function() {
+                                return {
+                                    "contract": contract
+                                };
+                            },
+                            edit: function() {
+                                return true;
+                            }
+                        }
+                    });
+
+                    modalInstance.result.then(function(selectedItem) {
+                        $scope.selected = selectedItem;
+                    }, function() {
+                        $log.info('Product modal dismissed at: ' + new Date());
+                    });
+                };
 
             };
 
-            var ProductModalInstance = function($scope, $modalInstance, contract) {
+            var ProductModalInstance = function($scope, $modalInstance, contract, edit) {
 
-                $scope.contract = contract;
-                $scope.contract.productQuantity = 1;
-                $scope.contract.productCondition = 'New';
-                $scope.contracts_current_page = 0;
-                $scope.contract.productPrice = 0;
-                $scope.contract.productShippingPrice = 0;
+                console.log(edit);
 
-                $scope.createContract = function() {
+                if(edit) {
+                    contract = contract.contract;
+                    $scope.contract = contract;
+                    $scope.contract.id = contract.id;
+                    $scope.contract.productQuantity = contract.item_quantity_available;
+                    $scope.contract.productCondition = contract.item_condition;
+                    $scope.contracts_current_page = 0;
+                    $scope.contract.productPrice = contract.unit_price;
+                    $scope.contract.productShippingPrice = contract.shipping_price;
+                    $scope.contract.productTitle = contract.item_title;
+                    $scope.contract.productDescription = contract.item_desc;
+                    $scope.contract.productImage = contract.item_images;
+                    $scope.edit = true;
+
+                } else {
+                    $scope.contract = contract;
+                    $scope.contract.id = '';
+                    $scope.contract.productQuantity = 1;
+                    $scope.contract.productCondition = 'New';
+                    $scope.contracts_current_page = 0;
+                    $scope.contract.productPrice = 0.5;
+                    $scope.contract.productShippingPrice = 0;
+                    $scope.edit = false;
+                }
+
+                console.log($scope.contract);
+
+                $scope.saveContract = function() {
 
                     $scope.contract.productPrice = (String($scope.contract.productPrice).match(/^[+]?([0-9]+(?:[\.][0-9]*)?|\.[0-9]+)$/)) ? $scope.contract.productPrice : 0;
                     $scope.contract.productShippingPrice = (String($scope.contract.productShippingPrice).match(/^[+]?([0-9]+(?:[\.][0-9]*)?|\.[0-9]+)$/)) ? $scope.contract.productShippingPrice : 0;

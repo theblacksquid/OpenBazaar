@@ -100,7 +100,7 @@ angular.module('app')
 
                 $scope.modalOrder = msg.order;
 
-                if (msg.order.state == 'Accepted') {
+                if (msg.order.state == 'Accepted' || msg.order.state == 'Waiting for Payment') {
                     $scope.modalOrder.waitingForPayment = true;
                 } else if (msg.order.state == 'Paid' || msg.order.state == 'Buyer Paid') {
                     console.log('order', msg.order, $scope.myself.guid);
