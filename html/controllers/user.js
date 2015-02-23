@@ -91,9 +91,8 @@ angular.module('app')
                     'findGUID': guid
                 };
 
-                setTimeout(function() {
-                    Connection.send('query_page', query);
-                }, 5000);
+                Connection.send('query_page', query);
+
             };
 
             $scope.parse_page = function(msg) {
@@ -163,7 +162,6 @@ angular.module('app')
 
                 $('#listing-loader').hide();
                 console.log('New Listing', $scope.store_listings);
-                $scope.$apply();
             };
 
             $scope.parse_store_listings = function(msg) {

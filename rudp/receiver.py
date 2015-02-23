@@ -116,6 +116,8 @@ class Receiver(object):
 
     def receive(self, packet):
 
+        self.log.debug('Receive Packet #%s', packet.get_sequence_number())
+
         try:
 
             packet_data = packet._payload.split('|')

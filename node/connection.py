@@ -334,8 +334,9 @@ class PeerListener(GUIDMixin):
                     data, addr = self.socket.recvfrom(2048)
                     self.log.debug('Got data from socket: %s', data[:50])
 
-                    if data[:5] == 'punch':
-                        self.log.debug('We just received a hole punch.')
+                    if data[:9] == 'heartbeat':
+                        self.log.debug('We just received a heartbeat.')
+                        return
                     else:
                         self.ee.emit('on_message', (data, addr))
 
@@ -343,7 +344,7 @@ class PeerListener(GUIDMixin):
                     err = e.args[0]
 
                     if err == 'timed out':
-                        time.sleep(1)
+                        time.sleep(0.5)
                         continue
                     else:
                         sys.exit(1)
@@ -368,7 +369,7 @@ class PeerListener(GUIDMixin):
     def _prepare_datagram_socket(self, family=socket.AF_INET):
         self.socket = socket.socket(family, socket.SOCK_DGRAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        #self.socket.setblocking(0)
+        self.socket.setblocking(0)
         self.socket.bind((self.hostname, self.port))
 
 

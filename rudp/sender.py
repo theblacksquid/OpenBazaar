@@ -52,7 +52,7 @@ class Window(object):
         @self.synchronization_packet.ee.on('acknowledge')
         def on_sync_knowledge():  # pylint: disable=unused-variable
 
-            self.log.debug('on_sync_knowledge')
+            self.log.debug('Acknowledging sync packet')
 
             # We will either notify the owning class that this window has finished
             # sending all of its packets (that is, if this window only had one packet
@@ -60,7 +60,7 @@ class Window(object):
             # they have been acknowledged.
 
             if self._reset_packet is self.synchronization_packet:
-                self.log.debug('Sync Packet equals Reset Packet')
+                self.log.debug('Only one packet in this message. We are done.')
                 self.ee.emit('done')
                 return
             elif len(pkts) is 0:
@@ -92,7 +92,6 @@ class Window(object):
                         self.log.debug('ackd all packets')
                         self.ee.emit('acknowledge')
                         self.ee.emit('done')
-                        #self._reset_packet.send()
 
                 packet.send()
 
@@ -125,28 +124,36 @@ class Sender(object):
 
     def send(self, data):
 
-        data_encoded = data.encode('hex')
-        data_size = str(len(data_encoded))
+        def send_attempt(counter):
 
-        # Unique message ID
-        message_id = random.randint(0, 99999)
+            if counter == 20:
+                self._sending = None
+                self._last_sent = 0
 
-        chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE, message_id, data_size)
-        self.log.debug('Sending %s chunks', chunks)
+            if not self._sending:
+                data_encoded = data.encode('hex')
+                data_size = str(len(data_encoded))
 
-        windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
-        self._windows = self._windows + windows
-        self._windows = [x for x in self._windows if x != []]
+                # Unique message ID
+                message_id = random.randint(0, 99999)
 
-        self.log.debug('Windows: %s', self._windows)
-        self._push()
+                chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE, message_id, data_size)
+                self.log.debug('Sending %s chunks', chunks)
+
+                windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
+                self._windows = self._windows + windows
+                self._windows = [x for x in self._windows if x != []]
+
+                self.log.debug('Windows: %s', self._windows)
+                self._push()
+                return
+            ioloop.IOLoop.instance().call_later(0.5, send_attempt, counter+1)
+
+        send_attempt(0)
 
     def _push(self):
 
-        self.log.debug('self._sending: %s', self._sending)
-
-        if len(self._windows) == 0:
-            return
+        self.log.debug('Current Window: %s', self._sending)
 
         if not self._sending and len(self._windows):
             self._last_sent = int(time.time())
@@ -166,7 +173,7 @@ class Sender(object):
             # pylint: disable=unused-variable
             @self._sending.ee.on('done')
             def on_done():
-                self.log.debug('_sending done: %s', len(self._sending._packets))
+                self.log.debug('Window Complete: %s', len(self._sending._packets))
                 for x in self._sending._packets:
                     x._sending = False
                 self._sending = None

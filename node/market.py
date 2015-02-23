@@ -15,7 +15,6 @@ import re
 import tornado
 
 from node import constants
-from node.crypto_util import Cryptor
 from node.data_uri import DataURI
 from node.orders import Orders
 from node.protocol import proto_page, query_page
@@ -430,8 +429,7 @@ class Market(object):
         # Sign listing index for validation and tamper resistance
         data_string = str({'guid': self.transport.guid,
                            'contracts': my_contracts})
-        cryptor = Cryptor(privkey_hex=self.transport.settings['secret'])
-        signature = cryptor.sign(data_string)
+        signature = self.transport.cryptor.sign(data_string)
 
         value = {
             'signature': signature.encode('hex'),

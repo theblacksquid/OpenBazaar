@@ -186,7 +186,7 @@ class DHT(object):
                 else:
                     close_nodes = self.close_nodes(key, guid)
                     self.log.debug('Found Close Nodes: %s', close_nodes)
-                    response_msg['foundNodes'] = close_nodes
+                    response_msg['foundNodes'] = []
 
                 querying_peer.send(response_msg)
             else:
@@ -432,10 +432,10 @@ class DHT(object):
 
         for node in found_nodes:
 
-            node_guid, node_hostname, node_port, node_pubkey, node_nick = node
+            node_guid, node_hostname, node_port, node_pubkey, node_nick, node_nat_type = node
 
             # Add to shortlist
-            if (node_hostname, node_port, node_guid, node_nick) not in search.shortlist:
+            if (node_hostname, node_port, node_guid, node_nick, node_nat_type) not in search.shortlist:
                 search.add_to_shortlist([(node_hostname, node_port, node_guid, node_pubkey, node_nick)])
 
             # Skip ourselves if returned
