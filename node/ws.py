@@ -1219,3 +1219,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             self.loop.current().add_callback(send_response)
         except Exception:
             logging.error("Error adding callback", exc_info=True)
+
+    # overwrite tornado.websocket.WebSocketHandler's check_origin
+    # https://github.com/tornadoweb/tornado/blob/master/tornado/websocket.py#L311
+    def check_origin(self, origin):
+        return True

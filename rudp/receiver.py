@@ -32,6 +32,8 @@ class IncomingMessage(object):
         self.log.debug('IncomingMessage Reset')
         self.log.debug('Self Packets: %s', self._packets.toArray())
 
+        self._packets.clear()
+
         self.synced = False
         self._next_sequence_number = 0
         self._sync_sequence_number = None
@@ -126,12 +128,6 @@ class Receiver(object):
             message_size = packet_data[1]
             payload = packet_data[2]
 
-            self._packet_sender.send(Packet.createAcknowledgementPacket(
-                packet._sequenceNumber,
-                self._packet_sender._transport.guid,
-                self._packet_sender._transport.pubkey
-            ))
-
             if message_id not in self.incoming_messages:
                 message = IncomingMessage(message_id, message_size)
                 self.incoming_messages[message_id] = message
@@ -167,6 +163,12 @@ class Receiver(object):
                     if packet._reset:
                         message.reset()
 
+                    self._packet_sender.send(Packet.createAcknowledgementPacket(
+                        packet._sequenceNumber,
+                        self._packet_sender._transport.guid,
+                        self._packet_sender._transport.pubkey
+                    ))
+
                     return
 
             elif packet._reset:
@@ -176,6 +178,11 @@ class Receiver(object):
                     message.body += payload
                     self.log.debug('Message Updated: %s', message.body)
                     message.reset()
+                    self._packet_sender.send(Packet.createAcknowledgementPacket(
+                        packet._sequenceNumber,
+                        self._packet_sender._transport.guid,
+                        self._packet_sender._transport.pubkey
+                    ))
                     return
             else:
                 self.log.debug('Receive Inside Packet')
@@ -189,6 +196,13 @@ class Receiver(object):
                         # message._packets.seek()
                         # if message._packets.hasNext():
                         #     self._push_if_expected_sequence(self._packets.nextValue())
+
+                        self._packet_sender.send(Packet.createAcknowledgementPacket(
+                            packet._sequenceNumber,
+                            self._packet_sender._transport.guid,
+                            self._packet_sender._transport.pubkey
+                        ))
+
                 elif result is LinkedList.insertion_result.get('EXISTS'):
                     self.log.debug('Already have this packet')
                     return

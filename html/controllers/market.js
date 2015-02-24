@@ -42,6 +42,7 @@ angular.module('app')
 
                 Connection.$on('peer', function(e, msg){ $scope.add_peer(msg); });
                 Connection.$on('goodbye', function(e, msg){ $scope.goodbye(msg); });
+                Connection.$on('hello_response', function(e, msg){ $scope.hello_response(msg); });
                 Connection.$on('peers', function(e, msg){ $scope.update_peers(msg); });
                 Connection.$on('peer_remove', function(e, msg){ $scope.remove_peer(msg); });
                 Connection.$on('myself', function(e, msg){ $scope.parse_myself(msg); });
@@ -279,6 +280,11 @@ angular.module('app')
                     $scope.peers = $scope.myself.peers;
                 }
             };
+
+            $scope.hello_response = function(msg) {
+                console.log('Hello Response', msg);
+                refresh_peers();
+            }
 
             $scope.update_peers = function(msg) {
 

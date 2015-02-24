@@ -124,32 +124,51 @@ class Sender(object):
 
     def send(self, data):
 
-        def send_attempt(counter):
+        # def send_attempt(counter):
+        #
+        #     if counter == 20:
+        #         self._sending = None
+        #         self._last_sent = 0
+        #
+        #     if not self._sending:
+        #         data_encoded = data.encode('hex')
+        #         data_size = str(len(data_encoded))
+        #
+        #         # Unique message ID
+        #         message_id = random.randint(0, 99999)
+        #
+        #         chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE, message_id, data_size)
+        #         self.log.debug('Sending %s chunks', chunks)
+        #
+        #         windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
+        #         self._windows = self._windows + windows
+        #         self._windows = [x for x in self._windows if x != []]
+        #
+        #         self.log.debug('Windows: %s', self._windows)
+        #         self._push()
+        #         return
+        #     ioloop.IOLoop.instance().call_later(1, send_attempt, counter+1)
+        #
+        # send_attempt(0)
 
-            if counter == 20:
-                self._sending = None
-                self._last_sent = 0
+        if not self._sending:
+            data_encoded = data.encode('hex')
+            data_size = str(len(data_encoded))
 
-            if not self._sending:
-                data_encoded = data.encode('hex')
-                data_size = str(len(data_encoded))
+            # Unique message ID
+            message_id = random.randint(0, 99999)
 
-                # Unique message ID
-                message_id = random.randint(0, 99999)
+            chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE, message_id, data_size)
+            self.log.debug('Sending %s chunks', chunks)
 
-                chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE, message_id, data_size)
-                self.log.debug('Sending %s chunks', chunks)
+            windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
+            self._windows = self._windows + windows
+            self._windows = [x for x in self._windows if x != []]
 
-                windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
-                self._windows = self._windows + windows
-                self._windows = [x for x in self._windows if x != []]
-
-                self.log.debug('Windows: %s', self._windows)
-                self._push()
-                return
-            ioloop.IOLoop.instance().call_later(0.5, send_attempt, counter+1)
-
-        send_attempt(0)
+            self.log.debug('Windows: %s', self._windows)
+            self._push()
+        else:
+            self.log.debug('Still sending to peer')
 
     def _push(self):
 

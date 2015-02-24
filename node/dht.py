@@ -89,6 +89,7 @@ class DHT(object):
 
         # activePeers
         for peer in self.active_peers:
+            self.log.debug('Peer: %s', peer)
             if peer.guid == guid:
 
                 # Check if hostname/port combo changed
@@ -110,6 +111,18 @@ class DHT(object):
                 # DHT contacts
                 # self.routingTable.removeContact(guid)
                 #self.routingTable.addContact(peer)
+
+                return peer
+            elif peer.hostname == hostname and peer.port == port:
+                peer.guid = guid
+                peer.nat_type = nat_type
+
+                if nat_type == 'Full Cone':
+                    peer.reachable = True
+
+                peer.init_packetsender()
+                peer.setup_emitters()
+                self.routing_table.add_contact(peer)
 
                 return peer
 

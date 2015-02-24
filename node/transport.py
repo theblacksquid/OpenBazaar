@@ -98,6 +98,7 @@ class CryptoTransportLayer(TransportLayer):
         self.nickname = ""
         self.dev_mode = ob_ctx.dev_mode
         self.seed_mode = ob_ctx.seed_mode
+        self.mediation_mode = False
 
         self._connections = {}
         self._punches = {}
@@ -140,7 +141,10 @@ class CryptoTransportLayer(TransportLayer):
 
     def start_mediation(self, guid):
         self.log.debug('Starting mediation %s', self.ob_ctx)
-        if self.ob_ctx.mediator:
+
+        if not self.mediation_mode:
+            self.mediation_mode = True
+
             for peer in self.dht.active_peers:
                 if peer.hostname == '127.0.0.1' or peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
                     peer.send_raw(json.dumps({
@@ -154,7 +158,7 @@ class CryptoTransportLayer(TransportLayer):
                         peer.send_raw('heartbeat')
 
                     # Heartbeat to relay server
-                    ioloop.PeriodicCallback(heartbeat, 5000, ioloop.IOLoop.instance())
+                    PeriodicCallback(heartbeat, 5000, ioloop.IOLoop.instance()).start()
 
     def get_nat_type(self, guid):
         self.log.debug('Requesting nat type for user: %s', guid)
@@ -182,6 +186,14 @@ class CryptoTransportLayer(TransportLayer):
             self.guid,
             self._on_message
         )
+
+        # pylint: disable=unused-variable
+        @self.listener.ee.on('on_pong_message')
+        def on_pong_message(msg):
+            data, addr = msg[0], msg[1]
+            for x in self.dht.active_peers:
+                if x.hostname == addr[0] and x.port == addr[1]:
+                    x.reachable = True
 
         # pylint: disable=unused-variable
         @self.listener.ee.on('on_message')
@@ -529,7 +541,6 @@ class CryptoTransportLayer(TransportLayer):
         self.log.info('Received Hello: %s', json.dumps(msg, ensure_ascii=False))
 
         peer = self.dht.routing_table.get_contact(msg['senderGUID'])
-
         peer.nat_type = msg['nat_type']
 
         # new_peer = self.dht.add_peer(
@@ -541,19 +552,19 @@ class CryptoTransportLayer(TransportLayer):
         #     dump=True
         # )
 
-        if peer:
-            peer.send_raw(
-                json.dumps({
-                    'type': 'hello_response',
-                    'pubkey': self.pubkey,
-                    'senderGUID': self.guid,
-                    'hostname': self.hostname,
-                    'nat_type': self.nat_type,
-                    'port': self.port,
-                    'senderNick': self.nickname,
-                    'v': node.constants.VERSION
-                })
-            )
+        # if peer:
+        #     peer.send_raw(
+        #         json.dumps({
+        #             'type': 'hello_response',
+        #             'pubkey': self.pubkey,
+        #             'senderGUID': self.guid,
+        #             'hostname': self.hostname,
+        #             'nat_type': self.nat_type,
+        #             'port': self.port,
+        #             'senderNick': self.nickname,
+        #             'v': node.constants.VERSION
+        #         })
+        #     )
 
     def validate_on_hello_response(self, msg):
         self.log.debug('Validating hello response message.')
@@ -725,19 +736,6 @@ class CryptoTransportLayer(TransportLayer):
 
             peer_obj.seed = True
             peer_obj.reachable = True  # Seeds should be reachable always
-
-            peer_obj.send_raw(
-                json.dumps({
-                    'type': 'hello',
-                    'pubkey': self.pubkey,
-                    'senderGUID': self.guid,
-                    'hostname': self.hostname,
-                    'nat_type': self.nat_type,
-                    'port': self.port,
-                    'senderNick': self.nickname,
-                    'v': node.constants.VERSION
-                })
-            )
 
         # Populate routing table by searching for non-existent key
         def join_callback():

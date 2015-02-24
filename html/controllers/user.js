@@ -248,7 +248,9 @@ angular.module('app')
                     'type': 'query_store_products',
                     'key': storeID
                 };
+                setTimeout(function() {
                 Connection.send('query_store_products', query);
+                }, 1000);
 
             };
 

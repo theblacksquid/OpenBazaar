@@ -3,6 +3,7 @@ import logging
 from pprint import pformat
 from pyee import EventEmitter
 from threading import Thread
+from node import constants
 import sys
 import time
 
@@ -23,19 +24,6 @@ class PeerConnection(GUIDMixin, object):
         GUIDMixin.__init__(self, guid)
 
         self.transport = transport
-        self.hostname = hostname
-        self.port = port
-        self.nickname = nickname
-        self.reachable = False
-        self.nat_type = nat_type
-
-        if nat_type == 'Symmetric NAT':
-            self.relaying = True
-        else:
-            self.relaying = False
-
-        self.seed = False
-        self.punching = False
 
         self.log = logging.getLogger(
             '[%s] %s' % (self.transport.market_id, self.__class__.__name__)
@@ -45,8 +33,59 @@ class PeerConnection(GUIDMixin, object):
 
         self.ee = EventEmitter()
         self.sock = peer_socket
+        self.hostname = hostname
+        self.port = port
+        self.nickname = nickname
+        self.nat_type = nat_type
+        self.relaying = False
+        self.reachable = False
+
+        if nat_type == 'Symmetric NAT':
+            self.reachable = True
+            self.relaying = True
+        else:
+            self.send_ping()
+
+            def no_response():
+                if not self.reachable:
+                    self.log.error('No response from peer.')
+                    self.reachable = True
+                    self.relaying = True
+                else:
+                    self.log.debug('Sending Hello')
+                    self.send_raw(
+                        json.dumps({
+                            'type': 'hello',
+                            'pubkey': self.transport.pubkey,
+                            'senderGUID': self.transport.guid,
+                            'hostname': self.transport.hostname,
+                            'nat_type': self.transport.nat_type,
+                            'port': self.transport.port,
+                            'senderNick': self.transport.nickname,
+                            'v': constants.VERSION
+                        })
+                    )
+
+            ioloop.IOLoop.instance().call_later(5, no_response)
+
+        self.seed = False
+        self.punching = False
 
         self.init_packetsender()
+
+    def send_ping(self):
+        # Send ping over to peer and see if we get a quick response
+        # msg = {
+        #     'type': 'ping',
+        #     'senderGUID': self.transport.guid,
+        #     'hostname': self.hostname,
+        #     'port': self.port,
+        #     'senderNick': self.nickname,
+        #     'nat_type': self.transport.nat_type
+        # }
+        # self.send_raw(json.dumps(msg))
+        self.sock.sendto('ping', (self.hostname, self.port))
+        return True
 
     def init_packetsender(self):
         self._packet_sender = PacketSender(
@@ -68,6 +107,7 @@ class PeerConnection(GUIDMixin, object):
         self.send_raw(json.dumps(data), callback)
 
     def send_raw(self, serialized, callback=None, relay=False):
+
         if self.transport.seed_mode or relay:
             self.send_to_rudp(serialized)
             return
@@ -88,6 +128,7 @@ class PeerConnection(GUIDMixin, object):
                     self.transport.start_mediation(self.guid)
                 if self.nat_type == 'Full Cone':
                     self.send_to_rudp(serialized)
+                    return
                 if self.relaying:
                     self.log.debug('Relay through seed')
                     self.transport.relay_message(serialized, self.guid)
@@ -119,33 +160,20 @@ class CryptoPeerConnection(PeerConnection):
 
         self.setup_emitters()
 
-        if not self.reachable:
-            self.log.debug('Peer is not reachable. Trying to ping.')
-
-            # Test connectivity to peer
-            self.waiting = True
-            self.send_ping()
-
-            def try_to_mediate():
-                self.log.debug('Trying to reach peer: %s %s %s', self.reachable, self.waiting, id(self))
-
-                if guid is not None and not self.nat_type:
-                    self.transport.get_nat_type(guid)
-
-            ioloop.IOLoop.instance().call_later(5, try_to_mediate)
-
-    def send_ping(self):
-        # Send ping over to peer and see if we get a quick response
-        msg = {
-            'type': 'ping',
-            'senderGUID': self.transport.guid,
-            'hostname': self.hostname,
-            'port': self.port,
-            'senderNick': self.nickname,
-            'nat_type': self.transport.nat_type
-        }
-        self.send_raw(json.dumps(msg))
-        return True
+        # if not self.reachable:
+        #     self.log.debug('Peer is not reachable. Trying to ping.')
+        #
+        #     # Test connectivity to peer
+        #     self.waiting = True
+        #     self.send_ping()
+        #
+        #     def try_to_mediate():
+        #         self.log.debug('Trying to reach peer: %s %s %s', self.reachable, self.waiting, id(self))
+        #
+        #         if guid is not None and not self.nat_type:
+        #             self.transport.get_nat_type(guid)
+        #
+        #     ioloop.IOLoop.instance().call_later(5, try_to_mediate)
 
     def setup_emitters(self):
         self.log.debug('Setting up emitters')
@@ -158,20 +186,24 @@ class CryptoPeerConnection(PeerConnection):
 
         @self._rudp_connection.ee.on('data')
         def handle_recv(msg):  # pylint: disable=unused-variable
-            try:
-                self.log.debug('Got the whole message: %s', msg.get('payload'))
-                payload = json.loads(msg.get('payload'))
-                self.transport.listener._on_raw_message(payload)
-                return
-            except Exception as e:
-                self.log.debug('Problem with serializing: %s', e)
 
-            try:
-                payload = msg.get('payload').decode('hex')
-                self.transport.listener._on_raw_message(payload)
-            except Exception as e:
-                self.log.debug('not yet %s', e)
-                self.transport.listener._on_raw_message(msg.get('payload'))
+            self.log.debug('Got the whole message: %s', msg.get('payload'))
+            payload = msg.get('payload')
+
+            if payload[:1] == '{':
+                try:
+                    payload = json.loads(msg.get('payload'))
+                    self.transport.listener._on_raw_message(payload)
+                    return
+                except Exception as e:
+                    self.log.debug('Problem with serializing: %s', e)
+            else:
+                try:
+                    payload = msg.get('payload').decode('hex')
+                    self.transport.listener._on_raw_message(payload)
+                except Exception as e:
+                    self.log.debug('not yet %s', e)
+                    self.transport.listener._on_raw_message(msg.get('payload'))
 
     def start_handshake(self, initial_handshake_cb=None):
         # TODO: Think about removing completely
@@ -334,9 +366,12 @@ class PeerListener(GUIDMixin):
                     data, addr = self.socket.recvfrom(2048)
                     self.log.debug('Got data from socket: %s', data[:50])
 
-                    if data[:9] == 'heartbeat':
+                    if data[:4] == 'ping':
+                        self.socket.sendto('pong', (addr[0], addr[1]))
+                    elif data[:4] == 'pong':
+                        self.ee.emit('on_pong_message', (data, addr))
+                    elif data[:9] == 'heartbeat':
                         self.log.debug('We just received a heartbeat.')
-                        return
                     else:
                         self.ee.emit('on_message', (data, addr))
 
@@ -369,7 +404,7 @@ class PeerListener(GUIDMixin):
     def _prepare_datagram_socket(self, family=socket.AF_INET):
         self.socket = socket.socket(family, socket.SOCK_DGRAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.setblocking(0)
+        # self.socket.setblocking(0)
         self.socket.bind((self.hostname, self.port))
 
 
@@ -400,7 +435,7 @@ class CryptoPeerListener(PeerListener):
         try:
             message = json.loads(message)
         except (ValueError, TypeError) as e:
-            self.log.debug('Error: %s ', e)
+            self.log.debug('Cannot deserialize the JSON: %s ', e)
             return False
 
         return 'type' in message

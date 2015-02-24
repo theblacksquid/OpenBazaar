@@ -30,7 +30,7 @@ class PendingPacket(object):
         #self._packet_sender.send(self._packet)
 
         def packet_send(counter):
-            if self._sending and counter < 10:
+            if self._sending and counter < 1:
                 self.log.debug('Sending #%s: %s', self._packet.get_sequence_number(), self._sending)
                 self._packet_sender.send(self._packet)
                 ioloop.IOLoop.instance().call_later(rudp.constants.TIMEOUT, packet_send, counter+1)
