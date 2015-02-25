@@ -541,16 +541,19 @@ class CryptoTransportLayer(TransportLayer):
         self.log.info('Received Hello: %s', json.dumps(msg, ensure_ascii=False))
 
         peer = self.dht.routing_table.get_contact(msg['senderGUID'])
-        peer.nat_type = msg['nat_type']
 
-        # new_peer = self.dht.add_peer(
-        #     msg['hostname'],
-        #     msg['port'],
-        #     msg['pubkey'],
-        #     msg['senderGUID'],
-        #     msg['senderNick'],
-        #     dump=True
-        # )
+        if not peer:
+            peer = self.dht.add_peer(
+                msg['hostname'],
+                msg['port'],
+                msg['pubkey'],
+                msg['senderGUID'],
+                msg['senderNick'],
+                dump=True
+            )
+
+        peer.nat_type = msg['nat_type']
+        peer.relaying = msg.get('relayed', False)
 
         # if peer:
         #     peer.send_raw(

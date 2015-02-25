@@ -47,14 +47,7 @@ class PeerConnection(GUIDMixin, object):
             self.send_ping()
 
             def no_response():
-                if not self.reachable:
-                    self.log.error('No response from peer.')
-                    self.reachable = True
-                    self.relaying = True
-                else:
-                    self.log.debug('Sending Hello')
-                    self.send_raw(
-                        json.dumps({
+                hello_msg = {
                             'type': 'hello',
                             'pubkey': self.transport.pubkey,
                             'senderGUID': self.transport.guid,
@@ -63,7 +56,21 @@ class PeerConnection(GUIDMixin, object):
                             'port': self.transport.port,
                             'senderNick': self.transport.nickname,
                             'v': constants.VERSION
-                        })
+                        }
+
+                if not self.reachable:
+                    self.log.error('No response from peer.')
+                    self.reachable = True
+                    self.relaying = True
+                    self.init_packetsender()
+                    self.log.debug('Relay Hello through Seed')
+                    hello_msg['relayed'] = True
+
+                    self.transport.relay_message(json.dumps(hello_msg), self.guid)
+                else:
+                    self.log.debug('Sending Hello')
+                    self.send_raw(
+                        json.dumps(hello_msg)
                     )
 
             ioloop.IOLoop.instance().call_later(5, no_response)
@@ -110,6 +117,11 @@ class PeerConnection(GUIDMixin, object):
 
         if self.transport.seed_mode or relay:
             self.send_to_rudp(serialized)
+            return
+
+        if self.relaying:
+            self.log.debug('Relay through seed')
+            self.transport.relay_message(serialized, self.guid)
             return
 
         def sending_out():
@@ -248,8 +260,9 @@ class CryptoPeerConnection(PeerConnection):
         #         initial_handshake_cb()
 
     def __repr__(self):
-        return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s nat: %s}' % (
-            self.guid, self.hostname, self.port, self.pub, self.reachable, self.nat_type
+        return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s nat: %s relaying: %s}' % (
+            self.guid, self.hostname, self.port, self.pub, self.reachable, self.nat_type,
+            self.relaying
         )
 
     @staticmethod
