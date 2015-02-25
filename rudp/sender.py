@@ -174,7 +174,7 @@ class Sender(object):
 
         self.log.debug('Current Window: %s', self._sending)
 
-        if not self._sending and len(self._windows):
+        if len(self._windows):
             self._last_sent = int(time.time())
             self._base_sequence_number = math.floor(random.random() *
                                                     (rudp.constants.MAX_SIZE - rudp.constants.WINDOW_SIZE))

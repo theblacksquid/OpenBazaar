@@ -287,7 +287,6 @@ angular.module('app')
             }
 
             $scope.update_peers = function(msg) {
-
                 console.log('Refresh peers: ', msg);
                 $scope.peers = msg.peers;
             };

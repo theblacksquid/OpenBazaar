@@ -140,7 +140,7 @@
                                 <td width="40" style="vertical-align:top"><identicon icon-size="50" hash="peer.guid" title="{{peer.guid}}"></identicon></td>
                                 <td>
                                     <span title="{{peer.pubkey}}">
-                                        <strong>{{peer.nick != "" ? peer.nick : peer.uri }}</strong>
+                                        <strong>{{peer.nick != "" ? peer.nick : peer.uri }}</strong> {{!peer.reachable ? '[Offline]' : ''}}
                                         <br>
                                         <span style="font-style:italic;font-size:12px">
                                             {{peer.nickname ? peer.nickname : peer.guid}}

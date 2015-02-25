@@ -194,6 +194,7 @@ class CryptoTransportLayer(TransportLayer):
             for x in self.dht.active_peers:
                 if x.hostname == addr[0] and x.port == addr[1]:
                     x.reachable = True
+                    x.last_reached = time.time()
 
         # pylint: disable=unused-variable
         @self.listener.ee.on('on_message')
@@ -228,6 +229,9 @@ class CryptoTransportLayer(TransportLayer):
                         inbound_peer._rudp_connection.receive(packet)
 
                     self.log.debug('Updated peers: %s', self.dht.active_peers)
+                    if self.handler:
+                        self.handler.refresh_peers()
+
                 else:
                     self.log.debug('Did not find a peer')
             except Exception as e:
@@ -503,7 +507,7 @@ class CryptoTransportLayer(TransportLayer):
         return True
 
     def on_ping(self, msg):
-        self.log.debug('Got a ping message')
+        self.log.debug('Got a ping message from: %s:%d', self.hostname, self.port)
 
         peer = self.dht.routing_table.get_contact(msg['senderGUID'])
 
@@ -549,7 +553,7 @@ class CryptoTransportLayer(TransportLayer):
                 msg['pubkey'],
                 msg['senderGUID'],
                 msg['senderNick'],
-                dump=True
+                msg['nat_type']
             )
 
         peer.nat_type = msg['nat_type']
@@ -741,12 +745,9 @@ class CryptoTransportLayer(TransportLayer):
             peer_obj.reachable = True  # Seeds should be reachable always
 
         # Populate routing table by searching for non-existent key
-        def join_callback():
-            if known_peers:
-                self.search_for_my_node()
-            else:
-                ioloop.IOLoop.instance().call_later(2, join_callback)
-        ioloop.IOLoop.instance().call_later(2, join_callback)
+        # def join_callback():
+        #     self.search_for_my_node()
+        # ioloop.IOLoop.instance().call_later(10, join_callback)
 
         if callback is not None:
             callback('Joined')

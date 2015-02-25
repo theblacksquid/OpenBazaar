@@ -39,11 +39,16 @@ class PeerConnection(GUIDMixin, object):
         self.nat_type = nat_type
         self.relaying = False
         self.reachable = False
+        self.last_reached = None
+
+        self.init_packetsender()
 
         if nat_type == 'Symmetric NAT':
             self.reachable = True
             self.relaying = True
+            self.send_ping()
         else:
+
             self.send_ping()
 
             def no_response():
@@ -73,12 +78,22 @@ class PeerConnection(GUIDMixin, object):
                         json.dumps(hello_msg)
                     )
 
+                # self.transport.search_for_my_node()
+
             ioloop.IOLoop.instance().call_later(5, no_response)
 
         self.seed = False
         self.punching = False
 
-        self.init_packetsender()
+        # Recurring check for peer accessibility
+        def pinger():
+            if not self.last_reached or time.time() - self.last_reached <= 30:
+                self.send_ping()
+                ioloop.IOLoop.instance().call_later(5, pinger)
+            else:
+                self.reachable = False
+        pinger()
+
 
     def send_ping(self):
         # Send ping over to peer and see if we get a quick response
@@ -377,7 +392,7 @@ class PeerListener(GUIDMixin):
 
                 try:
                     data, addr = self.socket.recvfrom(2048)
-                    self.log.debug('Got data from socket: %s', data[:50])
+                    self.log.debug('Got data from %s:%d: %s', addr[0], addr[1], data[:50])
 
                     if data[:4] == 'ping':
                         self.socket.sendto('pong', (addr[0], addr[1]))

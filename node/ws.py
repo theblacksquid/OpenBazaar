@@ -302,6 +302,7 @@ class ProtocolHandler(object):
 
     def client_query_page(self, socket_handler, msg):
         find_guid = msg['findGUID']
+        self.log.info('Looking for Store: %s', find_guid)
 
         query_id = random.randint(0, 1000000)
         self.timeouts.append(query_id)
@@ -1118,7 +1119,6 @@ class ProtocolHandler(object):
         peers = []
 
         for peer in self.transport.dht.active_peers:
-
             if hasattr(peer, 'hostname'):
                 peer_item = {
                     'hostname': peer.hostname,
@@ -1135,7 +1135,10 @@ class ProtocolHandler(object):
                         '\x0F\x02%s' + peer.guid.decode('hex')
                     )
                 peer_item['nick'] = peer.nickname
-                self.log.debug('Peer Nick %s', peer)
+
+                peer_item['reachable'] = peer.reachable
+
+                self.log.debug('Peer: %s', peer)
                 peers.append(peer_item)
 
         return peers

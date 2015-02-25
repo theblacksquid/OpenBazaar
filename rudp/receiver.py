@@ -56,7 +56,6 @@ class IncomingMessage(object):
 
 class Receiver(object):
     def __init__(self, packet_sender):
-        print 'Init Receiver'
 
         # TODO: have this be a DuplexStream instead of an EventEmitter.
         # TODO: the Receiver should never send raw packets to the end host. It should
@@ -83,6 +82,7 @@ class Receiver(object):
         self.log = logging.getLogger(
             '%s' % self.__class__.__name__
         )
+        self.log.debug('Init Receiver')
 
     def reset(self):
         self.log.debug('Reset')

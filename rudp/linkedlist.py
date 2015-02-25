@@ -21,8 +21,6 @@ class LinkedList(object):
     insertion_result['FAILED'] = 'failed'
 
     def __init__(self, order_by):
-        print 'Init LinkedList'
-
         self._child_node = None
         self._order_by = order_by
         self._current_node = None
