@@ -84,7 +84,8 @@ def create_argument_parser():
     parser.add_argument('-l', '--log', default=default_log_path)
 
     # Add valid commands.
-    parser.add_argument('command', choices=('start', 'stop', 'help'))
+    parser.add_argument('command', choices=('start', 'stop', 'help'),
+                        nargs='?', default='help')
 
     return parser
 
