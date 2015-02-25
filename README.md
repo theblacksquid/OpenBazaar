@@ -80,6 +80,8 @@ contributed by Dean Masley
 10. [Dispute Resolution in OpenBazaar - Arbitration Market](https://gist.github.com/drwasho/405d51bd1b1a32e38145) by Dr Washington Sanchez
 11. [Notary Selection in OpenBazaar](https://gist.github.com/drwasho/a0225f5455e508095ac2) by Dr Washington Sanchez
 12. [Risk and Insurance in OpenBazaar](https://gist.github.com/drwasho/9759924342859872851e) by Dr Washington Sanchez
+13. [Subspace and OpenBazaar](https://gist.github.com/drwasho/8daf0e95d42ab2266e6b) by Dr Washington Sanchez
+14. [Bounded Futures Contracts: Hedging Against Price Volatility](https://gist.github.com/drwasho/04dbaf19da4f4a8ae512) by Dr Joseph Clark and Dr Washington Sanchez
 
 ## Screenshots
 Here are some screenshots of the *alpha* UI so far:
