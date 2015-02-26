@@ -1,5 +1,5 @@
 from rudp.packet import Packet
-from rudp.linkedlist import LinkedList
+from rudp.sortedlist import SortedList
 import rudp.constants
 import logging
 import rudp.helpers
@@ -23,17 +23,16 @@ class IncomingMessage(object):
         self.synced = False
         self._next_sequence_number = 0
         self._sync_sequence_number = None
-        self._packets = LinkedList(rudp.helpers.sort_by_sequence)
+        self._packets = SortedList()
 
         self.body = ''
         self.waiting = False
 
     def reset(self):
         self.log.debug('IncomingMessage Reset')
-        self.log.debug('Self Packets: %s', self._packets.toArray())
+        self.log.debug('Self Packets: %s', self._packets)
 
         self._packets.clear()
-
         self.synced = False
         self._next_sequence_number = 0
         self._sync_sequence_number = None
@@ -69,7 +68,7 @@ class Receiver(object):
         self._next_sequence_number = 0
         self._sync_sequence_number = None
 
-        self._packets = LinkedList(rudp.helpers.sort_by_sequence)
+        self._packets = SortedList()
         self._packet_sender = packet_sender
         self._closed = False
 
@@ -86,8 +85,9 @@ class Receiver(object):
 
     def reset(self):
         self.log.debug('Reset')
-        self.log.debug('Self Packets: %s', self._packets.toArray())
+        self.log.debug('Self Packets: %s', self._packets)
 
+        self._packets.clear()
         self._synced = False
         self._next_sequence_number = 0
         self._sync_sequence_number = None
@@ -148,7 +148,7 @@ class Receiver(object):
                         return
 
                     self.log.debug('Inserting Packet #%s', packet._sequenceNumber)
-                    message._packets.insert(packet)
+                    message._packets.insertSorted(packet)
 
                     if not message.waiting:
                         message.body = payload
@@ -187,26 +187,21 @@ class Receiver(object):
             else:
                 self.log.debug('Receive Inside Packet')
 
-                result = message._packets.insert(packet)
-
-                if result is LinkedList.insertion_result.get('INSERTED'):
+                if message._packets.count(packet) == 0:
+                    message._packets.insertSorted(packet)
                     if packet.get_sequence_number() == message._next_sequence_number:
                         message.body += payload
                         message._next_sequence_number += 1
                         # message._packets.seek()
                         # if message._packets.hasNext():
                         #     self._push_if_expected_sequence(self._packets.nextValue())
-
                         self._packet_sender.send(Packet.createAcknowledgementPacket(
                             packet._sequenceNumber,
                             self._packet_sender._transport.guid,
                             self._packet_sender._transport.pubkey
                         ))
-
-                elif result is LinkedList.insertion_result.get('EXISTS'):
+                else:
                     self.log.debug('Already have this packet')
-                    return
-
 
             # Ignores packets that have a sequence number less than the next sequence
             # number
@@ -242,7 +237,7 @@ class Receiver(object):
             #
             #     self.log.debug('Inserting Packet #%s', packet._sequenceNumber)
             #     # self.log.debug('Before Packets: %s', self._packets)
-            #     self._packets.insert(packet)
+            #     self._packets.insertSorted(packet)
             #
             #     if not self._waiting:
             #         self._message = packet._payload
@@ -311,18 +306,6 @@ class Receiver(object):
         # after the current packet. If there are, then check to see if the next
         # packet is the expected packet number. If it is, then start the
         # acknowledgement process anew.
-
-        # self.log.debug('Inserting Packet #%s', packet._sequenceNumber)
-        #
-        # result = self._packets.insert(packet)
-        #
-        # if result is LinkedList.insertion_result.get('INSERTED'):
-        #     self._push_if_expected_sequence(packet)
-        # elif result is LinkedList.insertion_result.get('EXISTS'):
-        #     self._packet_sender.send(Packet.createAcknowledgementPacket(packet.get_sequence_number(),
-        #                                                                 self._packet_sender._transport.guid,
-        #                                                                 self._packet_sender._transport.pubkey))
-        #     return
 
     def _push_if_expected_sequence(self, packet):
 

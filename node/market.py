@@ -678,6 +678,7 @@ class Market(object):
         msg = query_page(find_guid)
         msg['hostname'] = self.transport.hostname
         msg['port'] = self.transport.port
+        msg['nat_type'] = self.transport.nat_type
         msg['senderGUID'] = self.transport.guid
         msg['sin'] = self.transport.sin
         msg['pubkey'] = self.transport.pubkey

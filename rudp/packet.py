@@ -74,6 +74,18 @@ class Packet(object):
             self._payload is other._payload
         )
 
+    def __gt__(self, other):
+        return self._sequenceNumber > other._sequenceNumber
+
+    def __lt__(self, other):
+        return self._sequenceNumber < other._sequenceNumber
+
+    def __ge__(self, other):
+        return self._sequenceNumber >= other._sequenceNumber
+
+    def __le__(self, other):
+        return self._sequenceNumber <= other._sequenceNumber
+
     def get_sequence_number(self):
         return self._sequenceNumber
 
