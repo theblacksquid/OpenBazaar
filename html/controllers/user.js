@@ -251,7 +251,7 @@ angular.module('app')
 
                 setTimeout(function() {
                 Connection.send('query_store_products', query);
-                }, 5000);
+                }, 2000);
 
             };
 

@@ -87,18 +87,19 @@ class PeerConnection(GUIDMixin, object):
 
         # Recurring check for peer accessibility
         def pinger():
-            self.log.debug('Pinging: %s %s %s', self.guid, time.time(), self.last_reached)
-            if time.time() - self.last_reached <= 30:
-                self.send_ping()
-                ioloop.IOLoop.instance().call_later(5, pinger)
-            else:
-                self.reachable = False
-                self.transport.dht.remove_peer(self.guid)
+            self.log.debug('Pinging: %s', self.guid)
+            if not self.relaying:
+                if time.time() - self.last_reached <= 30:
+                    self.send_ping()
+                    ioloop.IOLoop.instance().call_later(5, pinger)
+                else:
+                    self.reachable = False
+                    self.transport.dht.remove_peer(self.guid)
 
-                # Update GUI if possible
-                if self.transport.handler:
-                    self.transport.handler.refresh_peers()
-        pinger()
+                    # Update GUI if possible
+                    if self.transport.handler:
+                        self.transport.handler.refresh_peers()
+        # pinger()
 
 
     def send_ping(self):
