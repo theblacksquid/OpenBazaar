@@ -116,6 +116,7 @@ class DHT(object):
             elif peer.hostname == hostname and peer.port == port:
                 peer.guid = guid
                 peer.nat_type = nat_type
+                peer.pub = pubkey
 
                 if nat_type == 'Full Cone':
                     peer.reachable = True
