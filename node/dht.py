@@ -120,8 +120,6 @@ class DHT(object):
                 if nat_type == 'Full Cone':
                     peer.reachable = True
 
-                peer.init_packetsender()
-                peer.setup_emitters()
                 self.routing_table.add_contact(peer)
 
                 return peer

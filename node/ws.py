@@ -288,7 +288,8 @@ class ProtocolHandler(object):
             {
                 "market_id": self.transport.market_id,
                 "state": "Waiting for Payment"
-            }
+            },
+            select_fields="order_id"
         )
 
         self.send_to_client(
@@ -889,9 +890,9 @@ class ProtocolHandler(object):
         self.log.debug('Found Contracts: %s', type(results))
         self.log.debug(results)
 
-        if type(results) is not 'dict':
-            self.log.error('Legacy node returned list of close nodes.')
-            return
+        # if type(results) is not 'dict':
+        #     self.log.error('Legacy node returned list of close nodes.')
+        #     return
 
         if results.get('data') and isinstance(results['data'], unicode):
             results = json.loads(results[0])

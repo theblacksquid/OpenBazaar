@@ -123,70 +123,41 @@ class Sender(object):
         self.ee = EventEmitter()
 
     def send(self, data):
+        data_encoded = data.encode('hex')
+        data_size = str(len(data_encoded))
 
-        # def send_attempt(counter):
-        #
-        #     if counter == 20:
-        #         self._sending = None
-        #         self._last_sent = 0
-        #
-        #     if not self._sending:
-        #         data_encoded = data.encode('hex')
-        #         data_size = str(len(data_encoded))
-        #
-        #         # Unique message ID
-        #         message_id = random.randint(0, 99999)
-        #
-        #         chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE, message_id, data_size)
-        #         self.log.debug('Sending %s chunks', chunks)
-        #
-        #         windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
-        #         self._windows = self._windows + windows
-        #         self._windows = [x for x in self._windows if x != []]
-        #
-        #         self.log.debug('Windows: %s', self._windows)
-        #         self._push()
-        #         return
-        #     ioloop.IOLoop.instance().call_later(1, send_attempt, counter+1)
-        #
-        # send_attempt(0)
+        # Unique message ID
+        message_id = random.randint(0, 99999)
 
-        if not self._sending:
-            data_encoded = data.encode('hex')
-            data_size = str(len(data_encoded))
+        # Split message into chunks
+        chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE, message_id, data_size)
+        self.log.debug('Sending %d chunks', len(chunks))
 
-            # Unique message ID
-            message_id = random.randint(0, 99999)
+        # Organize into windows
+        windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
 
-            chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE, message_id, data_size)
-            self.log.debug('Sending %s chunks', chunks)
+        self._windows = self._windows + windows
+        self._windows = [x for x in self._windows if x != []]
 
-            windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
-            self._windows = self._windows + windows
-            self._windows = [x for x in self._windows if x != []]
-
-            self.log.debug('Windows: %s', self._windows)
-            self._push()
-        # else:
-        #     self.log.debug('Still sending to peer')
+        self.log.debug('Windows: %d', len(self._windows))
+        self._push()
 
     def _push(self):
+        if not self._sending and len(self._windows):
 
-        self.log.debug('Current Window: %s', self._sending)
-
-        if len(self._windows):
+            self.log.debug('Sending New Window')
             self._last_sent = int(time.time())
             self._base_sequence_number = math.floor(random.random() *
                                                     (rudp.constants.MAX_SIZE - rudp.constants.WINDOW_SIZE))
             window = self._windows.pop(0)
 
+            # Generate PendingPacket objects to store in Window
             def get_packet(i, pdata):
                 packet = Packet(float(i) + self._base_sequence_number, pdata, not i, i is (len(window) - 1))
                 return PendingPacket(packet, self._packet_sender)
-
             packets = [get_packet(i, data) for i, data in enumerate(window)]
-            to_send = Window(packets)
 
+            to_send = Window(packets)
             self._sending = to_send
 
             # pylint: disable=unused-variable
@@ -200,18 +171,11 @@ class Sender(object):
                 self._push()
 
             to_send.send()
-
-        # elif self._last_sent != 0 and int(time.time()) - self._last_sent > 300:
-        #     self._last_sent = 0
-        #     self._sending = None
-        #     self._windows = []
-        #     self.log.info('Peer may have timed out or be unreachable.')
-        #     self.ee.emit('timeout', {})
-
         else:
-            # if self._sending:
-            #     self._sending.send()
-            self.log.debug('None of the above')
+            if self._sending:
+                self.log.debug('Already sending a window. Waiting...')
+            else:
+                self.log.debug('All done.')
 
     def verify_acknowledgement(self, sequence_number):
         self.log.debug('Verifying Acknowledgement: %s', self._sending)
