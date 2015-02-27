@@ -38,6 +38,7 @@ class Orders(object):
         RECEIVED = 'Received'
         SHIPPED = 'Shipped'
         WAITING_FOR_PAYMENT = 'Waiting for Payment'
+        COMPLETED = 'Completed'
 
     def __init__(self, transport, market_id, db_connection):
         self.transport = transport
@@ -104,6 +105,8 @@ class Orders(object):
                      Orders.State.BUYER_PAID,
                      Orders.State.SHIPPED]:
             start_line = 8
+        elif state == Orders.State.COMPLETED:
+            start_line = 10
         else:
             start_line = 4
 
@@ -116,19 +119,27 @@ class Orders(object):
                      Orders.State.BUYER_PAID,
                      Orders.State.SHIPPED]:
             index_of_seller_signature = offer_data.find('- -----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
+        elif state == Orders.State.COMPLETED:
+            index_of_seller_signature = offer_data.find('- - -----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
         else:
             index_of_seller_signature = offer_data.find('-----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
 
-        if state in (Orders.State.NEED_TO_PAY,
-                     Orders.State.NOTARIZED,
-                     Orders.State.WAITING_FOR_MERCHANT,
-                     Orders.State.BUYER_PAID,
-                     Orders.State.PAID,
-                     Orders.State.SHIPPED):
+        if state in (
+            Orders.State.NEED_TO_PAY,
+            Orders.State.NOTARIZED,
+            Orders.State.WAITING_FOR_MERCHANT,
+            Orders.State.BUYER_PAID,
+            Orders.State.PAID,
+            Orders.State.SHIPPED
+        ):
             offer_data_json = offer_data[0:index_of_seller_signature - 2]
             offer_data_json = json.loads(offer_data_json)
         elif state in (Orders.State.WAITING_FOR_PAYMENT, Orders.State.WAITING_FOR_MERCHANT):
             offer_data_json = offer_data[0:index_of_seller_signature - 4]
+            offer_data_json = json.loads(str(offer_data_json))
+        elif state == Orders.State.COMPLETED:
+            offer_data_json = '{' + offer_data[0:index_of_seller_signature]
+            print offer_data_json
             offer_data_json = json.loads(str(offer_data_json))
         else:
             offer_data_json = '{"Seller": {' + offer_data[0:index_of_seller_signature - 2]
@@ -216,7 +227,8 @@ class Orders(object):
                                Orders.State.WAITING_FOR_MERCHANT,
                                Orders.State.PAID,
                                Orders.State.BUYER_PAID,
-                               Orders.State.SHIPPED):
+                               Orders.State.SHIPPED,
+                               Orders.State.COMPLETED):
 
             def cb(total):
                 if self.transport.handler is not None:
