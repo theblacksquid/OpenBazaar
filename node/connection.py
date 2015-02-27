@@ -52,16 +52,17 @@ class PeerConnection(GUIDMixin, object):
             self.send_ping()
 
             def no_response():
+
                 hello_msg = {
-                            'type': 'hello',
-                            'pubkey': self.transport.pubkey,
-                            'senderGUID': self.transport.guid,
-                            'hostname': self.transport.hostname,
-                            'nat_type': self.transport.nat_type,
-                            'port': self.transport.port,
-                            'senderNick': self.transport.nickname,
-                            'v': constants.VERSION
-                        }
+                    'type': 'hello',
+                    'pubkey': self.transport.pubkey,
+                    'senderGUID': self.transport.guid,
+                    'hostname': self.transport.hostname,
+                    'nat_type': self.transport.nat_type,
+                    'port': self.transport.port,
+                    'senderNick': self.transport.nickname,
+                    'v': constants.VERSION
+                }
 
                 if not self.reachable:
                     self.log.error('No response from peer.')
@@ -89,9 +90,9 @@ class PeerConnection(GUIDMixin, object):
         def pinger():
             self.log.debug('Pinging: %s', self.guid)
             if not self.relaying:
-                if time.time() - self.last_reached <= 30:
+                if time.time() - self.last_reached <= 60:
                     self.send_ping()
-                    ioloop.IOLoop.instance().call_later(5, pinger)
+                    ioloop.IOLoop.instance().call_later(2, pinger)
                 else:
                     self.reachable = False
                     self.transport.dht.remove_peer(self.guid)
@@ -99,7 +100,7 @@ class PeerConnection(GUIDMixin, object):
                     # Update GUI if possible
                     if self.transport.handler:
                         self.transport.handler.refresh_peers()
-        # pinger()
+        pinger()
 
 
     def send_ping(self):
@@ -168,7 +169,7 @@ class PeerConnection(GUIDMixin, object):
                     self.transport.relay_message(serialized, self.guid)
                     return
 
-            ioloop.IOLoop.instance().call_later(0.5, sending_out)
+            ioloop.IOLoop.instance().call_later(5, sending_out)
         sending_out()
 
     def send_to_rudp(self, data):

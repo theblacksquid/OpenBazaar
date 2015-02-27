@@ -363,7 +363,7 @@ def start(arguments):
         nat_status = network_util.get_NAT_status()
     else:
         nat_status = {
-            'nat_type': 'Full Cone'
+            'nat_type': 'Restric NAT'
         }
 
     if not arguments.disable_stun_check:

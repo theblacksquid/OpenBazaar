@@ -303,18 +303,6 @@ class DHT(object):
                                 node[4],
                                 node[5]
                             )
-                            # new_node.send_raw(
-                            #     json.dumps({
-                            #         'type': 'hello',
-                            #         'pubkey': self.transport.pubkey,
-                            #         'senderGUID': self.transport.guid,
-                            #         'nat_type': self.transport.nat_type,
-                            #         'hostname': self.transport.hostname,
-                            #         'port': self.transport.port,
-                            #         'senderNick': self.transport.nickname,
-                            #         'v': constants.VERSION
-                            #     })
-                            # )
                             nodes_to_extend.append(node)
 
                     self.extend_shortlist(msg['findID'], nodes_to_extend)

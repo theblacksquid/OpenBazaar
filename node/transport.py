@@ -154,11 +154,11 @@ class CryptoTransportLayer(TransportLayer):
                         'senderGUID': self.guid
                     }))
 
-                    def heartbeat():
-                        peer.send_raw('heartbeat')
+                    # def heartbeat():
+                    #     peer.sock.sendto('heartbeat', (peer.hostname, peer.port))
 
                     # Heartbeat to relay server
-                    PeriodicCallback(heartbeat, 5000, ioloop.IOLoop.instance()).start()
+                    # PeriodicCallback(heartbeat, 5000, ioloop.IOLoop.instance()).start()
 
     def get_nat_type(self, guid):
         self.log.debug('Requesting nat type for user: %s', guid)
@@ -555,6 +555,9 @@ class CryptoTransportLayer(TransportLayer):
                 msg['senderNick'],
                 msg['nat_type']
             )
+
+            if self.handler:
+                self.handler.refresh_peers()
 
         peer.nat_type = msg['nat_type']
         peer.relaying = msg.get('relayed', False)
