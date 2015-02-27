@@ -117,6 +117,7 @@ class DHT(object):
                 peer.guid = guid
                 peer.nat_type = nat_type
                 peer.pub = pubkey
+                peer.nickname = nickname
 
                 if nat_type == 'Full Cone':
                     peer.reachable = True
