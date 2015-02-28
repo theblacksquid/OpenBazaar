@@ -9,7 +9,7 @@ else
     exit 1
 fi
 
-echo '.:Checking python source files...'
+echo '.: Checking python source files...'
 errored=0;
 count=0;
 for file in $(find . -name "*.py" \
