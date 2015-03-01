@@ -203,6 +203,18 @@ class CryptoTransportLayer(TransportLayer):
             data, addr = msg[0], msg[1]
             self.log.debug('Got Packet: %s from %s', data, addr)
 
+            # Punch message
+            if data[:5] == 'punch':
+                data = data.split(' ')
+                guid = data[1]
+                peer = self.dht.routing_table.get_contact(guid)
+                if peer:
+                    peer.reachable = True
+                    peer.punching = False
+                    peer.relaying = False
+                else:
+                    self.log.debug('Do not know about this peer yet.')
+
             try:
                 data_body = json.loads(data)
 
@@ -426,7 +438,7 @@ class CryptoTransportLayer(TransportLayer):
         if not peer.punching:
             def send(count):
                 # Send raw socket punch
-                peer.sock.sendto('punch', (peer.hostname, peer.port))
+                peer.sock.sendto('punch %s' % self.guid, (peer.hostname, peer.port))
                 self.log.debug('Sending punch to %s:%d', peer.hostname, peer.port)
                 self.log.debug("UDP punching package {0} sent".format(count))
                 if peer.punching:
