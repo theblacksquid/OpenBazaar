@@ -95,7 +95,8 @@ class PeerConnection(GUIDMixin, object):
                     ioloop.IOLoop.instance().call_later(2, pinger)
                 else:
                     self.reachable = False
-                    self.transport.dht.remove_peer(self.guid)
+                    if self.guid:
+                        self.transport.dht.remove_peer(self.guid)
 
                     # Update GUI if possible
                     if self.transport.handler:
