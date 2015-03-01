@@ -149,14 +149,15 @@ class PeerConnection(GUIDMixin, object):
 
         def sending_out():
             if self.reachable:
-                if self.nat_type == 'Full Cone' or self.seed:
-                    self.send_to_rudp(serialized)
-                    return
-                elif self.relaying or self.nat_type == 'Symmetric NAT' or self.transport.nat_type == 'Symmetric NAT':
+                if self.relaying or self.nat_type == 'Symmetric NAT' or self.transport.nat_type == 'Symmetric NAT':
                     # Relay through seed server
                     self.log.debug('Relay through seed')
                     self.transport.relay_message(serialized, self.guid)
                     return
+                else:
+                    self.send_to_rudp(serialized)
+                    return
+
             else:
                 if self.nat_type == 'Restric NAT' and not self.punching and not self.relaying:
                     self.log.debug('Found restricted NAT client')

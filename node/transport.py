@@ -210,7 +210,6 @@ class CryptoTransportLayer(TransportLayer):
                 peer = self.dht.routing_table.get_contact(guid)
                 if peer:
                     peer.reachable = True
-                    peer.punching = False
                     peer.relaying = False
                 else:
                     self.log.debug('Do not know about this peer yet.')
@@ -445,11 +444,13 @@ class CryptoTransportLayer(TransportLayer):
                 if peer.punching:
                     ioloop.IOLoop.instance().call_later(0.5, send, count + 1)
                 if count >= 25:
-                    self.log.debug('Falling back to relaying.')
-                    peer.relaying = True
-                    peer.reachable = True
-                    peer.punching = False
-                    return
+                    if not peer.reachable:
+                        self.log.debug('Falling back to relaying.')
+                        peer.relaying = True
+                        peer.reachable = True
+                        peer.punching = False
+                    else:
+                        peer.punching = False
 
             peer.punching = True
             send(0)
