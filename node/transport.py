@@ -137,7 +137,7 @@ class CryptoTransportLayer(TransportLayer):
                     'data': data.encode('hex'),
                     'guid': guid,
                     'senderGUID': self.guid
-                }), True)
+                }), relay=True)
 
     def start_mediation(self, guid):
         self.log.debug('Starting mediation %s', self.ob_ctx)
@@ -221,7 +221,7 @@ class CryptoTransportLayer(TransportLayer):
                 # Peer metadata
                 guid = data_body.get('guid')
                 pubkey = data_body.get('pubkey')
-                port = addr[1]
+                port = data_body.get('port')
                 hostname = addr[0]
                 nickname = data_body.get('nick')
                 nat_type = data_body.get('nat_type')
