@@ -214,6 +214,7 @@ class CryptoTransportLayer(TransportLayer):
                     peer.relaying = False
                 else:
                     self.log.debug('Do not know about this peer yet.')
+                return
 
             try:
                 data_body = json.loads(data)
