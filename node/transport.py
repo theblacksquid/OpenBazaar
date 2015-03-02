@@ -221,7 +221,7 @@ class CryptoTransportLayer(TransportLayer):
                 # Peer metadata
                 guid = data_body.get('guid')
                 pubkey = data_body.get('pubkey')
-                port = data_body.get('port')
+                port = addr[1]
                 hostname = addr[0]
                 nickname = data_body.get('nick')
                 nat_type = data_body.get('nat_type')

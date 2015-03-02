@@ -40,6 +40,7 @@ class PeerConnection(GUIDMixin, object):
         self.relaying = False
         self.reachable = False
         self.last_reached = time.time()
+        self.seed = False
 
         self.init_packetsender()
 
@@ -78,8 +79,6 @@ class PeerConnection(GUIDMixin, object):
                     self.send_raw(
                         json.dumps(hello_msg)
                     )
-
-                self.transport.search_for_my_node()
 
             ioloop.IOLoop.instance().call_later(5, no_response)
 
@@ -139,7 +138,7 @@ class PeerConnection(GUIDMixin, object):
 
     def send_raw(self, serialized, callback=None, relay=False):
 
-        if self.transport.seed_mode or relay:
+        if self.transport.seed_mode or relay or self.seed:
             self.send_to_rudp(serialized)
             return
 

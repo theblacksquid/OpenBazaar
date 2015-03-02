@@ -331,7 +331,9 @@ angular.module('app')
                 //});
 
                 msg.peers.forEach(function(peer) {
-                    $scope.add_peer(peer);
+                    if(peer.guid != '') {
+                        $scope.add_peer(peer);
+                    }
                 });
 
             };

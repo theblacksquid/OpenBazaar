@@ -98,8 +98,8 @@ class DHT(object):
                     peer.port = port
                     peer.nat_type = nat_type
 
-                    if nat_type == 'Full Cone':
-                        peer.reachable = True
+                    # if nat_type == 'Full Cone':
+                    #     peer.reachable = True
 
                     peer.init_packetsender()
                     peer.setup_emitters()
@@ -119,8 +119,8 @@ class DHT(object):
                 peer.pub = pubkey
                 peer.nickname = nickname
 
-                if nat_type == 'Full Cone':
-                    peer.reachable = True
+                # if nat_type == 'Full Cone':
+                #     peer.reachable = True
 
                 self.routing_table.add_contact(peer)
 
@@ -172,13 +172,19 @@ class DHT(object):
         key = msg['key']
         find_id = msg['findID']
         pubkey = msg['pubkey']
+        nickname = msg['nickname']
+        nat_type = msg['nat_type']
+        hostname = msg['hostname']
+        port = msg['port']
 
         assert guid is not None and guid != self.transport.guid
         assert key is not None
         assert find_id is not None
         assert pubkey is not None
 
-        querying_peer = self.routing_table.get_contact(guid)
+        querying_peer = self.add_peer(
+            hostname, port, pubkey, guid, nickname, nat_type
+        )
         self.log.debug('got contact %s', querying_peer)
 
         if querying_peer is not None:
@@ -807,6 +813,8 @@ class DHT(object):
                         msg = {"type": "findNode",
                                "hostname": self.transport.hostname,
                                "port": self.transport.port,
+                               "nickname": self.transport.nickname,
+                               "nat_type": self.transport.nat_type,
                                "senderGUID": self.transport.guid,
                                "key": new_search.key,
                                "findValue": find_value,
