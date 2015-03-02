@@ -304,6 +304,9 @@ class Orders(object):
 
     def get_orders(self, page=0, merchant=None, notarizations=False):
 
+        if not page:
+            page = 0
+
         orders = []
 
         if merchant is None:

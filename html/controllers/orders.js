@@ -37,6 +37,15 @@ angular.module('app')
                 }
             };
 
+            $scope.parse_myorders = function(msg) {
+
+                $scope.orders = msg.orders;
+                $scope.orders_total = msg.total;
+                $scope.orders_pages = msg.total % 10;
+                $scope.orders_current_page = msg.page + 1;
+
+            };
+
             $scope.queryMyOrder = function(merchant) {
                 // Query for orders
                 var query = {
@@ -194,8 +203,7 @@ angular.module('app')
                 $scope.order = order;
                 $scope.Market = scope;
                 $scope.settings = settings;
-
-
+                $scope.orders_current_page = 0;
 
                 $scope.markOrderPaid = function(orderId) {
 

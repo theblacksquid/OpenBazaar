@@ -168,21 +168,12 @@ angular.module('app')
             };
 
             $scope.orders_page_changed = function() {
-                console.log($scope.orders_current_page);
+                console.log(this.orders_current_page);
                 var query = {
-                    'page': $scope.orders_current_page - 1,
+                    'page': this.orders_current_page - 1,
                     'merchant': $scope.merchant
                 };
                 Connection.send('query_orders', query);
-
-            };
-
-            $scope.parse_myorders = function(msg) {
-
-                $scope.orders = msg.orders;
-                $scope.orders_total = msg.total;
-                $scope.orders_pages = msg.total % 10;
-                $scope.orders_current_page = msg.page + 1;
 
             };
 
