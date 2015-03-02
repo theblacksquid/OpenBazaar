@@ -79,7 +79,7 @@ class PeerConnection(GUIDMixin, object):
                         json.dumps(hello_msg)
                     )
 
-                # self.transport.search_for_my_node()
+                self.transport.search_for_my_node()
 
             ioloop.IOLoop.instance().call_later(5, no_response)
 

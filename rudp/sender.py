@@ -143,7 +143,13 @@ class Sender(object):
         self._push()
 
     def _push(self):
-        if not self._sending and len(self._windows):
+
+        # Clear stale window
+        stale = False
+        if time.time() - self._last_sent > 30:
+            stale = True
+
+        if (stale or not self._sending) and len(self._windows):
 
             self.log.debug('Sending New Window')
             self._last_sent = int(time.time())
