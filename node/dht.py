@@ -119,9 +119,6 @@ class DHT(object):
                 peer.pub = pubkey
                 peer.nickname = nickname
 
-                # if nat_type == 'Full Cone':
-                #     peer.reachable = True
-
                 self.routing_table.add_contact(peer)
 
                 return peer
@@ -172,7 +169,7 @@ class DHT(object):
         key = msg['key']
         find_id = msg['findID']
         pubkey = msg['pubkey']
-        nickname = msg['nickname']
+        nickname = msg['senderNick']
         nat_type = msg['nat_type']
         hostname = msg['hostname']
         port = msg['port']
@@ -813,7 +810,6 @@ class DHT(object):
                         msg = {"type": "findNode",
                                "hostname": self.transport.hostname,
                                "port": self.transport.port,
-                               "nickname": self.transport.nickname,
                                "nat_type": self.transport.nat_type,
                                "senderGUID": self.transport.guid,
                                "key": new_search.key,

@@ -450,7 +450,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
                 # No cached contact for this bucket.
                 pass
             else:
-                self.buckets[bucket_index].addContact(cached)
+                self.buckets[bucket_index].add_contact(cached)
         finally:
             self.log.datadump('Contacts: %s', self.buckets[bucket_index].contacts)
 
@@ -461,8 +461,8 @@ class OptimizedTreeRoutingTable(RoutingTable):
         :param contact:
         :return:
         """
-        bucket_index = self.kbucketIndex(contact.guid)
-        self.buckets[bucket_index].update_contact(contact)
+        bucket_index = self.kbucket_index(contact.guid)
+        # self.buckets[bucket_index].update_contact(contact)
 
     def touch_kbucket(self, node_id, timestamp=None):
         """

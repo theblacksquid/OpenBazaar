@@ -146,8 +146,12 @@ class Sender(object):
 
         # Clear stale window
         stale = False
-        if time.time() - self._last_sent > 30:
+        if time.time() - self._last_sent > 30 and self._last_sent != 0:
             stale = True
+            self._windows = []
+            self._sending = None
+            self._last_sent = 0
+            return
 
         if (stale or not self._sending) and len(self._windows):
 

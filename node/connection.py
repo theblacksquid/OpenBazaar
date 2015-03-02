@@ -74,13 +74,14 @@ class PeerConnection(GUIDMixin, object):
                     hello_msg['relayed'] = True
 
                     self.transport.relay_message(json.dumps(hello_msg), self.guid)
+                    self.send_relayed_ping()
                 else:
                     self.log.debug('Sending Hello')
                     self.send_raw(
                         json.dumps(hello_msg)
                     )
 
-            ioloop.IOLoop.instance().call_later(5, no_response)
+            ioloop.IOLoop.instance().call_later(4, no_response)
 
         self.seed = False
         self.punching = False
@@ -88,33 +89,33 @@ class PeerConnection(GUIDMixin, object):
         # Recurring check for peer accessibility
         def pinger():
             self.log.debug('Pinging: %s', self.guid)
-            if not self.relaying:
-                if time.time() - self.last_reached <= 60:
-                    self.send_ping()
-                    ioloop.IOLoop.instance().call_later(2, pinger)
-                else:
-                    self.reachable = False
-                    if self.guid:
-                        self.transport.dht.remove_peer(self.guid)
 
-                    # Update GUI if possible
-                    if self.transport.handler:
-                        self.transport.handler.refresh_peers()
+            if time.time() - self.last_reached <= 60:
+                if not self.relaying:
+                    self.send_ping()
+                else:
+                    self.send_relayed_ping()
+                ioloop.IOLoop.instance().call_later(2, pinger)
+            else:
+                self.reachable = False
+                if self.guid:
+                    self.transport.dht.remove_peer(self.guid)
+
+                # Update GUI if possible
+                if self.transport.handler:
+                    self.transport.handler.refresh_peers()
+
         pinger()
 
 
     def send_ping(self):
-        # Send ping over to peer and see if we get a quick response
-        # msg = {
-        #     'type': 'ping',
-        #     'senderGUID': self.transport.guid,
-        #     'hostname': self.hostname,
-        #     'port': self.port,
-        #     'senderNick': self.nickname,
-        #     'nat_type': self.transport.nat_type
-        # }
-        # self.send_raw(json.dumps(msg))
         self.sock.sendto('ping', (self.hostname, self.port))
+        return True
+
+    def send_relayed_ping(self):
+        for x in self.transport.dht.active_peers:
+            if x.hostname == 'seed2.openbazaar.org' or x.hostname == '205.186.156.31':
+                self.sock.sendto('send_relay_ping %s' % self.guid, (x.hostname, x.port))
         return True
 
     def init_packetsender(self):
@@ -132,6 +133,9 @@ class PeerConnection(GUIDMixin, object):
         self.message_size = 0
         self.is_listening = True
         self.hello = False
+
+    def send_to_sock(self, data):
+        self.sock.sendto(data, (self.hostname, self.port))
 
     def send(self, data, callback):
         self.send_raw(json.dumps(data), callback)
@@ -407,6 +411,13 @@ class PeerListener(GUIDMixin):
                         self.socket.sendto('pong', (addr[0], addr[1]))
                     elif data[:4] == 'pong':
                         self.ee.emit('on_pong_message', (data, addr))
+                    elif data[:15] == 'send_relay_ping':
+                        self.ee.emit('on_send_relay_ping', (data, addr))
+                    elif data[:10] == 'relay_ping':
+                        data = data.split(' ')
+                        self.socket.sendto('send_relay_pong %s' % data[1], (addr[0], addr[1]))
+                    elif data[:15] == 'send_relay_pong':
+                        self.ee.emit('on_send_relay_pong', (data, addr))
                     elif data[:9] == 'heartbeat':
                         self.log.debug('We just received a heartbeat.')
                     else:

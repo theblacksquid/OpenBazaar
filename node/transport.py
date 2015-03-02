@@ -197,6 +197,38 @@ class CryptoTransportLayer(TransportLayer):
                     x.last_reached = time.time()
 
         # pylint: disable=unused-variable
+        @self.listener.ee.on('on_relay_pong_message')
+        def on_relay_pong_message(msg):
+            data, addr = msg[0], msg[1]
+            data = data.split(' ')
+            for x in self.dht.active_peers:
+                if x.guid == data[1]:
+                    x.reachable = True
+                    x.last_reached = time.time()
+
+        # pylint: disable=unused-variable
+        @self.listener.ee.on('on_send_relay_ping')
+        def on_send_relay_ping(msg):
+            data, addr = msg[0], msg[1]
+            data = data.split(' ')
+            peer = self.dht.routing_table.get_contact(data[1])
+            if peer:
+                peer.send_to_sock('relay_ping %s' % peer.guid)
+            else:
+                self.log.info('Could not find peer to send relay_ping to.')
+
+        # pylint: disable=unused-variable
+        @self.listener.ee.on('on_send_relay_pong')
+        def on_send_relay_pong(msg):
+            data, addr = msg[0], msg[1]
+            data = data.split(' ')
+            peer = self.dht.routing_table.get_contact(data[1])
+            if peer:
+                peer.send_to_sock('relay_pong %s' % self.guid)
+            else:
+                self.log.info('Could not find peer to send relay_pong to.')
+
+        # pylint: disable=unused-variable
         @self.listener.ee.on('on_message')
         def on_message(msg):
 
