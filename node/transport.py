@@ -273,6 +273,7 @@ class CryptoTransportLayer(TransportLayer):
                         inbound_peer._rudp_connection.receive(packet)
 
                     self.log.debug('Updated peers: %s', self.dht.active_peers)
+
                     if self.handler:
                         self.handler.refresh_peers()
 

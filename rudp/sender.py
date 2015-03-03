@@ -26,6 +26,7 @@ class Window(object):
     def send(self):
         # Our packets to send.
         pkts = list(self._packets)
+        packet_count = len(pkts)
 
         if len(pkts) < 1:
             self.ee.emit('done')
@@ -67,7 +68,6 @@ class Window(object):
                 # This means that this window only had two packets, and the second one
                 # was a reset packet.
                 self._reset_packet.send()
-                self.ee.emit('done')
                 return
 
             # pylint: disable=unused-variable
@@ -91,7 +91,6 @@ class Window(object):
                     if self.acknowledged == len(pkts):
                         self.log.debug('ackd all packets')
                         self.ee.emit('acknowledge')
-                        self.ee.emit('done')
 
                 packet.send()
 

@@ -114,6 +114,7 @@ class DHT(object):
                 #self.routingTable.addContact(peer)
 
                 return peer
+
             elif peer.hostname == hostname and peer.port == port:
                 peer.guid = guid
                 peer.nat_type = nat_type
