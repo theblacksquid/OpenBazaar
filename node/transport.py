@@ -255,7 +255,7 @@ class CryptoTransportLayer(TransportLayer):
                 pubkey = data_body.get('pubkey')
                 nickname = data_body.get('nick')
                 nat_type = data_body.get('nat_type')
-                port = addr[1] if nat_type == 'Symmetric NAT' else data_body.get('port')
+                port = addr[1]
                 hostname = addr[0]
 
                 inbound_peer = self.dht.add_peer(hostname, port, pubkey, guid, nickname, nat_type)
@@ -795,10 +795,10 @@ class CryptoTransportLayer(TransportLayer):
             peer_obj.seed = True
             peer_obj.reachable = True  # Seeds should be reachable always
 
-        # Populate routing table by searching for non-existent key
-        def join_callback():
-            self.search_for_my_node()
-        ioloop.IOLoop.instance().call_later(10, join_callback)
+        # # Populate routing table by searching for non-existent key
+        # def join_callback():
+        #     self.search_for_my_node()
+        # ioloop.IOLoop.instance().call_later(10, join_callback)
 
         if callback is not None:
             callback('Joined')

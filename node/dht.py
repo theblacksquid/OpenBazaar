@@ -101,6 +101,7 @@ class DHT(object):
                     # if nat_type == 'Full Cone':
                     #     peer.reachable = True
 
+                    self.log.debug('Hostname/Port combo changed.')
                     peer.init_packetsender()
                     peer.setup_emitters()
                     self.routing_table.add_contact(peer)
@@ -182,7 +183,6 @@ class DHT(object):
         querying_peer = self.add_peer(
             hostname, port, pubkey, guid, nickname, nat_type
         )
-        self.log.debug('got contact %s', querying_peer)
 
         if querying_peer is not None:
 
