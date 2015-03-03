@@ -29,13 +29,13 @@ class PendingPacket(object):
 
         #self._packet_sender.send(self._packet)
 
-        def packet_send():
-            if self._sending:
+        def packet_send(counter):
+            if self._sending and counter < 20:
                 self.log.debug('Sending Packet #%s: %s', self._packet.get_sequence_number(), self._sending)
                 self._packet_sender.send(self._packet)
-                ioloop.IOLoop.instance().call_later(rudp.constants.TIMEOUT, packet_send)
+                # ioloop.IOLoop.instance().call_later(rudp.constants.TIMEOUT, packet_send, counter+1)
 
-        packet_send()
+        packet_send(0)
 
         # self._intervalID = rudp.helpers.set_interval(
         #     packet_send,
