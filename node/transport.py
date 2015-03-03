@@ -253,10 +253,10 @@ class CryptoTransportLayer(TransportLayer):
                 # Peer metadata
                 guid = data_body.get('guid')
                 pubkey = data_body.get('pubkey')
-                port = addr[1]
-                hostname = addr[0]
                 nickname = data_body.get('nick')
                 nat_type = data_body.get('nat_type')
+                port = addr[1] if nat_type == 'Symmetric NAT' else data_body.get('port')
+                hostname = addr[0]
 
                 inbound_peer = self.dht.add_peer(hostname, port, pubkey, guid, nickname, nat_type)
                 inbound_peer.reachable = True
