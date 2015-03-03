@@ -796,9 +796,9 @@ class CryptoTransportLayer(TransportLayer):
             peer_obj.reachable = True  # Seeds should be reachable always
 
         # Populate routing table by searching for non-existent key
-        # def join_callback():
-        #     self.search_for_my_node()
-        # ioloop.IOLoop.instance().call_later(10, join_callback)
+        def join_callback():
+            self.search_for_my_node()
+        ioloop.IOLoop.instance().call_later(10, join_callback)
 
         if callback is not None:
             callback('Joined')
