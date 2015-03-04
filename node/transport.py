@@ -98,7 +98,7 @@ class CryptoTransportLayer(TransportLayer):
         self.nickname = ""
         self.dev_mode = ob_ctx.dev_mode
         self.seed_mode = ob_ctx.seed_mode
-        self.mediation_mode = False
+        self.mediation_mode = {}
 
         self._connections = {}
         self._punches = {}
@@ -140,10 +140,11 @@ class CryptoTransportLayer(TransportLayer):
                 }), relay=True)
 
     def start_mediation(self, guid):
-        self.log.debug('Starting mediation %s', self.ob_ctx)
 
-        if not self.mediation_mode:
-            self.mediation_mode = True
+        if not self.mediation_mode[guid]:
+            self.mediation_mode[guid] = True
+
+            self.log.debug('Starting mediation')
 
             for peer in self.dht.active_peers:
                 if peer.hostname == '127.0.0.1' or peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
@@ -224,7 +225,7 @@ class CryptoTransportLayer(TransportLayer):
             data = data.split(' ')
             peer = self.dht.routing_table.get_contact(data[1])
             if peer:
-                peer.send_to_sock('relay_pong %s' % self.guid)
+                peer.send_to_sock('relay_pong %s' % peer.guid)
             else:
                 self.log.info('Could not find peer to send relay_pong to.')
 
@@ -484,6 +485,7 @@ class CryptoTransportLayer(TransportLayer):
                         peer.punching = False
                     else:
                         peer.punching = False
+                        self.mediation_mode[peer.guid] = False
 
             peer.punching = True
             send(0)
