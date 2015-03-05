@@ -107,9 +107,8 @@ class PeerConnection(GUIDMixin, object):
 
             # yappi.get_thread_stats().print_all()
 
-        self.ping_task = ioloop.PeriodicCallback(pinger, 2000, io_loop=ioloop.IOLoop.instance()).start()
-
-
+        self.ping_task = ioloop.PeriodicCallback(pinger, 2000, io_loop=ioloop.IOLoop.instance())
+        self.ping_task.start()
 
     def send_ping(self):
         self.sock.sendto('ping', (self.hostname, self.port))
