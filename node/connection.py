@@ -16,7 +16,6 @@ from node.guid import GUIDMixin
 from rudp.connection import Connection
 from rudp.packetsender import PacketSender
 from tornado import ioloop
-import yappi
 
 
 class PeerConnection(GUIDMixin, object):
