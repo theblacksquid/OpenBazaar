@@ -223,9 +223,9 @@ class CryptoTransportLayer(TransportLayer):
         def on_send_relay_pong(msg):
             data, addr = msg[0], msg[1]
             data = data.split(' ')
-            peer = self.dht.routing_table.get_contact(data[1])
+            peer = self.dht.routing_table.get_contact(data[2])
             if peer:
-                peer.send_to_sock('relay_pong %s' % peer.guid)
+                peer.send_to_sock('relay_pong %s' % data[1])
             else:
                 self.log.info('Could not find peer to send relay_pong to.')
 

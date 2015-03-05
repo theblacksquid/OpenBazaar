@@ -16,6 +16,7 @@ from node.guid import GUIDMixin
 from rudp.connection import Connection
 from rudp.packetsender import PacketSender
 from tornado import ioloop
+import yappi
 
 
 class PeerConnection(GUIDMixin, object):
@@ -95,8 +96,8 @@ class PeerConnection(GUIDMixin, object):
                     self.send_ping()
                 else:
                     self.send_relayed_ping()
-                ioloop.IOLoop.instance().call_later(2, pinger)
             else:
+                self.ping_task.stop()
                 self.reachable = False
                 if self.guid:
                     self.transport.dht.remove_peer(self.guid)
@@ -105,7 +106,10 @@ class PeerConnection(GUIDMixin, object):
                 if self.transport.handler:
                     self.transport.handler.refresh_peers()
 
-        pinger()
+            # yappi.get_thread_stats().print_all()
+
+        self.ping_task = ioloop.PeriodicCallback(pinger, 2000, io_loop=ioloop.IOLoop.instance()).start()
+
 
 
     def send_ping(self):
@@ -416,7 +420,9 @@ class PeerListener(GUIDMixin):
                         self.ee.emit('on_send_relay_ping', (data, addr))
                     elif data[:10] == 'relay_ping':
                         data = data.split(' ')
-                        self.socket.sendto('send_relay_pong %s' % data[1], (addr[0], addr[1]))
+                        sender = self.guid
+                        recipient = data[1]
+                        self.socket.sendto('send_relay_pong %s %s' % (sender, recipient), (addr[0], addr[1]))
                     elif data[:15] == 'send_relay_pong':
                         self.ee.emit('on_send_relay_pong', (data, addr))
                     elif data[:9] == 'heartbeat':
