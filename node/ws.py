@@ -1120,7 +1120,7 @@ class ProtocolHandler(object):
         peers = []
 
         for peer in self.transport.dht.active_peers:
-            if hasattr(peer, 'hostname'):
+            if hasattr(peer, 'hostname') and peer.guid:
                 peer_item = {
                     'hostname': peer.hostname,
                     'port': peer.port

@@ -106,6 +106,9 @@ class DHT(object):
                     peer.setup_emitters()
                     self.routing_table.add_contact(peer)
 
+                    if self.transport.handler:
+                        self.transport.handler.refresh_peers()
+
                 peer.nickname = nickname
                 peer.pub = pubkey
 
@@ -123,6 +126,9 @@ class DHT(object):
 
                 self.routing_table.add_contact(peer)
 
+                if self.transport.handler:
+                    self.transport.handler.refresh_peers()
+
                 return peer
 
         new_peer = self.transport.get_crypto_peer(guid, hostname, port, pubkey, nickname, nat_type)
@@ -134,6 +140,10 @@ class DHT(object):
             self.active_peers.append(new_peer)
             self.log.debug('Active peers after adding new one: %s', self.active_peers)
             self.routing_table.add_contact(new_peer)
+
+            if self.transport.handler:
+                self.transport.handler.refresh_peers()
+
             return new_peer
         else:
             self.log.error('Could not create a new peer.')
