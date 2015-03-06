@@ -42,14 +42,13 @@ class PeerConnection(GUIDMixin, object):
         self.last_reached = time.time()
         self.seed = False
 
-
-
         if nat_type == 'Symmetric NAT':
             self.reachable = True
             self.relaying = True
             self.send_ping()
         else:
 
+            self.pinging = True
             self.send_ping()
 
             def no_response():
@@ -73,7 +72,7 @@ class PeerConnection(GUIDMixin, object):
                     self.log.debug('Relay Hello through Seed')
                     hello_msg['relayed'] = True
 
-                    self.transport.relay_message(json.dumps(hello_msg), self.guid)
+                    self.send_to_rudp(json.dumps(hello_msg))
                     self.send_relayed_ping()
                 else:
                     self.log.debug('Sending Hello')
@@ -81,6 +80,8 @@ class PeerConnection(GUIDMixin, object):
                     self.send_raw(
                         json.dumps(hello_msg)
                     )
+                self.pinging = False
+                ioloop.IOLoop.instance().call_later(2, self.transport.search_for_my_node)
 
                 self.setup_emitters()
 
@@ -102,6 +103,7 @@ class PeerConnection(GUIDMixin, object):
                 self.ping_task.stop()
                 self.reachable = False
                 if self.guid:
+                    self.log.error('Peer not responding. Removing.')
                     self.transport.dht.remove_peer(self.guid)
 
                 # Update GUI if possible
@@ -110,7 +112,7 @@ class PeerConnection(GUIDMixin, object):
 
             # yappi.get_thread_stats().print_all()
 
-        self.ping_task = ioloop.PeriodicCallback(pinger, 2000, io_loop=ioloop.IOLoop.instance())
+        self.ping_task = ioloop.PeriodicCallback(pinger, 5000, io_loop=ioloop.IOLoop.instance())
         self.ping_task.start()
 
     def setup_emitters(self):
@@ -192,29 +194,31 @@ class PeerConnection(GUIDMixin, object):
         #     return
 
         def sending_out():
-            if self.reachable:
-                if self.relaying or self.nat_type == 'Symmetric NAT' or self.transport.nat_type == 'Symmetric NAT':
-                    # Relay through seed server
-                    self.log.debug('Relay through seed')
-                    # self.transport.relay_message(serialized, self.guid)
-                    self.send_to_rudp(serialized)
-                    return
-                else:
-                    self.send_to_rudp(serialized)
-                    return
 
-            else:
-                if self.nat_type == 'Restric NAT' and not self.punching and not self.relaying:
-                    self.log.debug('Found restricted NAT client')
-                    self.transport.start_mediation(self.guid)
-                if self.nat_type == 'Full Cone':
-                    self.send_to_rudp(serialized)
-                    return
-                if self.relaying:
-                    self.log.debug('Relay through seed')
-                    # self.transport.relay_message(serialized, self.guid)
-                    self.send_to_rudp(serialized)
-                    return
+            if not self.pinging:
+                if self.reachable:
+                    if self.relaying or self.nat_type == 'Symmetric NAT' or self.transport.nat_type == 'Symmetric NAT':
+                        # Relay through seed server
+                        self.log.debug('Relay through seed')
+                        # self.transport.relay_message(serialized, self.guid)
+                        self.send_to_rudp(serialized)
+                        return
+                    else:
+                        self.send_to_rudp(serialized)
+                        return
+
+                else:
+                    if self.nat_type == 'Restric NAT' and not self.punching and not self.relaying:
+                        self.log.debug('Found restricted NAT client')
+                        self.transport.start_mediation(self.guid)
+                    if self.nat_type == 'Full Cone':
+                        self.send_to_rudp(serialized)
+                        return
+                    if self.relaying:
+                        self.log.debug('Relay through seed')
+                        # self.transport.relay_message(serialized, self.guid)
+                        self.send_to_rudp(serialized)
+                        return
 
             ioloop.IOLoop.instance().call_later(5, sending_out)
         sending_out()
