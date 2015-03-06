@@ -232,7 +232,7 @@ class CryptoTransportLayer(TransportLayer):
         # pylint: disable=unused-variable
         @self.listener.ee.on('on_relayto')
         def on_relayto(data):
-            data = data.split(' ')
+            data = data.split(' ', 3)
             peer = self.dht.routing_table.get_contact(data[1])
             if peer:
                 peer.send_to_sock('relay %s' % data[3])
@@ -260,18 +260,21 @@ class CryptoTransportLayer(TransportLayer):
 
                 # Relayed message
                 if data[:6] == 'relay ':
-                    msg_parts = data.split(' ')
+                    msg_parts = data.split(' ', 1)
                     data = msg_parts[1]
-
-                data_body = json.loads(data)
+                    data_body = json.loads(data)
+                    hostname = data_body.get('hostname')
+                    port = data_body.get('port')
+                else:
+                    data_body = json.loads(data)
+                    port = addr[1]
+                    hostname = addr[0]
 
                 # Peer metadata
                 guid = data_body.get('guid')
                 pubkey = data_body.get('pubkey')
                 nickname = data_body.get('nick')
                 nat_type = data_body.get('nat_type')
-                port = addr[1]
-                hostname = addr[0]
 
                 inbound_peer = self.dht.add_peer(hostname, port, pubkey, guid, nickname, nat_type)
                 inbound_peer.reachable = True
@@ -288,9 +291,6 @@ class CryptoTransportLayer(TransportLayer):
                         inbound_peer._rudp_connection.receive(packet)
 
                     self.log.debug('Updated peers: %s', self.dht.active_peers)
-
-                    if self.handler:
-                        self.handler.refresh_peers()
 
                 else:
                     self.log.debug('Did not find a peer')

@@ -33,9 +33,11 @@ class PendingPacket(object):
                 if self._sending:
                     self.log.info('Packet %s Lost', self._packet.get_sequence_number())
 
-            if self._sending and counter < 20:
+            if self._sending and counter < 4:
                 self.log.debug('Sending Packet #%s: %s', self._packet.get_sequence_number(), self._sending)
                 self._packet_sender.send(self._packet)
+                packet_send(counter+1)
+            else:
                 ioloop.IOLoop.instance().call_later(5, packet_lost)
 
         packet_send(0)

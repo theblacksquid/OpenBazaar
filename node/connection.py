@@ -83,7 +83,7 @@ class PeerConnection(GUIDMixin, object):
                     )
 
                 self.setup_emitters()
-                
+
             ioloop.IOLoop.instance().call_later(2, no_response)
 
         self.seed = False
@@ -186,17 +186,18 @@ class PeerConnection(GUIDMixin, object):
             self.send_to_rudp(serialized)
             return
 
-        if self.relaying:
-            self.log.debug('Relay through seed')
-            self.transport.relay_message(serialized, self.guid)
-            return
+        # if self.relaying:
+        #     self.log.debug('Relay through seed')
+        #     self.transport.relay_message(serialized, self.guid)
+        #     return
 
         def sending_out():
             if self.reachable:
                 if self.relaying or self.nat_type == 'Symmetric NAT' or self.transport.nat_type == 'Symmetric NAT':
                     # Relay through seed server
                     self.log.debug('Relay through seed')
-                    self.transport.relay_message(serialized, self.guid)
+                    # self.transport.relay_message(serialized, self.guid)
+                    self.send_to_rudp(serialized)
                     return
                 else:
                     self.send_to_rudp(serialized)
@@ -211,7 +212,8 @@ class PeerConnection(GUIDMixin, object):
                     return
                 if self.relaying:
                     self.log.debug('Relay through seed')
-                    self.transport.relay_message(serialized, self.guid)
+                    # self.transport.relay_message(serialized, self.guid)
+                    self.send_to_rudp(serialized)
                     return
 
             ioloop.IOLoop.instance().call_later(5, sending_out)
@@ -428,7 +430,7 @@ class PeerListener(GUIDMixin):
 
                     elif data[:6] == 'relay ':
                         self.log.debug('Relay Packet')
-                        self.ee.emit('on_relay', (data, addr))
+                        self.ee.emit('on_message', (data, addr))
 
                     else:
                         self.ee.emit('on_message', (data, addr))
