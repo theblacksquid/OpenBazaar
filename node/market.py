@@ -50,7 +50,7 @@ class Market(object):
         self.market_id = transport.market_id
         self.peers = self.dht.get_active_peers()
         self.db_connection = db_connection
-        self.orders = Orders(transport, self.market_id, db_connection)
+
         self.pages = {}
         self.mypage = None
         self.signature = None
@@ -58,6 +58,7 @@ class Market(object):
         self.log = logging.getLogger(
             "[%s] %s" % (self.market_id, self.__class__.__name__))
         self.settings = self.transport.settings
+
         self.gpg = gnupg.GPG()
 
         self.all_messages = (
@@ -81,12 +82,19 @@ class Market(object):
 
         self.nickname = self.settings.get('nickname', '')
 
-        # Periodically refresh buckets
+        # Recurring republish for DHT
+        self.start_listing_republisher()
+
+        self.orders = Orders(transport, self.market_id, db_connection, self.gpg)
+
+    def start_listing_republisher(self):
+         # Periodically refresh buckets
         loop = tornado.ioloop.IOLoop.instance()
         refresh_cb = tornado.ioloop.PeriodicCallback(self.dht._refresh_node,
                                                      constants.REFRESH_TIMEOUT,
                                                      io_loop=loop)
         refresh_cb.start()
+
 
     def disable_welcome_screen(self):
         """This just flags the welcome screen to not show on startup"""

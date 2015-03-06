@@ -230,6 +230,14 @@ class CryptoTransportLayer(TransportLayer):
                 self.log.info('Could not find peer to send relay_pong to.')
 
         # pylint: disable=unused-variable
+        @self.listener.ee.on('on_relayto')
+        def on_relayto(data):
+            data = data.split(' ')
+            peer = self.dht.routing_table.get_contact(data[1])
+            if peer:
+                peer.send_to_sock('relay %s' % data[3])
+
+        # pylint: disable=unused-variable
         @self.listener.ee.on('on_message')
         def on_message(msg):
 
@@ -249,6 +257,12 @@ class CryptoTransportLayer(TransportLayer):
                 return
 
             try:
+
+                # Relayed message
+                if data[:6] == 'relay ':
+                    msg_parts = data.split(' ')
+                    data = msg_parts[1]
+
                 data_body = json.loads(data)
 
                 # Peer metadata

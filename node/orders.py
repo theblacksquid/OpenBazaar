@@ -40,13 +40,13 @@ class Orders(object):
         WAITING_FOR_PAYMENT = 'Waiting for Payment'
         COMPLETED = 'Completed'
 
-    def __init__(self, transport, market_id, db_connection):
+    def __init__(self, transport, market_id, db_connection, gpg):
         self.transport = transport
         self.market_id = market_id
         self.log = logging.getLogger('[%s] %s' % (self.market_id, self.__class__.__name__))
-        self.gpg = gnupg.GPG()
+        self.gpg = gpg
         self.db_connection = db_connection
-        self.orders = self.get_orders()
+        self.orders = None
 
         self.transport.add_callbacks([
             (
@@ -636,10 +636,7 @@ class Orders(object):
                 except Exception as exc:
                     self.log.error('Cannot update DB %s', exc)
 
-                order_to_notary = {}
-                order_to_notary['type'] = 'order'
-                order_to_notary['rawContract'] = contract
-                order_to_notary['state'] = Orders.State.BID
+                order_to_notary = {'type': 'order', 'rawContract': contract, 'state': Orders.State.BID}
 
                 merchant = self.transport.dht.routing_table.get_contact(
                     contract_data_json['Seller']['seller_GUID']
@@ -730,8 +727,7 @@ class Orders(object):
 
         seller = self.transport.dht.routing_table.get_contact(msg['sellerGUID'])
 
-        buyer = {}
-        buyer['Buyer'] = {}
+        buyer = {'Buyer': {}}
         buyer['Buyer']['buyer_GUID'] = self.transport.guid
         buyer['Buyer']['buyer_BTC_uncompressed_pubkey'] = self.generate_new_order_pubkey(order_id)
         buyer['Buyer']['buyer_pgp'] = self.transport.settings['PGPPubKey']

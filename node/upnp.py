@@ -157,7 +157,7 @@ class PortMapper(object):
                     "d", dxx,
                     "e", exx
                 )
-                i = i + 1
+                i += 1
                 mappings.append(mapping)
 
         return mappings

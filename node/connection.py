@@ -42,7 +42,7 @@ class PeerConnection(GUIDMixin, object):
         self.last_reached = time.time()
         self.seed = False
 
-        self.init_packetsender()
+
 
         if nat_type == 'Symmetric NAT':
             self.reachable = True
@@ -77,11 +77,14 @@ class PeerConnection(GUIDMixin, object):
                     self.send_relayed_ping()
                 else:
                     self.log.debug('Sending Hello')
+                    self.init_packetsender()
                     self.send_raw(
                         json.dumps(hello_msg)
                     )
 
-            ioloop.IOLoop.instance().call_later(4, no_response)
+                self.setup_emitters()
+                
+            ioloop.IOLoop.instance().call_later(2, no_response)
 
         self.seed = False
         self.punching = False
@@ -110,6 +113,37 @@ class PeerConnection(GUIDMixin, object):
         self.ping_task = ioloop.PeriodicCallback(pinger, 2000, io_loop=ioloop.IOLoop.instance())
         self.ping_task.start()
 
+    def setup_emitters(self):
+        self.log.debug('Setting up emitters')
+        self.ee = EventEmitter()
+
+        @self._rudp_connection._sender.ee.on('timeout')
+        def on_timeout(data):  # pylint: disable=unused-variable
+            self.log.debug('Node Sender Timed Out')
+            #self.transport.dht.remove_peer(self.guid)
+
+        @self._rudp_connection.ee.on('data')
+        def handle_recv(msg):  # pylint: disable=unused-variable
+
+            self.log.debug('Got the whole message: %s', msg.get('payload'))
+            payload = msg.get('payload')
+
+            if payload[:1] == '{':
+                try:
+                    payload = json.loads(msg.get('payload'))
+                    self.transport.listener._on_raw_message(payload)
+                    return
+                except Exception as e:
+                    self.log.debug('Problem with serializing: %s', e)
+            else:
+                try:
+                    payload = msg.get('payload').decode('hex')
+                    self.transport.listener._on_raw_message(payload)
+                except Exception as e:
+                    self.log.debug('not yet %s', e)
+                    self.transport.listener._on_raw_message(msg.get('payload'))
+
+
     def send_ping(self):
         self.sock.sendto('ping', (self.hostname, self.port))
         return True
@@ -122,12 +156,15 @@ class PeerConnection(GUIDMixin, object):
         return True
 
     def init_packetsender(self):
+
         self._packet_sender = PacketSender(
             self.sock,
             self.hostname,
             self.port,
+            self.guid,
             self.transport,
-            self.nat_type
+            self.nat_type,
+            self.relaying
         )
 
         self._rudp_connection = Connection(self._packet_sender)
@@ -201,52 +238,6 @@ class CryptoPeerConnection(PeerConnection):
         self.sin = sin
         self.waiting = False  # Waiting for ping-pong
 
-        self.setup_emitters()
-
-        # if not self.reachable:
-        #     self.log.debug('Peer is not reachable. Trying to ping.')
-        #
-        #     # Test connectivity to peer
-        #     self.waiting = True
-        #     self.send_ping()
-        #
-        #     def try_to_mediate():
-        #         self.log.debug('Trying to reach peer: %s %s %s', self.reachable, self.waiting, id(self))
-        #
-        #         if guid is not None and not self.nat_type:
-        #             self.transport.get_nat_type(guid)
-        #
-        #     ioloop.IOLoop.instance().call_later(5, try_to_mediate)
-
-    def setup_emitters(self):
-        self.log.debug('Setting up emitters')
-        self.ee = EventEmitter()
-
-        @self._rudp_connection._sender.ee.on('timeout')
-        def on_timeout(data):  # pylint: disable=unused-variable
-            self.log.debug('Node Sender Timed Out')
-            #self.transport.dht.remove_peer(self.guid)
-
-        @self._rudp_connection.ee.on('data')
-        def handle_recv(msg):  # pylint: disable=unused-variable
-
-            self.log.debug('Got the whole message: %s', msg.get('payload'))
-            payload = msg.get('payload')
-
-            if payload[:1] == '{':
-                try:
-                    payload = json.loads(msg.get('payload'))
-                    self.transport.listener._on_raw_message(payload)
-                    return
-                except Exception as e:
-                    self.log.debug('Problem with serializing: %s', e)
-            else:
-                try:
-                    payload = msg.get('payload').decode('hex')
-                    self.transport.listener._on_raw_message(payload)
-                except Exception as e:
-                    self.log.debug('not yet %s', e)
-                    self.transport.listener._on_raw_message(msg.get('payload'))
 
     def start_handshake(self, initial_handshake_cb=None):
         # TODO: Think about removing completely
@@ -412,19 +403,33 @@ class PeerListener(GUIDMixin):
 
                     if data[:4] == 'ping':
                         self.socket.sendto('pong', (addr[0], addr[1]))
+
                     elif data[:4] == 'pong':
                         self.ee.emit('on_pong_message', (data, addr))
+
                     elif data[:15] == 'send_relay_ping':
                         self.ee.emit('on_send_relay_ping', (data, addr))
+
                     elif data[:10] == 'relay_ping':
                         data = data.split(' ')
                         sender = self.guid
                         recipient = data[1]
                         self.socket.sendto('send_relay_pong %s %s' % (sender, recipient), (addr[0], addr[1]))
+
                     elif data[:15] == 'send_relay_pong':
                         self.ee.emit('on_send_relay_pong', (data, addr))
+
                     elif data[:9] == 'heartbeat':
                         self.log.debug('We just received a heartbeat.')
+
+                    elif data[:7] == 'relayto':
+                        self.log.debug('Relay To Packet')
+                        self.ee.emit('on_relayto', data)
+
+                    elif data[:6] == 'relay ':
+                        self.log.debug('Relay Packet')
+                        self.ee.emit('on_relay', (data, addr))
+
                     else:
                         self.ee.emit('on_message', (data, addr))
 
