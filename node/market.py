@@ -299,6 +299,8 @@ class Market(object):
             notaries = []
         elif not isinstance(notaries, list):
             notaries = json.loads(notaries)
+        else:
+            notaries = notaries
 
         for notary in notaries:
             self.log.info(notary)
