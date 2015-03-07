@@ -64,7 +64,7 @@ class Window(object):
                 self.log.debug('Only one packet in this message. We are done.')
                 self.ee.emit('done')
                 return
-            elif len(pkts) is 0:
+            elif len(pkts) == 0:
                 # This means that this window only had two packets, and the second one
                 # was a reset packet.
                 self._reset_packet.send()
@@ -145,7 +145,7 @@ class Sender(object):
 
         # Clear stale window
         stale = False
-        if time.time() - self._last_sent > 30 and self._last_sent != 0:
+        if time.time() - self._last_sent > 5 and self._last_sent != 0:
             stale = True
             self._windows = []
             self._sending = None
