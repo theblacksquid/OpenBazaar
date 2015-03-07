@@ -649,6 +649,8 @@ class Market(object):
         if 'burnAddr' in msg:
             del msg['burnAddr']
 
+        msg['notaries'] = json.dumps(msg['notaries'])
+
         # Update local settings
         self.db_connection.update_entries(
             "settings",
@@ -670,10 +672,8 @@ class Market(object):
         if settings['notary'] == 1:
             settings['notary'] = True
 
-        for key in ('notaries', 'trustedArbiters'):
-            # Fix key not found, None and empty string
-            value = settings.get(key) or '[]'
-            settings[key] = ast.literal_eval(value)
+        settings['notaries'] = json.loads(settings['notaries']) if settings['notaries'] else []
+        settings['trustedArbiters'] = json.loads(settings['trustedArbiters']) if settings['trustedArbiters'] else []
 
         settings['secret'] = settings.get('secret')
 
