@@ -64,7 +64,7 @@ class Window(object):
                 self.log.debug('Only one packet in this message. We are done.')
                 self.ee.emit('done')
                 return
-            elif len(pkts) == 0:
+            elif not len(pkts):
                 # This means that this window only had two packets, and the second one
                 # was a reset packet.
                 self._reset_packet.send()
@@ -162,7 +162,7 @@ class Sender(object):
 
             # Generate PendingPacket objects to store in Window
             def get_packet(i, pdata):
-                packet = Packet(float(i) + self._base_sequence_number, pdata, not i, i is (len(window) - 1))
+                packet = Packet(float(i) + self._base_sequence_number, pdata, not i, i == (len(window) - 1))
                 return PendingPacket(packet, self._packet_sender)
             packets = [get_packet(i, data) for i, data in enumerate(window)]
 

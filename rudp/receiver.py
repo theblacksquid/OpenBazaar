@@ -44,6 +44,8 @@ class IncomingMessage(object):
                 self.log.debug('Download Complete')
                 self.ee.emit('complete', {'body': self.body})
                 return
+            elif len(self.body) > int(self.size):
+                self.log.error('Houston we have a problem. Message is oversized. %s', self.body.decode('hex'))
             else:
                 # print self._message, self._message_size
                 self.log.debug('Still downloading...')
@@ -195,11 +197,11 @@ class Receiver(object):
                         # message._packets.seek()
                         # if message._packets.hasNext():
                         #     self._push_if_expected_sequence(self._packets.nextValue())
-                        self._packet_sender.send(Packet.createAcknowledgementPacket(
-                            packet._sequenceNumber,
-                            self._packet_sender._transport.guid,
-                            self._packet_sender._transport.pubkey
-                        ))
+                    self._packet_sender.send(Packet.createAcknowledgementPacket(
+                        packet._sequenceNumber,
+                        self._packet_sender._transport.guid,
+                        self._packet_sender._transport.pubkey
+                    ))
                 else:
                     self.log.debug('Already have this packet')
 
