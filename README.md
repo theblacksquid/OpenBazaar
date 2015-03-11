@@ -25,7 +25,7 @@ You can financially support the project by either:
 
 1. A direct donation: [3MXYUBLWNETa5HTewZp1xMTt7AW9kbFNqs](https://blockchain.info/address/3MXYUBLWNETa5HTewZp1xMTt7AW9kbFNqs)
 2. Tip4Commit: https://tip4commit.com/projects/728
-  - Code committed to the project is rewarded with bitcoin
+  - Code committed to the project is rewarded with bitcoin: [![tip for next commit](https://tip4commit.com/projects/728.svg)](https://tip4commit.com/github/OpenBazaar/OpenBazaar)
 
 ## Features (Notional)
 - Full market editor for management of items catalog
