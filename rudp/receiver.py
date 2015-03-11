@@ -40,12 +40,12 @@ class IncomingMessage(object):
         try:
             self.log.debug('Downloaded (%s) | Total Size (%s)', len(self.body), self.size)
 
-            if len(self.body) == int(self.size):
+            if len(self.body) >= int(self.size):
                 self.log.debug('Download Complete')
+                if len(self.body) > int(self.size):
+                    self.log.debug('Oversized Message')
                 self.ee.emit('complete', {'body': self.body})
                 return
-            elif len(self.body) > int(self.size):
-                self.log.error('Houston we have a problem. Message is oversized. %s', self.body.decode('hex'))
             else:
                 # print self._message, self._message_size
                 self.log.debug('Still downloading...')
