@@ -180,12 +180,12 @@ class Receiver(object):
                     message.body += payload
                     self.log.debug('Message Updated: %s', message.body)
                     message.reset()
-                    self._packet_sender.send(Packet.createAcknowledgementPacket(
-                        packet._sequenceNumber,
-                        self._packet_sender._transport.guid,
-                        self._packet_sender._transport.pubkey
-                    ))
-                    return
+                self._packet_sender.send(Packet.createAcknowledgementPacket(
+                    packet._sequenceNumber,
+                    self._packet_sender._transport.guid,
+                    self._packet_sender._transport.pubkey
+                ))
+                return
             else:
                 self.log.debug('Receive Inside Packet')
 
