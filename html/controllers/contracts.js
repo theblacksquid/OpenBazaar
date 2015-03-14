@@ -210,6 +210,7 @@ angular.module('app')
                             "item_quantity": $scope.contract.productQuantity,
                             "item_desc": $scope.contract.productDescription,
                             "item_images": {},
+                            "item_remote_images": [],
                             "item_delivery": {
                                 "countries": "",
                                 "region": "",
@@ -232,6 +233,19 @@ angular.module('app')
                             contract.Contract.item_images.image1 = product_image;
                         }
 
+                        var remote_images = [];
+                        if($scope.contract.imageURL1 != '' && $scope.contract.imageURL1 !== undefined) {
+                            remote_images.push($scope.contract.imageURL1);
+                        }
+                        if($scope.contract.imageURL2 != '' && $scope.contract.imageURL2 !== undefined) {
+                            remote_images.push($scope.contract.imageURL2);
+                        }
+                        if($scope.contract.imageURL3 != '' && $scope.contract.imageURL3 !== undefined) {
+                            remote_images.push($scope.contract.imageURL3);
+                        }
+                        contract.Contract.item_remote_images = remote_images;
+
+                        console.log('Contract: ', contract);
                         Connection.send("create_contract", contract);
                         Notifier.success('Success', 'Contract saved successfully.');
                         Connection.send("query_contracts", {});
