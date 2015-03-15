@@ -91,64 +91,70 @@ class Orders(object):
     @staticmethod
     def get_offer_json(raw_contract, state):
 
-        if state == Orders.State.SENT:
-            offer_data = ''.join(raw_contract.split('\n')[5:])
-            sig_index = offer_data.find('- -----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
-            offer_data_json = offer_data[0:sig_index]
-            return json.loads(offer_data_json)
+        try:
+            if state == Orders.State.SENT:
+                offer_data = ''.join(raw_contract.split('\n')[5:])
+                sig_index = offer_data.find('- -----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
+                offer_data_json = offer_data[0:sig_index]
+                return json.loads(offer_data_json)
 
-        if state in [Orders.State.WAITING_FOR_PAYMENT,
-                     Orders.State.NOTARIZED,
-                     Orders.State.NEED_TO_PAY,
-                     Orders.State.WAITING_FOR_MERCHANT,
-                     Orders.State.PAID,
-                     Orders.State.BUYER_PAID,
-                     Orders.State.SHIPPED]:
-            start_line = 8
-        elif state == Orders.State.COMPLETED:
-            start_line = 10
-        else:
-            start_line = 4
+            if state in [Orders.State.WAITING_FOR_PAYMENT,
+                         Orders.State.NOTARIZED,
+                         Orders.State.NEED_TO_PAY,
+                         Orders.State.WAITING_FOR_MERCHANT,
+                         Orders.State.PAID,
+                         Orders.State.BUYER_PAID,
+                         Orders.State.SHIPPED]:
+                start_line = 8
+            elif state == Orders.State.COMPLETED:
+                start_line = 10
+            else:
+                start_line = 4
 
-        offer_data = ''.join(raw_contract.split('\n')[start_line:])
+            offer_data = ''.join(raw_contract.split('\n')[start_line:])
 
-        if state in [Orders.State.NOTARIZED,
-                     Orders.State.NEED_TO_PAY,
-                     Orders.State.WAITING_FOR_MERCHANT,
-                     Orders.State.PAID,
-                     Orders.State.BUYER_PAID,
-                     Orders.State.SHIPPED]:
-            index_of_seller_signature = offer_data.find('- -----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
-        elif state == Orders.State.COMPLETED:
-            index_of_seller_signature = offer_data.find('- - -----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
-        else:
-            index_of_seller_signature = offer_data.find('-----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
+            if state in [Orders.State.NOTARIZED,
+                         Orders.State.NEED_TO_PAY,
+                         Orders.State.WAITING_FOR_MERCHANT,
+                         Orders.State.PAID,
+                         Orders.State.BUYER_PAID,
+                         Orders.State.SHIPPED]:
+                index_of_seller_signature = offer_data.find('- -----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
+            elif state == Orders.State.COMPLETED:
+                index_of_seller_signature = offer_data.find('- - -----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
+            else:
+                index_of_seller_signature = offer_data.find('-----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
 
-        if state in (
-            Orders.State.NEED_TO_PAY,
-            Orders.State.NOTARIZED,
-            Orders.State.WAITING_FOR_MERCHANT,
-            Orders.State.BUYER_PAID,
-            Orders.State.PAID,
-            Orders.State.SHIPPED
-        ):
-            offer_data_json = offer_data[0:index_of_seller_signature - 2]
-            offer_data_json = json.loads(offer_data_json)
-        elif state in (Orders.State.WAITING_FOR_PAYMENT, Orders.State.WAITING_FOR_MERCHANT):
-            offer_data_json = offer_data[0:index_of_seller_signature - 4]
-            offer_data_json = json.loads(str(offer_data_json))
-        elif state == Orders.State.COMPLETED:
-            offer_data_json = '{' + offer_data[0:index_of_seller_signature]
-            print offer_data_json
-            offer_data_json = json.loads(str(offer_data_json))
-        else:
-            offer_data_json = '{"Seller": {' + offer_data[0:index_of_seller_signature - 2]
-            offer_data_json = json.loads(str(offer_data_json))
+            if state in (
+                Orders.State.NEED_TO_PAY,
+                Orders.State.NOTARIZED,
+                Orders.State.WAITING_FOR_MERCHANT,
+                Orders.State.BUYER_PAID,
+                Orders.State.PAID,
+                Orders.State.SHIPPED
+            ):
+                offer_data_json = offer_data[0:index_of_seller_signature - 2]
+                offer_data_json = json.loads(offer_data_json)
+            elif state in (Orders.State.WAITING_FOR_PAYMENT, Orders.State.WAITING_FOR_MERCHANT):
+                offer_data_json = offer_data[0:index_of_seller_signature - 4]
+                offer_data_json = json.loads(str(offer_data_json))
+            elif state == Orders.State.COMPLETED:
+                offer_data_json = '{' + offer_data[0:index_of_seller_signature]
+                print offer_data_json
+                offer_data_json = json.loads(str(offer_data_json))
+            else:
+                offer_data_json = '{"Seller": {' + offer_data[0:index_of_seller_signature - 2]
+                offer_data_json = json.loads(str(offer_data_json))
+        except ValueError as e:
+            print 'JSON error: %s' % e
+            return ''
 
         return offer_data_json
 
     @staticmethod
     def get_buyer_json(raw_contract, state):
+
+        print raw_contract, state
 
         if state in [Orders.State.NOTARIZED, Orders.State.NEED_TO_PAY]:
             start_line = 8
