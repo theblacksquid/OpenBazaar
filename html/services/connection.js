@@ -66,6 +66,8 @@ angular.module('app').service('Connection', ['$rootScope', '$timeout', function(
     var scope = $rootScope.$new(true);
 
     var socket = new Connection(function(data){
+
+      // Emit to browser
       scope.$emit('message', data);
 
       if (typeof data == 'object' && typeof data.type == 'string') {

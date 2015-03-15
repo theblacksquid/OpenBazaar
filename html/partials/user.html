@@ -137,12 +137,14 @@
                  <div style="margin-bottom:10px"><img src="img/ajax-loader.gif" width="25"/> Looking for contracts...</div>
             </div>
 
-            <div data-ng-show="no_listings">No listings available at this time.</div>
+            <div data-ng-show="no_listings || !store_listings">No listings available at this time.</div>
 
             <div class="div-listing col-sm-4 col-xs-6" style="padding:5px" data-ng-repeat="listing in store_listings">
 
-                <a href="" data-ng-click="open('lg', myself, page.pubkey, listing, trusted_notaries, settings.trustedArbiters, settings.btc_pubkey)"><img class="img-thumbnail" data-ng-src="{{listing.contract_body.Contract.item_images}}" width="100%"/></a>
-                        <h4 style="margin-bottom:0"><a href="" data-ng-click="open('lg', myself, page.pubkey, listing.contract_body.Contract.item_title, listing.contract_body.Contract.item_price, listing.contract_body.Contract.item_description, listing.contract_body.Contract.item_images, listing.key, listing.signed_contract_body, settings.notaries, settings.trustedArbiters, settings.btc_pubkey, listing.contract_body.Seller.seller_GUID)" class="trim-info">{{listing.contract_body.Contract.item_title}}</a></h4>
+                <a href="" data-ng-click="open('lg', myself, page.pubkey, listing, trusted_notaries, settings.trustedArbiters, settings.btc_pubkey)">
+                    <img class="img-thumbnail" data-ng-src="{{listing.item_remote_images[0]}}" width="100%"/></a>
+
+                        <h4 style="margin-bottom:0"><a href="" data-ng-click="open('lg', myself, page.pubkey, listing, trusted_notaries, settings.trustedArbiters, settings.btc_pubkey)" class="trim-info">{{listing.contract_body.Contract.item_title}}</a></h4>
                         <span style="font-size:16px;">&#3647;{{listing.contract_body.Contract.item_price}}</span>
             </div>
 

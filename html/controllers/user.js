@@ -11,7 +11,9 @@ angular.module('app')
 
             $scope.page_loading = true;
             $scope.path = $location.path();
+
             $scope.$emit('sidebar', true);
+
             $scope.guid = $routeParams.userId;
 
             /**
@@ -21,13 +23,33 @@ angular.module('app')
 
             $scope.$evalAsync( function( $scope ) {
 
+
+                    var listeners = Connection.$$listeners;
+
+
+                    console.log(listeners);
+
+                    listeners.load_page = [];
                     Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
-                    Connection.$on('store_contracts', function(e, msg){ $scope.parse_store_listings(msg); });
+
+                    if(!listeners.hasOwnProperty('store_contracts')) {
+                        Connection.$on('store_contracts', function(e, msg){ $scope.parse_store_listings(msg); });
+                    }
+                    listeners.store_contract = [];
                     Connection.$on('store_contract', function(e, msg){ $scope.parse_store_contract(msg); });
+
+                    listeners.page = [];
                     Connection.$on('page', function(e, msg){ $scope.parse_page(msg); });
+
                     Connection.$on('store_products', function(e, msg){ $scope.parse_store_products(msg); });
-                    Connection.$on('new_listing', function(e, msg){ $scope.parse_new_listing(msg); });
+                    //if(!listeners.hasOwnProperty('new_listing')) {
+                    //    Connection.$on('new_listing', function(e, msg){ $scope.parse_new_listing(msg); });
+                    //}
+
+                    listeners.no_listings_found = [];
                     Connection.$on('no_listings_found', function(e, msg){ $scope.handle_no_listings(); });
+
+                    listeners.reputation_pledge_update = [];
                     Connection.$on('reputation_pledge_update', function(e, msg){ $scope.parse_reputation_pledge_update(msg); });
 
             });
@@ -75,6 +97,7 @@ angular.module('app')
             $scope.queryShop = function(guid) {
 
                 $scope.awaitingShop = guid;
+
                 console.log('Querying for shop: ', guid);
 
                 // Tell the user store is probably offline if no response
@@ -97,6 +120,7 @@ angular.module('app')
 
             $scope.parse_page = function(msg) {
 
+                console.log('scope', $scope);
                 $scope.page_loading = false;
 
                 console.log('Parsing Store Page: ', msg);
@@ -118,7 +142,13 @@ angular.module('app')
                     $scope.currentReviews = $scope.reviews[msg.pubkey];
                     $scope.page = msg;
                     $scope.page.reputation_pledge = 0;
+
+                    if(('subpanel' in $scope) && $scope.subpanel == 'listings') {
+                        $scope.queryStoreProducts($scope.guid);
+                    }
+
                 }
+                console.log($scope.page);
 
             };
 
@@ -140,6 +170,8 @@ angular.module('app')
                 });
                 $('#listing-loader').hide();
                 console.log('New Listing', $scope.store_listings);
+                $scope.$apply();
+                $scope.no_listings = false;
             };
 
             $scope.no_listings = null;
@@ -150,18 +182,30 @@ angular.module('app')
 
             $scope.parse_store_contract = function(msg) {
                 var contract = msg.contract;
+                var contract_exists = false;
 
-                $scope.store_listings.push(contract);
-
-                $scope.store_listings = jQuery.unique($scope.store_listings);
-                $.each($scope.store_listings, function(index, contract) {
-                    if (jQuery.isEmptyObject(contract.contract_body.Contract.item_images)) {
-                        contract.contract_body.Contract.item_images = "img/no-photo.png";
+                $.each($scope.store_listings, function(i, listing) {
+                    console.log(listing.key, msg.contract.key);
+                    if(listing.key == msg.contract.key) {
+                        contract_exists = true;
                     }
                 });
 
+                if('item_images' in contract) {
+                    if (jQuery.isEmptyObject(contract.item_images)) {
+                        contract.item_images = "img/no-photo.png";
+                    }
+                } else {
+                    contract.item_images = "img/no-photo.png";
+                }
+
+                if(!contract_exists) {
+                    $scope.store_listings.push(contract);
+                }
+
                 $('#listing-loader').hide();
                 console.log('New Listing', $scope.store_listings);
+                $scope.no_listings = false;
             };
 
             $scope.parse_store_listings = function(msg) {
@@ -199,7 +243,6 @@ angular.module('app')
             };
             $scope.parse_listing_results = function(msg) {
                 $scope.store_products = msg.contracts;
-
             };
 
             function resetStorePanels() {
@@ -222,7 +265,7 @@ angular.module('app')
                     case 'storeProducts':
                         $('#listing-loader').show();
                         $scope.store_listings = [];
-                        $scope.queryStoreProducts($scope.guid);
+                        $scope.subpanel = 'listings';
                         Connection.send('get_notaries', {});
                         break;
                     case 'storeOrders':
@@ -341,6 +384,7 @@ angular.module('app')
                 $scope.productPrice = (listing.contract_body.Contract.item_price !== "") ? +listing.contract_body.Contract.item_price : 0;
                 $scope.productDescription = listing.contract_body.Contract.item_desc;
                 $scope.productImageData = listing.contract_body.Contract.item_images;
+                $scope.productRemoteImages = listing.contract_body.Contract.item_remote_images;
                 $scope.shippingPrice = (listing.contract_body.Contract.item_delivery.hasOwnProperty('shipping_price')) ? listing.contract_body.Contract.item_delivery.shipping_price : 0;
                 $scope.totalPrice = +(parseFloat($scope.productPrice) + parseFloat($scope.shippingPrice)).toPrecision(8);
                 $scope.productQuantity = 1;

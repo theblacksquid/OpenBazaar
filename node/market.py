@@ -600,6 +600,7 @@ class Market(object):
                 'item_desc': contract_field.get('item_desc'),
                 'item_condition': contract_field.get('item_condition'),
                 'item_quantity_available': contract_field.get('item_quantity'),
+                'item_remote_images': contract_field.get('item_remote_images')
             })
 
         return {

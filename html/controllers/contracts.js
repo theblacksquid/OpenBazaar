@@ -156,6 +156,7 @@ angular.module('app')
                     $scope.contract.productTitle = contract.item_title;
                     $scope.contract.productDescription = contract.item_desc;
                     $scope.contract.productImage = contract.item_images;
+                    $scope.contract.remoteImages = contract.item_remote_images;
                     $scope.edit = true;
 
                 } else {
@@ -166,6 +167,7 @@ angular.module('app')
                     $scope.contracts_current_page = 0;
                     $scope.contract.productPrice = 0.5;
                     $scope.contract.productShippingPrice = 0;
+                    $scope.contract.remoteImages = [];
                     $scope.edit = false;
                 }
 
