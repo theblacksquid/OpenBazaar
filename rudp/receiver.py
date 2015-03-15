@@ -156,7 +156,11 @@ class Receiver(object):
                         message.body = payload
                     else:
                         self.log.debug('Appending to Waiting Message: %s', self._message)
-                        message.body += payload
+                        if payload in message.body:
+                            self.log.debug('This content is already in here.')
+                            return
+                        else:
+                            message.body += payload
 
                     message._next_sequence_number = packet._sequenceNumber + 1
                     message.synced = True
@@ -177,7 +181,11 @@ class Receiver(object):
                 self.log.debug('Receive Reset Packet')
 
                 if message._next_sequence_number == packet.get_sequence_number():
-                    message.body += payload
+                    if payload in message.body:
+                        self.log.debug('This content is already in here.')
+                        return
+                    else:
+                        message.body += payload
                     self.log.debug('Message Updated: %s', message.body)
                     message.reset()
                 self._packet_sender.send(Packet.createAcknowledgementPacket(
@@ -192,7 +200,11 @@ class Receiver(object):
                 if message._packets.count(packet) == 0:
                     message._packets.insertSorted(packet)
                     if packet.get_sequence_number() == message._next_sequence_number:
-                        message.body += payload
+                        if payload in message.body:
+                            self.log.debug('This content is already in here.')
+                            return
+                        else:
+                            message.body += payload
                         message._next_sequence_number += 1
                         # message._packets.seek()
                         # if message._packets.hasNext():
@@ -317,7 +329,10 @@ class Receiver(object):
             payload = data[1]
 
             self.log.debug('Before Updated 2 Message: %s', self._message)
-            self._message += payload
+            if payload in self._message:
+                self.log.debug('This content is already in here.')
+            else:
+                self._message += payload
             self.log.debug('After Updated Message: %s', self._message)
 
             # [1] Never send packets directly!
