@@ -153,7 +153,7 @@ class PeerConnection(GUIDMixin, object):
         return True
 
     def send_relayed_ping(self):
-        self.log.debug('Sending Relay Ping')
+        self.log.debug('Sending Relay Ping to: %s', self)
         for x in self.transport.dht.active_peers:
             if x.hostname == 'seed2.openbazaar.org' or x.hostname == '205.186.156.31':
                 self.sock.sendto('send_relay_ping %s' % self.guid, (x.hostname, x.port))
@@ -213,10 +213,10 @@ class PeerConnection(GUIDMixin, object):
                     if self.nat_type == 'Restric NAT' and not self.punching and not self.relaying:
                         self.log.debug('Found restricted NAT client')
                         self.transport.start_mediation(self.guid)
-                    if self.nat_type == 'Full Cone':
+                    if self.nat_type == 'Full Cone' and not self.relaying:
                         self.send_to_rudp(serialized)
                         return
-                    if self.relaying:
+                    else:
                         self.log.debug('Relay through seed')
                         # self.transport.relay_message(serialized, self.guid)
                         self.send_to_rudp(serialized)
