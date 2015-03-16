@@ -72,7 +72,8 @@ class DHT(object):
                 del self.active_peers[i]
         self.routing_table.remove_contact(guid)
 
-        del self.transport.mediation_mode[guid]
+        if guid in self.transport.mediation_mode:
+            del self.transport.mediation_mode[guid]
 
         # Refresh GUI peer list
         if self.transport.handler:
