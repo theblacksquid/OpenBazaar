@@ -248,49 +248,6 @@ class CryptoPeerConnection(PeerConnection):
         self.sin = sin
         self.waiting = False  # Waiting for ping-pong
 
-
-    def start_handshake(self, initial_handshake_cb=None):
-        # TODO: Think about removing completely
-        self.log.debug('Deprecated')
-        # def cb(msg, handshake_cb=None):
-        #     if not msg:
-        #         return
-        #
-        #     self.log.debugv('ALIVE PEER %s', msg[0])
-        #     msg = msg[0]
-        #     try:
-        #         msg = json.loads(msg)
-        #     except ValueError:
-        #         self.log.error('[start_handshake] Bad JSON response: %s', msg)
-        #         return
-        #
-        #     # Update Information
-        #     self.guid = msg['senderGUID']
-        #     self.sin = self.generate_sin(self.guid)
-        #     self.pub = msg['pubkey']
-        #     self.nickname = msg['senderNick']
-        #
-        #     # Add this peer to active peers list
-        #     for idx, peer in enumerate(self.transport.dht.activePeers):
-        #         if peer.guid == self.guid or \
-        #                         (peer.hostname, peer.port) == (self.hostname, self.port):
-        #             self.transport.dht.activePeers[idx] = self
-        #             self.transport.dht.add_peer(
-        #                 self.hostname,
-        #                 self.port,
-        #                 self.pub,
-        #                 self.guid,
-        #                 self.nickname
-        #             )
-        #             return
-        #
-        #     self.transport.dht.activePeers.append(self)
-        #     self.transport.dht.routing_table.addContact(self)
-        #     self.log.debug('Active Peers %s', self.transport.dht.activePeers)
-        #
-        #     if initial_handshake_cb is not None:
-        #         initial_handshake_cb()
-
     def __repr__(self):
         return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s nat: %s relaying: %s}' % (
             self.guid, self.hostname, self.port, self.pub, self.reachable, self.nat_type,
@@ -311,6 +268,10 @@ class CryptoPeerConnection(PeerConnection):
         """
         assert self.pub, "Attempt to encrypt without key."
         cryptor = Cryptor(pubkey_hex=self.pub)
+
+        # zlib the data
+        data = data.encode('zlib')
+
         return cryptor.encrypt(data)
 
     def send(self, data, callback=None):
@@ -543,6 +504,10 @@ class CryptoPeerListener(PeerListener):
             try:
 
                 message = self.cryptor.decrypt(encrypted_message)
+
+                # un-zlib data
+                message = message.decode('zlib')
+
                 message = json.loads(message)
 
                 signature = message['sig'].decode('hex')
