@@ -43,6 +43,7 @@ class PeerConnection(GUIDMixin, object):
         self.seed = False
 
         self.init_packetsender()
+        self.setup_emitters()
 
         if nat_type == 'Symmetric NAT':
             self.reachable = True
@@ -85,7 +86,7 @@ class PeerConnection(GUIDMixin, object):
                 self.pinging = False
                 ioloop.IOLoop.instance().call_later(2, self.transport.search_for_my_node)
 
-                self.setup_emitters()
+
 
             ioloop.IOLoop.instance().call_later(2, no_response)
 
