@@ -6,6 +6,7 @@ import rfc3986
 import stun
 from urlparse import urlparse
 import re
+import logging
 
 
 # List taken from natvpn project and tested manually.
@@ -20,7 +21,6 @@ _STUN_SERVERS = (
 )
 
 IP_DETECT_SITE = 'https://icanhazip.com'
-
 
 def set_stun_servers(servers=_STUN_SERVERS):
     """Manually set the list of good STUN servers."""
@@ -143,6 +143,63 @@ def is_valid_uri(uri):
         and is_valid_hostname(hostname)
     )
 
+
+class PacketStats(object):
+    def __init__(self):
+        self.log = logging.getLogger(
+            '%s' % self.__class__.__name__
+        )
+        # incoming
+        self.num_packets_incoming = 0
+        self.total_bytes_incoming = 0
+        # outgoing
+        self.num_packets_outgoing = 0
+        self.total_bytes_outgoing = 0
+
+    def add_incoming_packet(self, packet_size):
+        if packet_size is None or packet_size < 0:
+            return
+        self.num_packets_incoming += 1
+        self.total_bytes_incoming += packet_size
+
+    def add_outgoing_packet(self, packet_size):
+        if packet_size is None or packet_size < 0:
+            return
+        self.num_packets_outgoing += 1
+        self.total_bytes_outgoing += packet_size
+
+    def logStats(self, incoming=True, outgoing=True):
+        if incoming:
+            self.log.info("Incoming Packet Stats.")
+            self.log.info("Total Incoming Packets:       {}".format(self.num_packets_incoming))
+            self.log.info("Total Incoming bytes:         {}".format(self.total_bytes_incoming))
+            self.log.info("Average Incoming Packet Size: {}".format(self.total_bytes_incoming/self.num_packets_incoming))
+
+        if outgoing:
+            self.log.info("Outgoing Packet Stats.")
+            self.log.info("Total Outgoing Packets:       {}".format(self.num_packets_outgoing))
+            self.log.info("Total Outgoing bytes:         {}".format(self.total_bytes_outgoing))
+            self.log.info("Average Outgoing Packet Size: {}".format(self.total_bytes_outgoing/self.num_packets_outgoing))
+
+PACKET_STATS = PacketStats()
+PACKET_STATS_LOGS_EVERY_N_PACKETS = 50
+
+def log_outgoing_packet(data, log=None):
+    stats = PACKET_STATS
+    if data is not None:
+        stats.add_outgoing_packet(len(data))
+    if stats.num_packets_outgoing % PACKET_STATS_LOGS_EVERY_N_PACKETS == 0:
+        stats.logStats(incoming=False)
+
+def log_incoming_packet(packet, log=None):
+    stats = PACKET_STATS
+    if packet is not None:
+        if hasattr(packet,'_size'):
+            stats.add_incoming_packet(packet._size)
+        else:
+            stats.add_incoming_packet(len(packet))
+    if stats.num_packets_incoming % PACKET_STATS_LOGS_EVERY_N_PACKETS == 0:
+        stats.logStats(outgoing=False)
 
 def main():
     test_stun_servers()

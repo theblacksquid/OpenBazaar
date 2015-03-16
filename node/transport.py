@@ -284,6 +284,7 @@ class CryptoTransportLayer(TransportLayer):
                     packet = Packet(data, packet_buffer=True)
 
                     if packet._finish:
+
                         inbound_peer.reset()
                         return
                         # del self._connections[address_key]

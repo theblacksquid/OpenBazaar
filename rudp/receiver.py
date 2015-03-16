@@ -131,7 +131,6 @@ class Receiver(object):
         self.log.debug('Receive Packet #%s', packet.get_sequence_number())
 
         try:
-
             packet_data = packet._payload.split('|')
 
             message_id = packet_data[0]
