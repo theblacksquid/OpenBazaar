@@ -288,6 +288,7 @@ class CryptoTransportLayer(TransportLayer):
                         return
                         # del self._connections[address_key]
                     else:
+
                         inbound_peer._rudp_connection.receive(packet)
 
                     self.log.debug('Updated peers: %s', self.dht.active_peers)
@@ -832,15 +833,6 @@ class CryptoTransportLayer(TransportLayer):
         if guid == self.guid:
             self.log.error('Cannot get CryptoPeerConnection for your own node')
             return
-
-        # self.log.debug(
-        #     'Getting CryptoPeerConnection'
-        #     '\nGUID: %s',
-        #     '\nHost: %s:%s' % (hostname, port),
-        #     '\nPubkey:%s'
-        #     '\nNickname:%s',
-        #     guid, hostname, '%d' % port, pubkey, nickname
-        # )
 
         if guid not in self.peers:
             self.peers[guid] = connection.CryptoPeerConnection(
