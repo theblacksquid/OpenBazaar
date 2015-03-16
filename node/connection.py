@@ -204,8 +204,8 @@ class PeerConnection(GUIDMixin, object):
                     if self.relaying or self.nat_type == 'Symmetric NAT' or self.transport.nat_type == 'Symmetric NAT':
                         # Relay through seed server
                         self.log.debug('Relay through seed')
-                        # self.transport.relay_message(serialized, self.guid)
-                        self.send_to_rudp(serialized)
+                        self.transport.relay_message(serialized, self.guid)
+                        # self.send_to_rudp(serialized)
                         return
                     else:
                         self.send_to_rudp(serialized)
