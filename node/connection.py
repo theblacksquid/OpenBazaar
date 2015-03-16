@@ -42,6 +42,8 @@ class PeerConnection(GUIDMixin, object):
         self.last_reached = time.time()
         self.seed = False
 
+        self.init_packetsender()
+
         if nat_type == 'Symmetric NAT':
             self.reachable = True
             self.relaying = True
@@ -68,7 +70,7 @@ class PeerConnection(GUIDMixin, object):
                     self.log.error('No response from peer.')
                     self.reachable = True
                     self.relaying = True
-                    self.init_packetsender()
+
                     self.log.debug('Relay Hello through Seed')
                     hello_msg['relayed'] = True
 
@@ -76,10 +78,10 @@ class PeerConnection(GUIDMixin, object):
                     self.send_relayed_ping()
                 else:
                     self.log.debug('Sending Hello')
-                    self.init_packetsender()
                     self.send_raw(
                         json.dumps(hello_msg)
                     )
+
                 self.pinging = False
                 ioloop.IOLoop.instance().call_later(2, self.transport.search_for_my_node)
 
@@ -543,6 +545,8 @@ class CryptoPeerListener(PeerListener):
 
                 signature = message['sig'].decode('hex')
                 signed_data = message['data']
+
+                self.log.debug('Decrypted Data: %s', message)
 
                 if CryptoPeerListener.validate_signature(signature, signed_data):
                     message = signed_data.decode('hex')
