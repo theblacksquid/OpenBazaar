@@ -37,6 +37,7 @@ class PeerConnection(GUIDMixin, object):
         self.port = port
         self.nickname = nickname
         self.nat_type = nat_type
+        self.pinging = False
         self.relaying = False
         self.reachable = False
         self.last_reached = time.time()
