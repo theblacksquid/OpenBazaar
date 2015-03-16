@@ -45,7 +45,6 @@ class Window(object):
             # pylint: disable=unused-variable
             @self._reset_packet.ee.on('acknowledge')
             def on_acknowledge():
-                self._acknowledged.append(self._reset_packet.get_sequence_number())
                 self.log.debug('ACKNOWLEDGED PACKETS: %s', self._acknowledged)
                 self.log.debug('done for real')
                 self.ee.emit('done')
@@ -101,7 +100,8 @@ class Window(object):
 
         for i in range(0, len(self._packets)):
             if self._packets[i].get_sequence_number() == sequence_number:
-                if sequence_number not in self._acknowledged:
+                self.log.debug('%s seq %s', sequence_number, self._acknowledged)
+                if not sequence_number in self._acknowledged:
                     self._acknowledged.append(sequence_number)
                     self.log.debug('ACKD PACKETS: %s', self._acknowledged)
                     self._packets[i].acknowledge()
