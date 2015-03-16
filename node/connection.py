@@ -97,7 +97,7 @@ class PeerConnection(GUIDMixin, object):
             self.log.debug('Pinging: %s', self.guid)
 
             if time.time() - self.last_reached <= 60:
-                if not self.relaying:
+                if not self.relaying or self.transport.seed_mode:
                     self.send_ping()
                 else:
                     self.send_relayed_ping()
