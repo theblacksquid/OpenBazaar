@@ -22,11 +22,12 @@ class Window(object):
         self.ee = EventEmitter()
 
         self._packets = packets
+        self._acknowledged = []
 
     def send(self):
         # Our packets to send.
         pkts = list(self._packets)
-        packet_count = len(pkts)
+        pkt_count = len(pkts)
 
         if len(pkts) < 1:
             self.ee.emit('done')
@@ -44,6 +45,8 @@ class Window(object):
             # pylint: disable=unused-variable
             @self._reset_packet.ee.on('acknowledge')
             def on_acknowledge():
+                self._acknowledged.append(self._reset_packet.get_sequence_number())
+                self.log.debug('ACKNOWLEDGED PACKETS: %s', self._acknowledged)
                 self.log.debug('done for real')
                 self.ee.emit('done')
 
@@ -53,7 +56,7 @@ class Window(object):
         @self.synchronization_packet.ee.on('acknowledge')
         def on_sync_knowledge():  # pylint: disable=unused-variable
 
-            self.log.debug('Acknowledging sync packet')
+            self.log.debug('ACK SYNC: #%s', self.synchronization_packet.get_sequence_number())
 
             # We will either notify the owning class that this window has finished
             # sending all of its packets (that is, if this window only had one packet
@@ -61,49 +64,48 @@ class Window(object):
             # they have been acknowledged.
 
             if self._reset_packet is self.synchronization_packet:
-                self.log.debug('Only one packet in this message. We are done.')
+                self.log.debug('SYNC is RESET. DONE')
                 self.ee.emit('done')
                 return
             elif not len(pkts):
                 # This means that this window only had two packets, and the second one
                 # was a reset packet.
+                self.log.debug('RESET SENT: #%s', self.synchronization_packet.get_sequence_number())
                 self._reset_packet.send()
                 return
 
             # pylint: disable=unused-variable
             @self.ee.on('acknowledge')
             def on_sender_acknowledge():
-                self.acknowledged = 0
                 # This means that it is now time to send the reset packet.
+                self.log.debug('RESET SENT: #%s', self.synchronization_packet.get_sequence_number())
                 self._reset_packet.send()
 
-            # And if there are more than two packets in this window, then send all
-            # other packets.
-            self.acknowledged = 0
-
             for packet in pkts:
-                self.log.debug('Sending another packet')
-
                 # pylint: disable=unused-variable
                 @packet.ee.on('acknowledge')
                 def on_packet_acknowledge():
-                    self.acknowledged += 1
-                    if self.acknowledged == len(pkts):
-                        self.log.debug('ackd all packets')
+
+                    if len(self._acknowledged) == len(self._packets)-1:
+                        self.log.debug('ALL PACKETS ACKD')
                         self.ee.emit('acknowledge')
 
                 packet.send()
 
+
+        self.log.debug('SYNC SENT: #%s', self.synchronization_packet.get_sequence_number())
         self.synchronization_packet.send()
 
     def verify_acknowledgement(self, sequence_number):
-        self.log.debug('Ack #%s in %s', sequence_number, len(self._packets))
+        self.log.debug('ACK #%s of %s packets', sequence_number, len(self._packets))
+
         for i in range(0, len(self._packets)):
-            self.log.debug('Check if %s matches %s' % (self._packets[i].get_sequence_number(), sequence_number))
             if self._packets[i].get_sequence_number() == sequence_number:
-                self.log.debug('Found packet to ack')
-                self._packets[i].acknowledge()
-                return
+                if sequence_number not in self._acknowledged:
+                    self._acknowledged.append(sequence_number)
+                    self.log.debug('ACKD PACKETS: %s', self._acknowledged)
+                    self._packets[i].acknowledge()
+                    return
 
 
 class Sender(object):
@@ -187,6 +189,6 @@ class Sender(object):
                 self.log.debug('All done.')
 
     def verify_acknowledgement(self, sequence_number):
-        self.log.debug('Verifying Acknowledgement: %s', self._sending)
+        self.log.debug('ACK: %s', sequence_number)
         if self._sending:
             self._sending.verify_acknowledgement(sequence_number)

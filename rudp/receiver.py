@@ -28,6 +28,14 @@ class IncomingMessage(object):
         self.body = ''
         self.waiting = False
 
+    def add_to_body(self, payload):
+        if payload in self.body:
+            self.log.debug('This content is already in the body.')
+            return
+        else:
+            self.body += payload
+
+
     def reset(self):
         self.log.debug('IncomingMessage Reset')
         self.log.debug('Self Packets: %s', self._packets)
@@ -156,11 +164,7 @@ class Receiver(object):
                         message.body = payload
                     else:
                         self.log.debug('Appending to Waiting Message: %s', self._message)
-                        if payload in message.body:
-                            self.log.debug('This content is already in here.')
-                            return
-                        else:
-                            message.body += payload
+                        message.add_to_body(payload)
 
                     message._next_sequence_number = packet._sequenceNumber + 1
                     message.synced = True
