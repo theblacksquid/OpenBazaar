@@ -33,10 +33,7 @@ class Connection(object):
 
     def send(self, data):
         self._sender.send(data)
-
-        # TODO: we have no way of knowing for now what the --log-level specified passed was.
-        if self.log.level >= 0:
-            log_outgoing_packet(data, self.log)
+        log_outgoing_packet(data)
 
 
     def receive(self, packet):
@@ -44,7 +41,4 @@ class Connection(object):
             self._sender.verify_acknowledgement(packet._sequenceNumber)
         else:
             self._receiver.receive(packet)
-
-        # TODO: we have no way of knowing for now what the --log-level specified passed was.
-        if self.log.level >= 0:
-            log_incoming_packet(packet, self.log)
+        log_incoming_packet(packet)

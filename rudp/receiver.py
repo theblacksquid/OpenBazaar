@@ -1,10 +1,7 @@
+import logging
+from pyee import EventEmitter
 from rudp.packet import Packet
 from rudp.sortedlist import SortedList
-import rudp.constants
-import logging
-import rudp.helpers
-
-from pyee import EventEmitter
 
 
 class IncomingMessage(object):

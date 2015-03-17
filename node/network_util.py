@@ -1,12 +1,11 @@
 import sys
-
+from urlparse import urlparse
+import re
+import logging
 import IPy
 import requests
 import rfc3986
 import stun
-from urlparse import urlparse
-import re
-import logging
 
 
 # List taken from natvpn project and tested manually.
@@ -184,14 +183,20 @@ class PacketStats(object):
 PACKET_STATS = PacketStats()
 PACKET_STATS_LOGS_EVERY_N_PACKETS = 50
 
-def log_outgoing_packet(data, log=None):
+def log_outgoing_packet(data):
+    if PACKET_STATS is None:
+        return
+
     stats = PACKET_STATS
     if data is not None:
         stats.add_outgoing_packet(len(data))
     if stats.num_packets_outgoing % PACKET_STATS_LOGS_EVERY_N_PACKETS == 0:
         stats.logStats(incoming=False)
 
-def log_incoming_packet(packet, log=None):
+def log_incoming_packet(packet):
+    if PACKET_STATS is None:
+        return
+
     stats = PACKET_STATS
     if packet is not None:
         if hasattr(packet,'_size'):

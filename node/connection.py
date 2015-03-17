@@ -3,7 +3,6 @@ import logging
 from pprint import pformat
 from pyee import EventEmitter
 from threading import Thread
-from node import constants
 from node.network_util import log_incoming_packet, log_outgoing_packet
 import sys
 import time
@@ -88,8 +87,6 @@ class PeerConnection(GUIDMixin, object):
                 self.pinging = False
                 ioloop.IOLoop.instance().call_later(2, self.transport.search_for_my_node)
 
-
-
             ioloop.IOLoop.instance().call_later(2, no_response)
 
         self.seed = False
@@ -115,7 +112,7 @@ class PeerConnection(GUIDMixin, object):
                 if self.transport.handler:
                     self.transport.handler.refresh_peers()
 
-            # yappi.get_thread_stats().print_all()
+                    # yappi.get_thread_stats().print_all()
 
         self.ping_task = ioloop.PeriodicCallback(pinger, 5000, io_loop=ioloop.IOLoop.instance())
         self.ping_task.start()
@@ -127,7 +124,7 @@ class PeerConnection(GUIDMixin, object):
         @self._rudp_connection._sender.ee.on('timeout')
         def on_timeout(data):  # pylint: disable=unused-variable
             self.log.debug('Node Sender Timed Out')
-            #self.transport.dht.remove_peer(self.guid)
+            # self.transport.dht.remove_peer(self.guid)
 
         @self._rudp_connection.ee.on('data')
         def handle_recv(msg):  # pylint: disable=unused-variable
@@ -138,22 +135,22 @@ class PeerConnection(GUIDMixin, object):
             if payload[:1] == '{':
                 try:
                     payload = json.loads(msg.get('payload'))
-                    self.transport.listener._on_raw_message(payload)
+                    self.transport.listener.on_raw_message(payload)
                     return
                 except Exception as e:
                     self.log.debug('Problem with serializing: %s', e)
             else:
                 try:
                     payload = msg.get('payload').decode('hex')
-                    self.transport.listener._on_raw_message(payload)
+                    self.transport.listener.on_raw_message(payload)
                 except Exception as e:
                     self.log.debug('not yet %s', e)
-                    self.transport.listener._on_raw_message(msg.get('payload'))
+                    self.transport.listener.on_raw_message(msg.get('payload'))
 
 
     def send_ping(self):
         self.sock.sendto('ping', (self.hostname, self.port))
-        log_outgoing_packet('ping', self.log)
+        log_outgoing_packet('ping')
         return True
 
     def send_relayed_ping(self):
@@ -161,7 +158,7 @@ class PeerConnection(GUIDMixin, object):
         for x in self.transport.dht.active_peers:
             if x.hostname == 'seed2.openbazaar.org' or x.hostname == '205.186.156.31':
                 self.sock.sendto('send_relay_ping %s' % self.guid, (x.hostname, x.port))
-                log_outgoing_packet('send_relay_ping %s' % self.guid, (x.hostname, x.port), self.log)
+                log_outgoing_packet('send_relay_ping %s' % self.guid, (x.hostname, x.port))
         return True
 
     def init_packetsender(self):
@@ -185,7 +182,7 @@ class PeerConnection(GUIDMixin, object):
 
     def send_to_sock(self, data):
         self.sock.sendto(data, (self.hostname, self.port))
-        log_outgoing_packet(data, self.log)
+        log_outgoing_packet(data)
 
     def send(self, data, callback):
         self.send_raw(json.dumps(data), callback)
@@ -197,8 +194,8 @@ class PeerConnection(GUIDMixin, object):
             return
 
         # if self.relaying:
-        #     self.log.debug('Relay through seed')
-        #     self.transport.relay_message(serialized, self.guid)
+        # self.log.debug('Relay through seed')
+        # self.transport.relay_message(serialized, self.guid)
         #     return
 
         def sending_out():
@@ -229,6 +226,7 @@ class PeerConnection(GUIDMixin, object):
                         return
 
             ioloop.IOLoop.instance().call_later(5, sending_out)
+
         sending_out()
 
     def send_to_rudp(self, data):
@@ -242,7 +240,6 @@ class PeerConnection(GUIDMixin, object):
 
 
 class CryptoPeerConnection(PeerConnection):
-
     def __init__(self, transport, hostname, port, pub=None, guid=None, nickname="",
                  sin=None, rudp_connection=None, peer_socket=None, nat_type=None):
 
@@ -421,12 +418,12 @@ class PeerListener(GUIDMixin):
                 except socket.error:
                     # No data. This is normal.
                     pass
-                # except AttributeError as err:
-                #     print 'Packet was jacked up: %s', err
+                    # except AttributeError as err:
+                    # print 'Packet was jacked up: %s', err
 
         Thread(target=start_listening).start()
 
-    def _on_raw_message(self, serialized):
+    def on_raw_message(self, serialized):
         self.log.info("connected %d", len(serialized))
         try:
             msg = json.loads(serialized[0])
@@ -444,7 +441,6 @@ class PeerListener(GUIDMixin):
 
 
 class CryptoPeerListener(PeerListener):
-
     def __init__(self, hostname, port, pubkey, secret, guid, data_cb):
 
         super(CryptoPeerListener, self).__init__(hostname, port, guid, data_cb)
@@ -475,7 +471,7 @@ class CryptoPeerListener(PeerListener):
 
         return 'type' in message
 
-    def _on_raw_message(self, serialized):
+    def on_raw_message(self, serialized):
         """
         Handles receipt of encrypted/plaintext message
         and passes to appropriate callback.
@@ -491,7 +487,7 @@ class CryptoPeerListener(PeerListener):
 
             # If relayed then unwrap and process again
             if message['type'] == 'relayed_msg':
-                self._on_raw_message(message['data'].decode('hex'))
+                self.on_raw_message(message['data'].decode('hex'))
                 return
 
         self.log.debugv('Received message of type "%s"',

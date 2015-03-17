@@ -1,14 +1,12 @@
+import math
+import random
+import logging
+import time
+from pyee import EventEmitter
 from rudp.packet import Packet
 from rudp.pendingpacket import PendingPacket
 import rudp.constants
 import rudp.helpers
-import math
-import random
-import logging
-
-from pyee import EventEmitter
-import time
-from tornado import ioloop
 
 
 class Window(object):

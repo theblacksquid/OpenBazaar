@@ -1,4 +1,3 @@
-import node.constants
 from collections import defaultdict
 import hashlib
 import json
@@ -9,14 +8,12 @@ import sys
 import traceback
 import xmlrpclib
 import time
-
 import gnupg
 import obelisk
 import bitcoin
 from pysqlcipher.dbapi2 import OperationalError, DatabaseError
 from tornado import ioloop
 from tornado.ioloop import PeriodicCallback
-
 from node import connection, network_util, trust
 from node.dht import DHT
 from rudp.packet import Packet
