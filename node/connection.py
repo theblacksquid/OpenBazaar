@@ -3,7 +3,7 @@ import logging
 from pprint import pformat
 from pyee import EventEmitter
 from threading import Thread
-from node.network_util import log_incoming_packet, log_outgoing_packet
+from node.network_util import count_incoming_packet, count_outgoing_packet
 import sys
 import time
 
@@ -150,7 +150,7 @@ class PeerConnection(GUIDMixin, object):
 
     def send_ping(self):
         self.sock.sendto('ping', (self.hostname, self.port))
-        log_outgoing_packet('ping')
+        count_outgoing_packet('ping')
         return True
 
     def send_relayed_ping(self):
@@ -158,7 +158,7 @@ class PeerConnection(GUIDMixin, object):
         for x in self.transport.dht.active_peers:
             if x.hostname == 'seed2.openbazaar.org' or x.hostname == '205.186.156.31':
                 self.sock.sendto('send_relay_ping %s' % self.guid, (x.hostname, x.port))
-                log_outgoing_packet('send_relay_ping %s' % self.guid, (x.hostname, x.port))
+                count_outgoing_packet('send_relay_ping %s' % self.guid, (x.hostname, x.port))
         return True
 
     def init_packetsender(self):
@@ -182,7 +182,7 @@ class PeerConnection(GUIDMixin, object):
 
     def send_to_sock(self, data):
         self.sock.sendto(data, (self.hostname, self.port))
-        log_outgoing_packet(data)
+        count_outgoing_packet(data)
 
     def send(self, data, callback):
         self.send_raw(json.dumps(data), callback)
@@ -372,11 +372,11 @@ class PeerListener(GUIDMixin):
                 try:
                     data, addr = self.socket.recvfrom(2048)
                     self.log.debug('Got data from %s:%d: %s', addr[0], addr[1], data[:50])
-                    log_incoming_packet(data)
+                    count_incoming_packet(data)
 
                     if data[:4] == 'ping':
                         self.socket.sendto('pong', (addr[0], addr[1]))
-                        log_outgoing_packet('pong')
+                        count_outgoing_packet('pong')
                     elif data[:4] == 'pong':
                         self.ee.emit('on_pong_message', (data, addr))
 
@@ -388,7 +388,7 @@ class PeerListener(GUIDMixin):
                         sender = self.guid
                         recipient = data[1]
                         self.socket.sendto('send_relay_pong %s %s' % (sender, recipient), (addr[0], addr[1]))
-                        log_outgoing_packet('send_relay_pong %s %s' % (sender, recipient))
+                        count_outgoing_packet('send_relay_pong %s %s' % (sender, recipient))
 
                     elif data[:15] == 'send_relay_pong':
                         self.ee.emit('on_send_relay_pong', (data, addr))

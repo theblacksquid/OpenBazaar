@@ -183,7 +183,7 @@ class PacketStats(object):
 PACKET_STATS = PacketStats()
 PACKET_STATS_LOGS_EVERY_N_PACKETS = 50
 
-def log_outgoing_packet(data):
+def count_outgoing_packet(data):
     if PACKET_STATS is None:
         return
 
@@ -193,7 +193,7 @@ def log_outgoing_packet(data):
     if stats.num_packets_outgoing % PACKET_STATS_LOGS_EVERY_N_PACKETS == 0:
         stats.logStats(incoming=False)
 
-def log_incoming_packet(packet):
+def count_incoming_packet(packet):
     if PACKET_STATS is None:
         return
 

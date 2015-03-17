@@ -1,6 +1,6 @@
 from rudp.sender import Sender
 from rudp.receiver import Receiver
-from node.network_util import log_incoming_packet, log_outgoing_packet
+from node.network_util import count_incoming_packet, count_outgoing_packet
 from pyee import EventEmitter
 import logging
 
@@ -33,7 +33,7 @@ class Connection(object):
 
     def send(self, data):
         self._sender.send(data)
-        log_outgoing_packet(data)
+        count_outgoing_packet(data)
 
 
     def receive(self, packet):
@@ -41,4 +41,4 @@ class Connection(object):
             self._sender.verify_acknowledgement(packet._sequenceNumber)
         else:
             self._receiver.receive(packet)
-        log_incoming_packet(packet)
+        count_incoming_packet(packet)
