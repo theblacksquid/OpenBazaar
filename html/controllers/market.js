@@ -243,15 +243,16 @@ angular.module('app')
                 });
             };
 
+            // Check if peer is already known by comparing the public key
             $scope.add_peer = function(msg) {
-                /* get index if peer is already known */
-                var index = [-1].concat($scope.peers).reduce(
-                    function(previousValue, currentValue, index, array) {
-                        return currentValue.uri == msg.uri ? index : previousValue;
-                    });
+                var alreadyExists = false;
+                angular.forEach($scope.peers,function(peer,index){
+                    if(peer.pubkey === msg.pubkey){
+                        alreadyExists = true;
+                    }
+                });
 
-                if (index == -1) {
-                    /* it is a new peer */
+                if(!alreadyExists){
                     $scope.peers.push(msg);
                 }
             };
