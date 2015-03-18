@@ -106,7 +106,7 @@ class PeerConnection(GUIDMixin, object):
                 self.reachable = False
                 if self.guid:
                     self.log.error('Peer not responding. Removing.')
-                    # self.transport.dht.remove_peer(self.guid)
+                    self.transport.dht.remove_peer(self.guid)
 
                 # Update GUI if possible
                 if self.transport.handler:
