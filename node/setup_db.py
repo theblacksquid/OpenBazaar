@@ -1,8 +1,9 @@
 import os
 
 from pysqlcipher import dbapi2
+from node import constants
 
-_PASSPHRASE = 'passphrase'
+_PASSPHRASE = constants.DB_PASSPHRASE
 
 # TODO: Use indexes.
 # TODO: Maybe it makes sense to put tags on a different table

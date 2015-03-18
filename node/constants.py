@@ -52,7 +52,12 @@ CHECK_REFRESH_INTERVAL = REFRESH_TIMEOUT / 5
 # [bytes]
 UDP_DATAGRAM_MAX_SIZE = 8192  # 8 KB
 
+# You should change this value before starting OB for the first time.
+# It is very recommended to change it to a strong password.
+DB_PASSPHRASE = "passphrase"
+
 DB_PATH = "db/ob.db"
+
 VERSION = "0.3.1"
 
 SATOSHIS_IN_BITCOIN = 100000000
