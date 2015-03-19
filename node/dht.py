@@ -351,7 +351,7 @@ class DHT(object):
 
     @_synchronized
     def _republish_data(self, *args):
-        self._threadedRepublishData()
+        self._threaded_republish_data()
 
     @_synchronized
     def _threaded_republish_data(self, *args):
