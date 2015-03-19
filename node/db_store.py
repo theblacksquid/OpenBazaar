@@ -3,6 +3,7 @@ import logging
 import threading
 
 from pysqlcipher import dbapi2
+from node import constants
 
 
 class Obdb(object):
@@ -21,7 +22,7 @@ class Obdb(object):
         dbapi2.register_adapter(bool, int)
         dbapi2.register_converter("bool", lambda v: bool(int(v)))
 
-    def _login(self, passphrase='passphrase'):
+    def _login(self, passphrase=constants.DB_PASSPHRASE):
         """Enable access to an encrypted database."""
         cursor = self.con.cursor()
         cursor.execute("PRAGMA key = '%s';" % passphrase)

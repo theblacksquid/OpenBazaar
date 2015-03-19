@@ -11,7 +11,7 @@ def upgrade(db_path):
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
-        cur.execute("PRAGMA key = 'passphrase';")
+        cur.execute("PRAGMA key = '%s';" % constants.DB_PASSPHRASE)
 
         try:
             cur.execute("CREATE TABLE events("
@@ -32,7 +32,7 @@ def downgrade(db_path):
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
-        cur.execute("PRAGMA key = 'passphrase';")
+        cur.execute("PRAGMA key = '%s';" % constants.DB_PASSPHRASE)
         cur.execute("DROP TABLE IF EXISTS events;")
 
         print 'Downgraded'
