@@ -1113,19 +1113,13 @@ class Orders(object):
                 bid_data_json['Buyer']['buyer_order_id']
             )
 
-            # Send notice to order receipt
-            self.transport.send({
-                'type': 'order',
-                'state': Orders.State.WAITING_FOR_PAYMENT,
-                'buyer_order_id': bid_data_json['Buyer']['buyer_order_id'],
-            }, bid_data_json['Buyer']['buyer_GUID'])
-
+            shipping_address = bid_data_json['Buyer'].get('buyer_deliveryaddr', None)
+            print 'address:', shipping_address
             # Decrypt shipping address
-
-            if self.transport.cryptor:
-                shipping_address = self.transport.cryptor.decrypt(
-                    bid_data_json['Buyer']['buyer_deliveryaddr'].decode('hex')
-                )
+            if shipping_address and self.transport.cryptor:
+                shipping_address = shipping_address.decode('hex')
+                shipping_address = self.transport.cryptor.decrypt(shipping_address)
+                shipping_address = shipping_address.decode('zlib')
             else:
                 shipping_address = ''
 
@@ -1152,6 +1146,13 @@ class Orders(object):
 
             self.transport.handler.send_to_client(None, {"type": "order_notify",
                                                          "msg": "You just received a new order."})
+
+            # Send notice to order receipt
+            self.transport.send({
+                'type': 'order',
+                'state': Orders.State.WAITING_FOR_PAYMENT,
+                'buyer_order_id': bid_data_json['Buyer']['buyer_order_id'],
+            }, bid_data_json['Buyer']['buyer_GUID'])
 
         else:
             self.log.info('I am the buyer')
