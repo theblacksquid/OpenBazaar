@@ -137,10 +137,11 @@
                     <table id="favorite-peers" class="peers-table table-hover">
                         <tbody>
                             <tr data-ng-repeat="peer in peers" data-ng-click="goToStore('/user/'+peer.guid+'/products', peer.guid);">
-                                <td width="40" style="vertical-align:top"><identicon icon-size="50" hash="peer.guid" title="{{peer.guid}}"></identicon></td>
+                                <td width="40" style="vertical-align:top" ><identicon icon-size="50" hash="peer.guid" title="{{peer.guid}}"></identicon></td>
                                 <td>
                                     <span title="{{peer.pubkey}}">
-                                        <strong>{{peer.nick != "" ? peer.nick : peer.uri }}</strong> {{!peer.reachable ? '[Offline]' : ''}}
+                                        <span class="glyphicon {{peer.reachable ? 'glyphicon-ok' : 'glyphicon-remove'}}"></span>
+                                        <strong>{{peer.nick != "" ? peer.nick : peer.uri }}</strong>
                                         <br>
                                         <span style="font-style:italic;font-size:12px">
                                             {{peer.nickname ? peer.nickname : peer.guid}}
