@@ -1144,7 +1144,8 @@ class Orders(object):
                 }
             )
 
-            self.transport.handler.send_to_client(None, {"type": "order_notify",
+            if self.transport.handler:
+                self.transport.handler.send_to_client(None, {"type": "order_notify",
                                                          "msg": "You just received a new order."})
 
             # Send notice to order receipt
