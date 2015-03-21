@@ -292,6 +292,7 @@ class Orders(object):
                  "payment_address_amount": _order.get('payment_address_amount'),
                  "qrcode": 'data:image/png;base64,' + qr_code,
                  "item_title": offer_data_json['Contract']['item_title'],
+                 "item_desc": offer_data_json['Contract']['item_desc'],
                  "signed_contract_body": _order.get('signed_contract_body'),
                  "note_for_merchant": _order.get('note_for_merchant'),
                  "merchant_tx": _order.get('merchant_tx'),
@@ -299,10 +300,10 @@ class Orders(object):
                  "merchant_script": _order.get('merchant_script'),
                  "updated": _order.get('updated')}
 
-        if 'item_images' in offer_data_json['Contract'] and offer_data_json['Contract']['item_images'] != {}:
-            order['item_image'] = offer_data_json['Contract']['item_images']
+        if len(offer_data_json['Contract']['item_remote_images']):
+            order['item_images'] = offer_data_json['Contract']['item_remote_images']
         else:
-            order['item_image'] = "img/no-photo.png"
+            order['item_images'] = ["img/no-photo.png"]
 
         self.log.datadump('FULL ORDER: %s', order)
 

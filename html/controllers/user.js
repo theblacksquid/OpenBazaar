@@ -322,8 +322,15 @@ angular.module('app')
                     // Send socket a request for order info
                     //Connection.send('query_order', { orderId: orderId } )
 
-                    notaries = $scope.settings.notaries;
-
+                    notaries = [];
+                    console.log('notaries', $scope.settings.notaries);
+                    for(i in $scope.settings.notaries) {
+                        console.log('notary', $scope.settings.notaries[i]);
+                        notary = $scope.settings.notaries[i];
+                        if(notary.online) {
+                            notaries.push(notary);
+                        }
+                    }
 
                     var modalInstance = $modal.open({
                         templateUrl: 'partials/modal/buyItem.html',
@@ -399,7 +406,6 @@ angular.module('app')
                 $scope.update = function(user) {
                     console.log('Updated');
                 };
-
 
                 $scope.ok = function() {
                     $modalInstance.close();

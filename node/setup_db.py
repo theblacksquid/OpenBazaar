@@ -34,7 +34,7 @@ _SCHEMA = (
             'deleted INT DEFAULT 0',
             'item_desc TEXT',
             'item_condition TEXT',
-            'item_quantity_available',  # XXX: No type for this field!
+            'item_quantity_available INT',  # XXX: No type for this field!
             'state TEXT',
             'key TEXT',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
@@ -195,6 +195,20 @@ _SCHEMA = (
             'contract_id INT',
             'FOREIGN KEY(order_id) REFERENCES orders(order_id)',
             'FOREIGN KEY(contract_id) REFERENCES contracts(id)'
+        )
+    ),
+    (
+        'inbox',
+        (
+            'id INTEGER PRIMARY KEY AUTOINCREMENT',
+            'message_id INT',
+            'parent_id INT',
+            'subject TEXT',
+            'body TEXT',
+            'sender_guid TEXT',
+            'recipient_guid TEXT',
+            'created INT',
+            'received INT'
         )
     )
 )

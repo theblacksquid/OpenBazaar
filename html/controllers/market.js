@@ -39,6 +39,9 @@ angular.module('app')
                 if(!listeners.hasOwnProperty('republish_notify')) {
                     Connection.$on('republish_notify', function(e, msg){ $scope.republish_notify(msg); });
                 }
+                if(!listeners.hasOwnProperty('inbox_notify')) {
+                    Connection.$on('inbox_notify', function(e, msg){ $scope.inbox_notify(msg); });
+                }
 
                 Connection.$on('peer', function(e, msg){ $scope.add_peer(msg); });
                 Connection.$on('goodbye', function(e, msg){ $scope.goodbye(msg); });
@@ -52,6 +55,8 @@ angular.module('app')
                 Connection.$on('notaries', function(e, msg){ $scope.parse_notaries(msg); });
                 Connection.$on('reputation', function(e, msg){ $scope.parse_reputation(msg); });
                 Connection.$on('burn_info_available', function(e, msg){ $scope.parse_burn_info(msg); });
+
+                Connection.$on('inbox_messages', function(e, msg){ $scope.parse_inbox_messages(msg); });
 
                 Connection.$on('hello', function(e, msg){
                     console.log('Received a hello', msg);
@@ -220,6 +225,12 @@ angular.module('app')
                 }
             };
 
+            $scope.inbox_messages = {};
+            $scope.parse_inbox_messages = function(msg) {
+                console.log(msg);
+                $scope.inbox_messages = msg.messages;
+            }
+
             $scope.parse_burn_info = function(msg) {
                 // console.log('Burn info available!');
                 var SATOSHIS_IN_BITCOIN = 100000000;
@@ -366,6 +377,10 @@ angular.module('app')
             };
             $scope.republish_notify = function(msg) {
                 Notifier.info('Network Update', msg.msg);
+            };
+            $scope.inbox_notify = function(msg) {
+                console.log(msg);
+                Notifier.info('"' + msg.msg.subject + '"', 'Message from ' + msg.msg.senderNick);
             };
 
             // Create a new order and send to the network
@@ -812,6 +827,180 @@ angular.module('app')
                 };
 
 
+            };
+
+            $scope.NewMessageCtrl = function($scope, $modal, $log) {
+
+                $scope.$on("compose_message", function(event, args) {
+                    $scope.bm_address = args.bm_address;
+                    $scope.size = args.size;
+                    $scope.subject = args.subject;
+                    $scope.myself = args.myself;
+
+                    $scope.compose($scope.size, $scope.myself, $scope.bm_address, $scope.subject);
+                });
+
+
+                $scope.compose = function(size, myself, recipient, msg) {
+
+                    var composeModal = $modal.open({
+                        templateUrl: 'partials/modal/newMessage.html',
+                        controller: $scope.NewMessageInstanceCtrl,
+                        resolve: {
+                            myself: function() {
+
+                                return myself;
+                            },
+                            recipient: function() {
+                                return recipient;
+                            },
+                            msg: function() {
+                                return msg;
+                            },
+                            scope: function() {
+                                return $scope;
+                            }
+                        },
+                        size: size
+                    });
+                    var afterFunc = function() {
+                        $scope.showDashboardPanel('inbox');
+                    };
+                    composeModal.result.then(
+                        afterFunc,
+                        function() {
+                            $log.info('Modal dismissed at: ' + new Date());
+                        }
+                    );
+                };
+
+                $scope.view = function(size, myself, msg) {
+                    var viewModal = $modal.open({
+                        templateUrl: 'partials/modal/viewInboxMessage.html',
+                        controller: ViewInboxMessageInstanceCtrl,
+                        resolve: {
+                            myself: function() {
+                                return myself;
+                            },
+                            msg: function() {
+                                return msg;
+                            },
+                            scope: function() {
+                                return $scope;
+                            }
+                        },
+                        size: size
+                    });
+                    var afterFunc = function() {
+                        $scope.showDashboardPanel('inbox');
+                    };
+                    viewModal.result.then(
+                        afterFunc,
+                        function() {
+                            $log.info('Modal dismissed at: ' + new Date());
+                        }
+                    );
+                };
+            };
+
+            $scope.NewMessageInstanceCtrl = function($scope, $modalInstance, myself, msg, scope) {
+
+                $scope = scope;
+                $scope.myself = myself;
+                $scope.recipient = '';
+                $scope.msg = msg;
+
+                // Fill in form if msg is passed - reply mode
+                if (msg !== null) {
+                    $scope.recipient = msg.recipient;
+
+                    // Make sure subject start with RE:
+                    var sj = msg.subject;
+                    if (sj.match(/^RE:/) === null) {
+                        sj = "RE: " + sj;
+                    }
+                    $scope.subject = sj;
+
+                    // Quote message
+                    var quote_re = /^(.*?)/mg;
+                    var quote_msg = msg.message.replace(quote_re, "> $1");
+                    $scope.body = "\n" + quote_msg;
+                }
+
+                $scope.send = function() {
+                    // Trigger validation flag.
+                    $scope.submitted = true;
+
+                    // If form is invalid, return and let AngularJS show validation errors.
+                    if (sendMessageForm.$invalid) {
+                        return;
+                    }
+
+                    var query = {
+                        'type': 'send_inbox_message',
+                        'recipient': this.recipient.guid,
+                        'subject': subject.value,
+                        'body': body.value
+                    };
+
+                    Connection.send('send_inbox_message', query);
+                    $modalInstance.close();
+                };
+
+                $scope.cancel = function() {
+                    $modalInstance.dismiss('cancel');
+                };
+
+
+            };
+
+            var ViewInboxMessageInstanceCtrl = function($scope, $modalInstance, myself, msg) {
+                $scope.myself = myself;
+                $scope.inbox = {};
+                $scope.inbox.message = msg;
+
+                console.log('test', $scope);
+
+                // Fill in form if msg is passed - reply mode
+                if (msg !== null) {
+
+                    // Make sure subject start with RE:
+                    var sj = msg.subject;
+                    if (sj.match(/^RE:/) === null) {
+                        sj = "RE: " + sj;
+                    }
+                    $scope.subject = sj;
+                    // Quote message
+                    var quote_re = /^(.*?)/mg;
+
+                    //var quote_msg = $scope.msg.body.replace(quote_re, "> $1");
+                    //$scope.body = "\n" + quote_msg;
+                }
+
+                $scope.send = function() {
+                    // Trigger validation flag.
+                    $scope.submitted = true;
+
+                    // If form is invalid, return and let AngularJS show validation errors.
+                    if (composeForm.$invalid) {
+                        return;
+                    }
+
+                    var query = {
+                        'type': 'send_message',
+                        'to': toAddress.value,
+                        'subject': subject.value,
+                        'body': body.value
+                    };
+                    console.log('sending message with subject ' + subject);
+                    Connection.send('send_message', query);
+
+                    $modalInstance.close();
+                };
+
+                $scope.close = function() {
+                    $modalInstance.dismiss('cancel');
+                };
             };
 
             // Modal Code

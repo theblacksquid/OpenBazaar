@@ -19,6 +19,7 @@ from node.data_uri import DataURI
 from node.orders import Orders
 from node.protocol import proto_page, query_page
 import bitcoin
+import time
 
 
 class Market(object):
@@ -65,7 +66,8 @@ class Market(object):
             'query_myorders',
             'peer',
             'query_page',
-            'query_listings'
+            'query_listings',
+            'inbox_message'
         )
 
         # Register callbacks for incoming events
@@ -368,23 +370,17 @@ class Market(object):
         # Updating the DHT index of your store's listings
         self.update_listings_index()
 
-    def get_notaries(self, online_only=False):
+    def get_notaries(self):
         """Getting notaries and exchange contact in network"""
-        self.log.debug('Getting notaries')
+        self.log.debug('Retrieving trusted notaries')
         notaries = []
         settings = self.get_settings()
+        self.log.debug(settings.get('notaries'))
 
-        # Untested code
-        if online_only:
-            for notary in settings['notaries']:
-                peer = self.dht.routing_table.get_contact(notary.guid)
-                if peer is not None:
-                    peer.start_handshake()
-                    notaries.append(notary)
-            return notaries
-        # End of untested code
+        self.log.debug('Notaries Online: %s', notaries)
+        return notaries
 
-        return settings['notaries']
+        # return settings['notaries']
 
     @staticmethod
     def valid_guid(guid):
@@ -542,6 +538,42 @@ class Market(object):
             self.log.error(traceback.format_exc())
             return {}
 
+    def send_inbox_message(self, msg):
+        """Send message for market internally"""
+        self.log.info(
+            "Sending message for market: %s", self.transport.market_id)
+        self.log.debug('Inbox Message: %s', msg)
+
+        # Save message to DB
+        message_id = hashlib.sha256()
+        message_id.update('%d%s%s' % (time.time(), self.transport.guid, msg.get('recipient')))
+
+        self.db_connection.insert_entry('inbox', {
+            'created': time.time(),
+            'subject': msg.get('subject', ''),
+            'body': msg.get('body', ''),
+            'sender_guid': self.transport.guid,
+            'recipient_guid': msg.get('recipient', ''),
+            'message_id': message_id.hexdigest()
+        })
+
+        # Send to peer
+        peer = self.dht.routing_table.get_contact(msg.get('recipient'))
+        if peer:
+            peer.send({
+                'type': 'inbox_message',
+                'subject': msg.get('subject'),
+                'body': msg.get('body'),
+                'sender_guid': self.transport.guid,
+                'created': time.time(),
+                'message_id': message_id.hexdigest()
+            })
+
+    def get_inbox_messages(self):
+        """Get messages from inbox table"""
+        messages = self.db_connection.select_entries("inbox")
+        return messages
+
     def get_contracts(self, page=0, remote=False):
         """Select contracts for market from database"""
         self.log.info(
@@ -674,6 +706,15 @@ class Market(object):
             settings['notary'] = True
 
         settings['notaries'] = json.loads(settings['notaries']) if settings['notaries'] else []
+        for i, notary in enumerate(settings['notaries']):
+            guid = notary.get('guid')
+            if guid:
+                peer = self.dht.routing_table.get_contact(guid)
+                if peer:
+                    settings['notaries'][i]['online'] = True
+                else:
+                    settings['notaries'][i]['online'] = False
+
         settings['trustedArbiters'] = json.loads(settings['trustedArbiters']) if settings['trustedArbiters'] else []
 
         settings['secret'] = settings.get('secret')
@@ -736,6 +777,36 @@ class Market(object):
     def on_query_myorders(self, peer):
         """Run if someone is querying for your page"""
         self.log.debug("Someone is querying for your page: %s", peer)
+
+    def validate_on_inbox_message(self, *data):
+        self.log.debug('Validating on inbox message.')
+        return True
+
+    def on_inbox_message(self, msg):
+        """Accept incoming inbox message"""
+        self.log.debug('Inbox Message: %s', msg)
+
+        # Save to DB
+        self.db_connection.insert_entry(
+            'inbox',
+            {
+                'subject': msg.get('subject',''),
+                'body': msg.get('body', ''),
+                'sender_guid': msg.get('sender_guid', ''),
+                'recipient_guid': self.transport.guid,
+                'message_id': msg.get('message_id', ''),
+                'parent_id': msg.get('parent_id', ''),
+                'created': msg.get('created', ''),
+                'received': time.time()
+            }
+        )
+
+        # Send to client
+        if self.transport.handler:
+            self.transport.handler.send_to_client(None, {
+                "type": "inbox_notify",
+                "msg": msg
+            })
 
     def validate_on_query_listings(self, *data):
         self.log.debug('Validating on query listings message.')

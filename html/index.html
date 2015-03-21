@@ -23,6 +23,7 @@
     <script src="controllers/contracts.js" type="text/javascript"></script>
     <script src="controllers/market.js" type="text/javascript"></script>
     <script src="controllers/messages.js" type="text/javascript"></script>
+    <script src="controllers/inbox.js" type="text/javascript"></script>
     <script src="controllers/orders.js" type="text/javascript"></script>
     <script src="controllers/search.js" type="text/javascript"></script>
     <script src="controllers/settings.js" type="text/javascript"></script>
@@ -69,6 +70,7 @@
                         <div id="header-navigation">
                             <ul class="nav nav-pills">
                                 <li><a data-ng-href="#/dashboard">Home</a></li>
+                                <li><a data-ng-href="#/inbox" data-ng-click="showDashboardPanel('inbox')">Inbox <span class="badge pull-right">0</span></a></li>
                                 <li class="dropdown"><a data-ng-href="#orders" data-toggle="dropdown" class="dropdown-toggle">Orders <b class="caret"></b></a>
                                     <ul class="dropdown-menu" role="menu">
                                         <li role="presentation"><a role="menuitem" tabindex="-1" data-ng-href="#/orders/sales">My Sales</a></li>
@@ -83,7 +85,8 @@
                                         <!--<li><a data-ng-href="#" data-ng-click="$event.preventDefault()">Find Arbiters/Notaries</a></li>-->
                                     <!--</ul>-->
                                 <!--</li>-->
-                                <li><a data-ng-href="#/messages" data-ng-click="showDashboardPanel('messages')">Messages <span data-ng-show="BMMessages" class="badge pull-right">1</span></a></li>
+                                <!--<li><a data-ng-href="#/messages" data-ng-click="showDashboardPanel('messages')">Messages <span data-ng-show="BMMessages" class="badge pull-right">1</span></a></li>-->
+
                                 <li><a data-ng-href="#/settings">Settings</a></li>
                                 <li><identicon icon-size="30" hash="myself.guid" title="{{myself.guid}}" ></identicon></li>
                             </ul>

@@ -8,8 +8,9 @@
     <form id="form-item-purchase" role="form" novalidate="novalidate" name="buyItem">
 
     <div class="alert alert-danger" role="alert" ng-show="!notaries.length" >
-                You don't have any notaries trusted. Please add one before you purchase contracts or you are putting yourself at risk.
-            </div>
+        <strong>No notaries online</strong><br/>
+        You have not trusted any notaries or none of them are online. Make sure to have an online notary in your Settings before purchasing items or services.
+    </div>
 
     <div id="purchase_step1" ng-show="!order.step2 && !order.confirmation">
 
@@ -77,9 +78,9 @@
 
             <div class="form-group row" ng-show="!!notaries.length">
                 <div class="col-sm-12">
-                <label for="notary">Choose an online notary:</label>
+                    <label for="notary">Choose an online notary:</label>
 
-                <select id="notary" ng-model="order.notary" ng-options="notary.guid as notary.nickname+' ('+notary.guid+')' for notary in notaries" class="form-control col-sm-12"></select>
+                    <select id="notary" ng-model="order.notary" ng-options="notary.guid as notary.nickname+' ('+notary.guid+')' for notary in notaries" class="form-control col-sm-12"></select>
                 </div>
             </div>
 
@@ -131,3 +132,4 @@
     <a class="btn btn-success" ng-show="order.confirmation" ng-click="closeConfirmation()" type="button">Go to Orders</a>
 
 </div>
+

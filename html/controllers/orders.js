@@ -108,6 +108,7 @@ angular.module('app')
                 console.log(msg.order);
 
                 $scope.modalOrder = msg.order;
+                console.log(msg.order);
 
                 if (msg.order.state == 'Accepted' || msg.order.state == 'Waiting for Payment') {
                     $scope.modalOrder.waitingForPayment = true;

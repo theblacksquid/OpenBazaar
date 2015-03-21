@@ -1,0 +1,49 @@
+<div class="modal-header">
+    <h3 class="modal-title">View Message</h3>
+</div>
+
+<div class="modal-body"  style="text-align:left;">
+
+<div class="row">
+    <form class="form-horizontal" name="viewInboxForm" role="form">
+        <div class="form-group">
+            <label class="col-sm-2 control-label">Received</label>
+            <div class="col-sm-6">
+                <p class="form-control-static">{{inbox.message.received * 1000 | date: 'medium'}}</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">From</label>
+            <div class="col-sm-6">
+                <p class="form-control-static">
+                    <identicon icon-size="50" hash="inbox.message.sender_guid" title="{{inbox.message.sender_guid}}"></identicon>
+                    {{inbox.message.sender_guid}}
+                </p>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="subject" class="col-sm-2 control-label">Subject</label>
+            <div class="col-sm-6">
+                <p class="form-control-static">{{inbox.message.subject}}</p>
+             </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">Message ID</label>
+            <div class="col-sm-6">
+                <p class="form-control-static">{{inbox.message.message_id}}</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-12">
+                <p class="form-control-static messageBody" style="background-color:#efefef;padding:10px;">{{inbox.message.body}}</p>
+             </div>
+        </div>
+    </form>
+
+</div>
+
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-info" role="button" ng-click="close()" type="submit">Close</button>
+</div>
