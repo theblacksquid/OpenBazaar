@@ -23,7 +23,7 @@
                             <tr>
                                 <td><identicon icon-size="50" hash="message.sender_guid" title="{{message.sender_guid}}"></identicon></td>
                                 <td>
-                                    <strong>nickname</strong>
+                                    <strong>{{guid_to_nickname(message.sender_guid)}}</strong>
                                     <br/>
                                     {{message.received * 1000 | date:'medium'}}
                                 </td>

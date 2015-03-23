@@ -840,6 +840,15 @@ angular.module('app')
                     $scope.compose($scope.size, $scope.myself, $scope.bm_address, $scope.subject);
                 });
 
+                $scope.guid_to_nickname = function(guid) {
+                    for(peer in $scope.myself.peers) {
+                        peer = $scope.myself.peers[peer];
+                        if(peer.guid == guid) {
+                            return peer.nick;
+                        }
+                    }
+                    return '';
+                }
 
                 $scope.compose = function(size, myself, recipient, msg) {
 
