@@ -6,38 +6,31 @@
 
 <div class="row">
     <form class="form-horizontal" name="viewInboxForm" role="form">
-        <div class="form-group">
-            <label class="col-sm-2 control-label">Received</label>
-            <div class="col-sm-6">
-                <p class="form-control-static">{{inbox.message.received * 1000 | date: 'medium'}}</p>
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="col-sm-2 control-label">From</label>
-            <div class="col-sm-6">
-                <p class="form-control-static">
-                    <identicon icon-size="50" hash="inbox.message.sender_guid" title="{{inbox.message.sender_guid}}"></identicon>
+
+        <div style="margin:0 20px;">
+        <table width="100%">
+            <tr>
+                <td colspan="100%" style="font-size:30px;padding:0 0 10px 0;">{{inbox.message.subject}}</td>
+            </tr>
+            <tr>
+                <td width="60"><identicon icon-size="50" hash="inbox.message.sender_guid" title="{{inbox.message.sender_guid}}"></identicon></td>
+                <td>
+                    <strong>{{inbox.message.nickname}}</strong>
+                    <BR>
                     {{inbox.message.sender_guid}}
-                </p>
-            </div>
+                </td>
+                <td width="200">
+                    {{inbox.message.received * 1000 | date: 'medium'}}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="100%"><div style="padding:10px;background-color:#efefef;margin-top:10px;">{{inbox.message.body}}</div></td>
+            </tr>
+
+        </table>
         </div>
-        <div class="form-group">
-            <label for="subject" class="col-sm-2 control-label">Subject</label>
-            <div class="col-sm-6">
-                <p class="form-control-static">{{inbox.message.subject}}</p>
-             </div>
-        </div>
-        <div class="form-group">
-            <label class="col-sm-2 control-label">Message ID</label>
-            <div class="col-sm-6">
-                <p class="form-control-static">{{inbox.message.message_id}}</p>
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="col-sm-12">
-                <p class="form-control-static messageBody" style="background-color:#efefef;padding:10px;">{{inbox.message.body}}</p>
-             </div>
-        </div>
+
+
     </form>
 
 </div>

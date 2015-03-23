@@ -961,10 +961,12 @@ angular.module('app')
 
             };
 
-            var ViewInboxMessageInstanceCtrl = function($scope, $modalInstance, myself, msg) {
+            var ViewInboxMessageInstanceCtrl = function($scope, $modalInstance, myself, msg, scope) {
                 $scope.myself = myself;
                 $scope.inbox = {};
                 $scope.inbox.message = msg;
+
+                $scope.inbox.message.nickname = scope.guid_to_nickname(msg.sender_guid);
 
                 console.log('test', $scope);
 
