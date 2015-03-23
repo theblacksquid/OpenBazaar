@@ -848,7 +848,6 @@ angular.module('app')
                         controller: $scope.NewMessageInstanceCtrl,
                         resolve: {
                             myself: function() {
-
                                 return myself;
                             },
                             recipient: function() {
@@ -859,7 +858,7 @@ angular.module('app')
                             },
                             scope: function() {
                                 return $scope;
-                            }
+                            },
                         },
                         size: size
                     });
@@ -905,7 +904,6 @@ angular.module('app')
 
             $scope.NewMessageInstanceCtrl = function($scope, $modalInstance, myself, msg, scope) {
 
-                $scope = scope;
                 $scope.myself = myself;
                 $scope.recipient = '';
                 $scope.msg = msg;
