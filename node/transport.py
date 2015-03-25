@@ -635,6 +635,10 @@ class CryptoTransportLayer(TransportLayer):
             if self.handler:
                 self.handler.refresh_peers()
 
+        else:
+            peer.init_packetsender()
+            peer.setup_emitters()
+
         peer.nat_type = msg['nat_type']
         peer.relaying = msg.get('relayed', False)
 
