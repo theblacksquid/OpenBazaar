@@ -79,7 +79,7 @@ class PeerConnection(GUIDMixin, object):
                     hello_msg['relayed'] = True
 
                     self.send_to_rudp(json.dumps(hello_msg))
-                    self.send_relayed_ping()
+                    self.send_ping()
                 else:
                     self.log.debug('Sending Hello')
                     self.send_raw(
@@ -99,10 +99,11 @@ class PeerConnection(GUIDMixin, object):
             self.log.debug('Pinging: %s', self.guid)
 
             if time.time() - self.last_reached <= 15:
-                if not self.relaying or self.transport.seed_mode:
-                    self.send_ping()
-                else:
-                    self.send_relayed_ping()
+                self.send_ping()
+                # if not self.relaying or self.transport.seed_mode:
+                #     self.send_ping()
+                # else:
+                #     self.send_relayed_ping()
             else:
                 self.ping_task.stop()
                 self.reachable = False
@@ -404,8 +405,7 @@ class PeerListener(GUIDMixin):
 
                     elif data[:6] == 'relay ':
                         self.log.debug('Relay Packet')
-                        data = data.split(' ', 1)
-                        self.ee.emit('on_message', (data[1], addr))
+                        self.ee.emit('on_message', (data, addr))
 
                     else:
                         self.ee.emit('on_message', (data, addr))
