@@ -238,7 +238,9 @@ class CryptoTransportLayer(TransportLayer):
         # pylint: disable=unused-variable
         @self.listener.ee.on('on_relayto')
         def on_relayto(data):
+
             data = data.split(' ', 4)
+            self.log.debug('RelayTo Data: %s', data)
             self.listener.socket.sendto('relay %s' % data[4], (data[2], int(data[3])))
             # peer = self.dht.routing_table.get_contact(data[1])
             # if peer:
