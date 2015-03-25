@@ -51,7 +51,7 @@ class PeerConnection(GUIDMixin, object):
             self.relaying = True
             self.init_packetsender()
             self.setup_emitters()
-            self.send_ping()
+            self.send_relayed_ping()
         else:
 
             self.pinging = True
@@ -81,12 +81,13 @@ class PeerConnection(GUIDMixin, object):
                     hello_msg['relayed'] = True
 
                     self.send_to_rudp(json.dumps(hello_msg))
-                    self.send_ping()
+                    self.send_relayed_ping()
                 else:
                     self.log.debug('Sending Hello')
                     self.send_raw(
                         json.dumps(hello_msg)
                     )
+                    self.send_ping()
 
                 self.pinging = False
                 ioloop.IOLoop.instance().call_later(2, self.transport.search_for_my_node)

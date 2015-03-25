@@ -91,6 +91,7 @@ class DHT(object):
         # found_peer = False
 
         # activePeers
+
         for peer in self.active_peers:
             self.log.debug('Peer: %s', peer)
             if peer.guid == guid:
