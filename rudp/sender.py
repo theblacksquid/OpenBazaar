@@ -135,6 +135,12 @@ class Sender(object):
         # Organize into windows
         windows = rudp.helpers.splitArrayLike(chunks, rudp.constants.WINDOW_SIZE)
 
+        # Clear stale windows
+        if time.time() - self._last_sent > 5 and self._last_sent != 0:
+            self._windows = []
+            self._sending = None
+            self._last_sent = 0
+
         self._windows = self._windows + windows
         self._windows = [x for x in self._windows if x != []]
 
@@ -143,17 +149,7 @@ class Sender(object):
 
     def _push(self):
 
-        # Clear stale window
-        stale = False
-        if time.time() - self._last_sent > 5 and self._last_sent != 0:
-            stale = True
-            self._windows = []
-            self._sending = None
-            self._last_sent = 0
-            self.log.debug('Stale. Returning')
-            return
-
-        if (stale or not self._sending) and len(self._windows):
+        if not self._sending and len(self._windows):
 
             self.log.debug('Sending New Window')
             self._last_sent = int(time.time())

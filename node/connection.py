@@ -49,8 +49,7 @@ class PeerConnection(GUIDMixin, object):
         if nat_type == 'Symmetric NAT':
             self.reachable = True
             self.relaying = True
-            self.init_packetsender()
-            self.setup_emitters()
+            self._rudp_connection._sender._packet_sender.relaying = True
             self.send_relayed_ping()
         else:
 
@@ -74,8 +73,7 @@ class PeerConnection(GUIDMixin, object):
                     self.log.error('No response from peer.')
                     self.reachable = True
                     self.relaying = True
-                    self.init_packetsender()
-                    self.setup_emitters()
+                    self._rudp_connection._sender._packet_sender.relaying = True
 
                     self.log.debug('Relay Hello through Seed')
                     hello_msg['relayed'] = True
