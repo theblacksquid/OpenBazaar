@@ -150,6 +150,7 @@ class Sender(object):
             self._windows = []
             self._sending = None
             self._last_sent = 0
+            self.log.debug('Stale. Returning')
             return
 
         if (stale or not self._sending) and len(self._windows):
