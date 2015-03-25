@@ -404,7 +404,8 @@ class PeerListener(GUIDMixin):
 
                     elif data[:6] == 'relay ':
                         self.log.debug('Relay Packet')
-                        self.ee.emit('on_message', (data, addr))
+                        data = data.split(' ', 1)
+                        self.ee.emit('on_message', (data[1], addr))
 
                     else:
                         self.ee.emit('on_message', (data, addr))
