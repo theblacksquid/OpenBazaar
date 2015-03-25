@@ -146,6 +146,8 @@ class Receiver(object):
             else:
                 message = self.incoming_messages[message_id]
 
+            print message.size
+
             # Process Packet Contents
             if packet._synchronize:
                 if not message.synced:

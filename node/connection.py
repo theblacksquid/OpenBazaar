@@ -50,6 +50,7 @@ class PeerConnection(GUIDMixin, object):
             self.reachable = True
             self.relaying = True
             self.init_packetsender()
+            self.setup_emitters()
             self.send_ping()
         else:
 
@@ -74,6 +75,7 @@ class PeerConnection(GUIDMixin, object):
                     self.reachable = True
                     self.relaying = True
                     self.init_packetsender()
+                    self.setup_emitters()
 
                     self.log.debug('Relay Hello through Seed')
                     hello_msg['relayed'] = True
@@ -205,16 +207,7 @@ class PeerConnection(GUIDMixin, object):
 
             if not self.pinging:
                 if self.reachable:
-                    if self.relaying or self.nat_type == 'Symmetric NAT' or self.transport.nat_type == 'Symmetric NAT':
-                        # Relay through seed server
-                        self.log.debug('Not Pinging - Relay through seed')
-                        # self.transport.relay_message(serialized, self.guid)
-                        self.send_to_rudp(serialized)
-                        return
-                    else:
-                        self.send_to_rudp(serialized)
-                        return
-
+                    self.send_to_rudp(serialized)
                 else:
                     if self.nat_type == 'Restric NAT' and not self.punching and not self.relaying:
                         self.log.debug('Found restricted NAT client')
