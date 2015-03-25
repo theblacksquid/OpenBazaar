@@ -208,6 +208,7 @@ class PeerConnection(GUIDMixin, object):
             if not self.pinging:
                 if self.reachable:
                     self.send_to_rudp(serialized)
+                    return
                 else:
                     if self.nat_type == 'Restric NAT' and not self.punching and not self.relaying:
                         self.log.debug('Found restricted NAT client')
