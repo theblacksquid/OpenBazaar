@@ -37,4 +37,4 @@ class PacketSender(object):
         else:
             self.log.debug('Relaying packet')
             relay_pair = (constants.RELAY_SERVER_IP, constants.RELAY_SERVER_PORT)
-            self._socket.sendto('relayto %s %s %s %s' % (self._guid, self._transport.hostname, self._transport.port, send_buffer) , relay_pair)
+            self._socket.sendto('relayto %s %s %s %s' % (self._guid, self.hostname, self.port, send_buffer) , relay_pair)
