@@ -239,7 +239,7 @@ class CryptoTransportLayer(TransportLayer):
         @self.listener.ee.on('on_relayto')
         def on_relayto(data):
             data = data.split(' ', 4)
-            self.listener.socket.sendto('relay %s' % data[4], (data[1], data[2]))
+            self.listener.socket.sendto('relay %s' % data[4], (data[1], int(data[2])))
             # peer = self.dht.routing_table.get_contact(data[1])
             # if peer:
             #     peer.send_to_sock('relay %s' % data[3])
@@ -504,6 +504,7 @@ class CryptoTransportLayer(TransportLayer):
                     if not peer.reachable:
                         self.log.debug('Falling back to relaying.')
                         peer.relaying = True
+                        peer._packet_sender.relaying = True
                         peer.reachable = True
                         peer.punching = False
                     else:
@@ -568,6 +569,7 @@ class CryptoTransportLayer(TransportLayer):
                 x.nat_type = msg['nat_type']
                 if x.nat_type == 'Symmetric NAT':
                     x.relaying = True
+                    x._packet_sender.relaying = True
                     x.reachable = True
                 self.log.debug(x)
                 return
