@@ -591,7 +591,8 @@ class Orders(object):
         self.log.debug(new_order)
 
         del new_order['qrcode']
-        del new_order['item_image']
+        del new_order['item_images']
+        del new_order['item_desc']
         del new_order['total_price']
         del new_order['item_title']
         del new_order['buyer_bitmessage']

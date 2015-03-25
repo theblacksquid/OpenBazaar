@@ -126,6 +126,15 @@ class CryptoTransportLayer(TransportLayer):
         if ob_ctx.enable_ip_checker and not ob_ctx.seed_mode and not ob_ctx.dev_mode:
             self.start_ip_address_checker()
 
+        # ioloop.IOLoop.instance().call_later(5, self.truncate_dead_peers)
+
+    def truncate_dead_peers(self):
+        for peer in self.dht.active_peers:
+            print 'last reached: ', peer.last_reached
+            if peer.last_reached != 0 and time.time() - peer.last_reached <= 15:
+                if peer.guid:
+                    self.dht.remove_peer(peer.guid)
+
     def relay_message(self, data, guid):
         for peer in self.dht.active_peers:
             if peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
@@ -229,10 +238,11 @@ class CryptoTransportLayer(TransportLayer):
         # pylint: disable=unused-variable
         @self.listener.ee.on('on_relayto')
         def on_relayto(data):
-            data = data.split(' ', 3)
-            peer = self.dht.routing_table.get_contact(data[1])
-            if peer:
-                peer.send_to_sock('relay %s' % data[3])
+            data = data.split(' ', 4)
+            self.listener.socket.sendto('relay %s' % data[4], (data[1], data[2]))
+            # peer = self.dht.routing_table.get_contact(data[1])
+            # if peer:
+            #     peer.send_to_sock('relay %s' % data[3])
 
         # pylint: disable=unused-variable
         @self.listener.ee.on('on_message')

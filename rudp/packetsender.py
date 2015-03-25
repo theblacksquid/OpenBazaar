@@ -28,10 +28,11 @@ class PacketSender(object):
                                        self._src_port,
                                        self._transport.nickname,
                                        self._transport.nat_type)
+
         if not self.relaying and self._nat_type != 'Symmetric NAT':
             self.log.debug('Sending packet over the wire: [%s] to %s:%s', send_buffer, self._address, self._port)
             self._socket.sendto(send_buffer, (self._address, self._port))
         else:
             self.log.debug('Relaying packet')
             relay_pair = (constants.RELAY_SERVER_IP, constants.RELAY_SERVER_PORT)
-            self._socket.sendto('relayto %s %s %s' % (self._guid, self._transport.guid, send_buffer) , relay_pair)
+            self._socket.sendto('relayto %s %s %s %s' % (self._guid, self._transport.hostname, self._transport.port, send_buffer) , relay_pair)
