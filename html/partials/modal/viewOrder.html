@@ -71,7 +71,7 @@
           <div class="media-body" style="margin-bottom:10px;">{{Market.modalOrder.item_desc}}</div>
 
           <a class="pull-left" href="#" onclick="return false">
-            <img class="media-object" ng-src="{{Market.modalOrder.item_images[0]}}" alt="{{Market.modalOrder.item_title}" style="width:100%;max-width:350px;">
+            <img class="media-object" ng-src="{{(isExists(Market.modalOrder.item_remote_images[0])) ? listing.item_remote_images[0] : 'img/no-photo.png'}}" alt="{{Market.modalOrder.item_title}" style="width:100%;max-width:350px;">
           </a>
 
         </div>
