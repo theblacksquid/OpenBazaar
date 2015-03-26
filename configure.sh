@@ -64,12 +64,15 @@ function installMac {
   else
     echo "Updating, Upgrading and checking brew installation..."
     ORIGINAL_CPPFLAGS=$CPPFLAGS
-    export CPPFLAGS=
+    ORIGINAL_DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH
+    unset CPPFLAGS
+    unset DYLD_LIBRARY_PATH
     brew update
     brewDoctor
     brewUpgrade
     brew prune
     export CPPFLAGS=$ORIGINAL_CPPFLAGS
+    export DYLD_LIBRARY_PATH=$ORIGINAL_DYLD_LIBRARY_PATH
   fi
 
   # Use brew's python 2.7, even if user has a system python.
