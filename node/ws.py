@@ -80,6 +80,7 @@ class ProtocolHandler(object):
             "send_message": self.client_send_message,
             "send_inbox_message": self.client_send_inbox_message,
             "get_inbox_messages": self.client_get_inbox_messages,
+            "get_inbox_sent_messages": self.client_get_inbox_sent_messages,
             "update_settings": self.client_update_settings,
             "query_order": self.client_query_order,
             "pay_order": self.client_pay_order,
@@ -401,6 +402,12 @@ class ProtocolHandler(object):
         self.log.info("Getting inbox messages")
         messages = self.market.get_inbox_messages()
         self.send_to_client(None, {"type": "inbox_messages", "messages": messages})
+
+    def client_get_inbox_sent_messages(self, socket_handler, msg):
+
+        self.log.info("Getting inbox sent messages")
+        messages = self.market.get_inbox_sent_messages()
+        self.send_to_client(None, {"type": "inbox_sent_messages", "messages": messages})
 
     def client_republish_contracts(self, socket_handler, msg):
 

@@ -207,6 +207,7 @@ _SCHEMA = (
             'body TEXT',
             'sender_guid TEXT',
             'recipient_guid TEXT',
+            'confirmed INT',
             'created INT',
             'received INT'
         )

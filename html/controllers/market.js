@@ -48,6 +48,7 @@ angular.module('app')
                 Connection.$on('hello_response', function(e, msg){ $scope.hello_response(msg); });
                 Connection.$on('peers', function(e, msg){ $scope.update_peers(msg); });
                 Connection.$on('peer_remove', function(e, msg){ $scope.remove_peer(msg); });
+
                 if(!listeners.hasOwnProperty('inbox_count')) {
                     Connection.$on('inbox_count', function (e, msg) {
                         $scope.parse_inbox_count(msg);
@@ -62,6 +63,7 @@ angular.module('app')
                 Connection.$on('burn_info_available', function(e, msg){ $scope.parse_burn_info(msg); });
 
                 Connection.$on('inbox_messages', function(e, msg){ $scope.parse_inbox_messages(msg); });
+                Connection.$on('inbox_sent_messages', function(e, msg){ $scope.parse_inbox_sent_messages(msg); });
 
                 Connection.$on('hello', function(e, msg){
                     console.log('Received a hello', msg);
@@ -243,9 +245,16 @@ angular.module('app')
             };
 
             $scope.inbox_messages = {};
+            $scope.inbox_sent_messages = {};
+
             $scope.parse_inbox_messages = function(msg) {
                 console.log(msg);
                 $scope.inbox_messages = msg.messages;
+            }
+
+            $scope.parse_inbox_sent_messages = function(msg) {
+                console.log(msg);
+                $scope.inbox_sent_messages = msg.messages;
             }
 
             $scope.parse_burn_info = function(msg) {

@@ -576,6 +576,13 @@ class Market(object):
         }, order = 'DESC')
         return messages
 
+    def get_inbox_sent_messages(self):
+        """Get messages from inbox table"""
+        messages = self.db_connection.select_entries("inbox", {
+            'sender_guid': self.transport.guid
+        }, order = 'DESC')
+        return messages
+
     def get_contracts(self, page=0, remote=False):
         """Select contracts for market from database"""
         self.log.info(

@@ -28,6 +28,15 @@ angular.module('app')
                 console.log($scope.inbox_messages);
             };
 
+            $scope.getInboxSentMessages = function() {
+                var query = {
+                    'type': 'get_inbox_sent_messages'
+                };
+                console.log('Getting inbox sent messages');
+                Connection.send('get_inbox_sent_messages', query);
+                console.log($scope.inbox_sent_messages);
+            };
+
             $scope.load_page = function(msg) {
                 $scope.inboxPanel = true;
                 $scope.getInboxMessages();
