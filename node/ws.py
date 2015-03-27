@@ -72,6 +72,7 @@ class ProtocolHandler(object):
             "remove_trusted_notary": self.client_remove_trusted_notary,
             "query_store_products": self.client_query_store_products,
             "check_order_count": self.client_check_order_count,
+            "check_inbox_count": self.client_check_inbox_count,
             "query_orders": self.client_query_orders,
             "query_contracts": self.client_query_contracts,
             "stop_server": self.client_stop_server,
@@ -297,6 +298,21 @@ class ProtocolHandler(object):
         self.send_to_client(
             None,
             {"type": "order_count", "count": len(orders)}
+        )
+
+    def client_check_inbox_count(self, socket_handler, msg):
+        self.log.debug('Checking inbox count')
+        messages = self.db_connection.select_entries(
+            "inbox",
+            {
+                "recipient_guid": self.transport.guid
+            },
+            select_fields="id"
+        )
+
+        self.send_to_client(
+            None,
+            {"type": "inbox_count", "count": len(messages)}
         )
 
     def refresh_peers(self):

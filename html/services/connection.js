@@ -9,6 +9,7 @@ angular.module('app').service('Connection', ['$rootScope', '$timeout', function(
       websocket.onopen = function(evt) {
         self.websocket.send(JSON.stringify({"id":42, "command":"load_page", "params":{}}));
         self.websocket.send(JSON.stringify({"id":42, "command":"check_order_count", "params":{}}));
+        self.websocket.send(JSON.stringify({"id":42, "command":"check_inbox_count", "params":{}}));
         //self.websocket.send(JSON.stringify({"id":42, "command":"read_log", "params":{}}));
       };
 

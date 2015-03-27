@@ -70,7 +70,7 @@
                         <div id="header-navigation">
                             <ul class="nav nav-pills">
                                 <li><a data-ng-href="#/dashboard">Home</a></li>
-                                <li><a data-ng-href="#/inbox" data-ng-click="showDashboardPanel('inbox')">Inbox <span class="badge pull-right">0</span></a></li>
+                                <li><a data-ng-href="#/inbox" data-ng-click="showDashboardPanel('inbox')">Inbox <span class="badge pull-right">{{inbox_count}}</span></a></li>
                                 <li class="dropdown"><a data-ng-href="#orders" data-toggle="dropdown" class="dropdown-toggle">Orders <b class="caret"></b></a>
                                     <ul class="dropdown-menu" role="menu">
                                         <li role="presentation"><a role="menuitem" tabindex="-1" data-ng-href="#/orders/sales">My Sales</a></li>
