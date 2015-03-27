@@ -162,7 +162,7 @@ class PeerConnection(GUIDMixin, object):
         for x in self.transport.dht.active_peers:
             if x.hostname == 'seed2.openbazaar.org' or x.hostname == '205.186.156.31':
                 self.sock.sendto('send_relay_ping %s' % self.guid, (x.hostname, x.port))
-                count_outgoing_packet('send_relay_ping %s' % self.guid, (x.hostname, x.port))
+                count_outgoing_packet('send_relay_ping %s' % self.guid)
         return True
 
     def init_packetsender(self):
