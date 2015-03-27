@@ -1,7 +1,7 @@
 import os
 
-from pysqlcipher import dbapi2
 from node import constants
+from sqlite3 import dbapi2
 
 _PASSPHRASE = constants.DB_PASSPHRASE
 

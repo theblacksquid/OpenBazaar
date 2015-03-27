@@ -11,7 +11,7 @@ import time
 import gnupg
 import obelisk
 import bitcoin
-from pysqlcipher.dbapi2 import OperationalError, DatabaseError
+from sqlite3.dbapi2 import OperationalError, DatabaseError
 from tornado import ioloop
 from tornado.ioloop import PeriodicCallback
 from node import connection, network_util, trust
