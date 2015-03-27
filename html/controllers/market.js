@@ -48,7 +48,6 @@ angular.module('app')
                 Connection.$on('hello_response', function(e, msg){ $scope.hello_response(msg); });
                 Connection.$on('peers', function(e, msg){ $scope.update_peers(msg); });
                 Connection.$on('peer_remove', function(e, msg){ $scope.remove_peer(msg); });
-
                 if(!listeners.hasOwnProperty('inbox_count')) {
                     Connection.$on('inbox_count', function (e, msg) {
                         $scope.parse_inbox_count(msg);

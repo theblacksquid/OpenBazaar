@@ -25,6 +25,7 @@ angular.module('app')
                 };
                 console.log('Getting inbox messages');
                 Connection.send('get_inbox_messages', query);
+                Connection.send('get_inbox_sent_messages', query);
                 console.log($scope.inbox_messages);
             };
 
