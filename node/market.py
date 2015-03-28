@@ -817,6 +817,26 @@ class Market(object):
                 "msg": msg
             })
 
+            messages = self.get_inbox_messages()
+            self.transport.handler.send_to_client(None, {"type": "inbox_messages", "messages": messages})
+
+            self.check_inbox_count()
+
+    def check_inbox_count(self):
+        messages = self.db_connection.select_entries(
+            "inbox",
+            {
+                "recipient_guid": self.transport.guid
+            },
+            select_fields="id"
+        )
+
+        if self.transport.handler:
+            self.transport.handler.send_to_client(
+                None,
+                {"type": "inbox_count", "count": len(messages)}
+            )
+
     def validate_on_query_listings(self, *data):
         self.log.debug('Validating on query listings message.')
         return "senderGUID" in data[0]

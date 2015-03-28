@@ -303,18 +303,7 @@ class ProtocolHandler(object):
 
     def client_check_inbox_count(self, socket_handler, msg):
         self.log.debug('Checking inbox count')
-        messages = self.db_connection.select_entries(
-            "inbox",
-            {
-                "recipient_guid": self.transport.guid
-            },
-            select_fields="id"
-        )
-
-        self.send_to_client(
-            None,
-            {"type": "inbox_count", "count": len(messages)}
-        )
+        self.market.check_inbox_count()
 
     def refresh_peers(self):
         self.log.info("Peers command")
