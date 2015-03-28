@@ -743,7 +743,7 @@ angular.module('app')
                             },
                             msg: function() {
                                 return msg;
-                            },
+                            }
                         },
                         size: size
                     });
@@ -938,10 +938,20 @@ angular.module('app')
                 };
             };
 
-            $scope.NewMessageInstanceCtrl = function($scope, $modalInstance, myself, msg, scope) {
+            $scope.NewMessageInstanceCtrl = function($scope, $modalInstance, myself, recipient, msg, scope) {
+
+                function guid_to_peer(guid) {
+                    for(peer in $scope.myself.peers) {
+                        peer = $scope.myself.peers[peer];
+                        if(peer.guid == guid) {
+                            return peer;
+                        }
+                    }
+                    return {};
+                }
 
                 $scope.myself = myself;
-                $scope.recipient = '';
+                $scope.recipient = (recipient != '') ? guid_to_peer(recipient) : '';
                 $scope.msg = msg;
 
                 // Fill in form if msg is passed - reply mode
