@@ -395,6 +395,10 @@ angular.module('app')
                 btc_pubkey,
                 scope) {
 
+                console.log('Listing Info: ', listing);
+
+                $scope.listing = listing;
+
                 $scope.myself = myself;
                 $scope.merchantPubkey = merchantPubkey;
                 $scope.productTitle = listing.contract_body.Contract.item_title;
@@ -431,8 +435,14 @@ angular.module('app')
                     $('#totalPrice').html(+(parseFloat(newPrice) + parseFloat($scope.shippingPrice)).toPrecision(8));
                 };
 
+                $scope.gotoStep3 = function() {
+                    $scope.order.step3 = 1;
+                    $scope.order.step2 = '';
+                };
+
                 $scope.gotoStep2 = function() {
                     $scope.order.step2 = 1;
+                    $scope.order.step3 = '';
                 };
 
                 $scope.gotoStep1 = function() {
@@ -455,6 +465,7 @@ angular.module('app')
                 $scope.submitOrder = function() {
 
                     $scope.creatingOrder = false;
+                    $scope.order.step3 = '';
                     $scope.order.step2 = '';
                     $scope.order.step1 = '';
                     $scope.order.confirmation = true;
@@ -467,6 +478,7 @@ angular.module('app')
                         'sellerGUID': $scope.guid,
                         'listingKey': $scope.key,
                         'orderTotal': $('#totalPrice').html(),
+
                         'rawContract': $scope.rawContract,
                         'notary': $scope.order.notary,
                         'btc_pubkey': $scope.order.btc_pubkey,

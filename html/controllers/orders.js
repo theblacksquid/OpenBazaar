@@ -73,6 +73,7 @@ angular.module('app')
                     $scope.myOrders[msg.id].notary = msg.notary;
                     $scope.myOrders[msg.id].item_price = msg.item_price;
                     $scope.myOrders[msg.id].shipping_price = msg.shipping_price;
+                    $scope.myOrders[msg.id].item_quantity = msg.item_quantity;
                     //$scope.myOrders[msg.id].total_price = parseFloat(msg.item_price) + parseFloat(msg.shipping_price)
                     $scope.myOrders[msg.id].address = msg.address;
                     $scope.myOrders[msg.id].buyer = msg.buyer;
@@ -84,7 +85,7 @@ angular.module('app')
                     $scope.myOrders.push(msg);
                 }
                 if (!$scope.$$phase) {
-                    console.log($scope.myOrders);
+                    console.log('My Orders', $scope.myOrders);
                     $scope.$apply();
                 }
             };
@@ -124,6 +125,8 @@ angular.module('app')
                 } else {
                     $scope.modalOrder.waitingForPayment = false;
                 }
+
+                $scope.modalOrder.item_quantity = msg.order.item_quantity;
 
                 if (msg.order.state == 'Notarized') {
                     $scope.modalOrder.notary = $scope.myself.guid;

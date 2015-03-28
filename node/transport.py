@@ -256,6 +256,7 @@ class CryptoTransportLayer(TransportLayer):
 
             data, addr = msg[0], msg[1]
             self.log.debug('Got Packet: %s from %s', data, addr)
+            relayed_message = False
 
             # Punch message
             if data[:5] == 'punch':
@@ -278,6 +279,7 @@ class CryptoTransportLayer(TransportLayer):
                     data_body = json.loads(data)
                     hostname = data_body.get('hostname')
                     port = data_body.get('port')
+                    relayed_message = True
                 else:
                     data_body = json.loads(data)
                     port = addr[1]
@@ -290,9 +292,13 @@ class CryptoTransportLayer(TransportLayer):
                 nat_type = data_body.get('nat_type')
 
                 inbound_peer = self.dht.add_peer(hostname, port, pubkey, guid, nickname, nat_type)
-                inbound_peer.reachable = True
+
 
                 if inbound_peer:
+                    inbound_peer.reachable = True
+
+                    if relayed_message:
+                        inbound_peer._rudp_connection._sender._packet_sender.relaying = True
 
                     packet = Packet(data, packet_buffer=True)
 
@@ -638,7 +644,6 @@ class CryptoTransportLayer(TransportLayer):
         )
 
         peer.nat_type = msg['nat_type']
-        peer.relaying = msg.get('relayed', False)
 
         # if peer:
         #     peer.send_raw(

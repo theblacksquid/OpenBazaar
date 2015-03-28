@@ -281,6 +281,7 @@ class Orders(object):
                  "buyer": _order.get('buyer'),
                  "merchant": _order.get('merchant'),
                  "order_id": _order.get('order_id'),
+                 "item_quantity": _order.get('item_quantity'),
                  "item_price": _order.get('item_price'),
                  "shipping_price": _order.get('shipping_price'),
                  "shipping_address": shipping_address,
@@ -303,7 +304,7 @@ class Orders(object):
         if len(offer_data_json['Contract']['item_remote_images']):
             order['item_images'] = offer_data_json['Contract']['item_remote_images']
         else:
-            order['item_images'] = ["img/no-photo.png"]
+            order['item_images'] = []
 
         self.log.datadump('FULL ORDER: %s', order)
 
@@ -739,6 +740,7 @@ class Orders(object):
         buyer['Buyer']['buyer_GUID'] = self.transport.guid
         buyer['Buyer']['buyer_BTC_uncompressed_pubkey'] = self.generate_new_order_pubkey(order_id)
         buyer['Buyer']['buyer_pgp'] = self.transport.settings['PGPPubKey']
+        buyer['Buyer']['item_quantity'] = msg.get('productQuantity')
         #buyer['Buyer']['buyer_Bitmessage'] = self.transport.settings['bitmessage']
         buyer['Buyer']['buyer_deliveryaddr'] = seller.encrypt(json.dumps(self.get_shipping_address())).encode(
             'hex')

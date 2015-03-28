@@ -5,7 +5,7 @@
                 </div>
                 <div class="modal-body" style="text-align:left;">
 
-                    <div data-ng-show="Market.modalOrder.state == 'Need to Pay' || Market.modalOrder.state == 'Paid'" class="alert alert-warning" role="alert">
+                    <div id="mark_paid_panel" data-ng-show="Market.modalOrder.state == 'Need to Pay'" class="alert alert-warning" role="alert">
                         <div class="row">
 
                             <div style="float:left;margin:10px;"><img ng-src="{{Market.modalOrder.qrcode}}" width="150" height="150"/></div>
@@ -15,7 +15,7 @@
 
                                 <div id="payment_buttons2" style="margin-top:10px;">
                                     <a href="bitcoin:{{Market.modalOrder.address}}?amount={{Market.modalOrder.total_price}}&message={{Market.modalOrder.item_title}}"><button type="button" class="btn btn-warning"><span class="glyphicon glyphicon-share-alt"></span> Pay in your Wallet</button></a>
-                                    <button data-ng-click="markOrderPaid(orderId)" class="btn btn-info"><span class="glyphicon glyphicon-ok"></span> Mark as Paid</button>
+                                    <button data-ng-click="markOrderPaid(orderId);" onclick="$('#mark_paid_panel').hide();" class="btn btn-info"><span class="glyphicon glyphicon-ok"></span> Mark as Paid</button>
                                     <button data-ng-click="" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span> Cancel Order</button>
                                 </div>
 
@@ -49,8 +49,10 @@
                     </div>
 
                     <div data-ng-show="(Market.modalOrder.state == 'Paid' || Market.modalOrder.state == 'Shipped') && Market.modalOrder.merchant != settings.guid" class="alert alert-warning" role="alert">
+                        <h4>Finalize Order</h4>
                         <p style="margin:5px 0">Once you've received your order and are satisfied please release your payment to the seller.</p>
-                        <button id="send-order-button" data-ng-click="markOrderReceived(orderId)" class="btn btn-sm btn-info"><span class="glyphicon glyphicon-share"></span> Release Payment to Merchant</button>
+                        <button data-ng-click="markOrderPaid(orderId);" onclick="$('#mark_paid_panel').hide();" class="btn btn-warning"><span class="glyphicon glyphicon-ok"></span> Resend Payment Notice</button>
+                        <button id="send-order-button" data-ng-click="markOrderReceived(orderId)" class="btn btn btn-info"><span class="glyphicon glyphicon-share"></span> Release Payment to Merchant</button>
                     </div>
 
                     <!--<button data-ng-show="Market.modalOrder.flagForArbitration" id="send-order-button" data-ng-click="flagOrderForArbitration(orderId)" class="btn btn-sm btn-danger"><span class="glyphicon glyphicon-flag"></span> Flag for Arbiter</button>-->
@@ -69,13 +71,13 @@
       <div class="media" style="margin:10px;">
           <h4 class="media-heading">{{Market.modalOrder.item_title}}</h4>
           <div class="media-body" style="margin-bottom:10px;">{{Market.modalOrder.item_desc}}</div>
-
-          <a class="pull-left" href="#" onclick="return false">
-            <img class="media-object" ng-src="{{(isExists(Market.modalOrder.item_remote_images[0])) ? listing.item_remote_images[0] : 'img/no-photo.png'}}" alt="{{Market.modalOrder.item_title}" style="width:100%;max-width:350px;">
+          <div data-ng-show="Market.modalOrder.item_images.length > 0">
+          <a class="pull-left" href="{{(Market.modalOrder.item_images[0] != '') ? Market.modalOrder.item_images[0] : 'img/no-photo.png'}}" target="_blank">
+            <img class="media-object" ng-src="{{(Market.modalOrder.item_images[0] != '') ? Market.modalOrder.item_images[0] : 'img/no-photo.png'}}" alt="{{Market.modalOrder.item_title}}" style="width:100%;max-width:350px;">
           </a>
+          </div>
 
         </div>
-
 
       <table class="table table-striped">
                         <tr>

@@ -28,6 +28,10 @@ a:hover {
   text-align:right;
 }
 
+.badge-alert {
+    border-radius: 1em;
+}
+
 /*
  * Base structure
  */
@@ -240,7 +244,7 @@ ul.pagination { margin: 10px 0 }
 #arbitration-form, #communication-form, #keys-form, #notary-form, #advanced-form { display:none; }
 
 .jumbotron { background-color:white; margin-top:20px; }
-#jumboh1 { font-weight:120; }
+/*jumboh1 { font-weight:120; }*/
 
 .coreContent {
   margin:40px 0;
@@ -282,7 +286,7 @@ div.contract-description { margin: 10px 0; font-size:16px;  font-family: 'Helvet
   margin-right:20px;
 }
 
-# Bootstrap Pills Dropdown
+/* Bootstrap Pills Dropdown*/
 .sidebar-nav {
     padding: 9px 0;
 }

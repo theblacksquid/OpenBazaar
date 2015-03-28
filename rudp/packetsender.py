@@ -35,6 +35,6 @@ class PacketSender(object):
             self.log.debug('Sending packet over the wire: [%s] to %s:%s', send_buffer, self._address, self._port)
             self._socket.sendto(send_buffer, (self._address, self._port))
         else:
-            self.log.debug('Relaying packet')
             relay_pair = (constants.RELAY_SERVER_IP, constants.RELAY_SERVER_PORT)
+            self.log.debug('Relaying packet: %s', relay_pair)
             self._socket.sendto('relayto %s %s %s %s' % (self._guid, self._address, self._port, send_buffer) , relay_pair)
