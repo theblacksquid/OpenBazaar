@@ -242,11 +242,13 @@ class CryptoTransportLayer(TransportLayer):
             data = data.split(' ', 4)
             self.log.debug('RelayTo Data: %s', data)
             if len(data) <= 5:
-                self.log.debug('Relaying to %s:%s', data[2], data[3])
-                self.listener.socket.sendto('relay %s' % data[4], (data[2], int(data[3])))
-            # peer = self.dht.routing_table.get_contact(data[1])
-            # if peer:
-            #     peer.send_to_sock('relay %s' % data[3])
+                peer = self.dht.routing_table.get_contact(data[1])
+
+                if peer:
+                    peer.send_to_sock('relay %s' % data[4])
+                else:
+                    self.log.debug('Relaying to %s:%s', data[2], data[3])
+                    self.listener.socket.sendto('relay %s' % data[4], (data[2], int(data[3])))
 
         # pylint: disable=unused-variable
         @self.listener.ee.on('on_message')
