@@ -773,7 +773,8 @@ class Market(object):
                 settings.get('arbiter', ''),
                 settings.get('notary', ''),
                 settings.get('arbiterDescription', ''),
-                self.transport.sin))
+                self.transport.sin,
+                settings['homepage']))
 
         send_page_query()
 

@@ -54,6 +54,10 @@
                     <td class="col-xs-3">Email Address</td>
                     <td style="word-wrap:break-word"><a href="mailto:{{page.email}}">{{page.email}}</a></td>
                 </tr>
+                <tr data-ng-show="page.homepage">
+                    <td class="col-xs-3">Web Site</td>
+                    <td style="word-wrap:break-word"><a href="{{page.homepage}}" target="_blank">{{page.homepage}}</a></td>
+                </tr>
                 <tr data-ng-show="page.bitmessage">
                     <td class="col-xs-3">Bitmessage Address</td>
                     <td style="word-wrap:break-word"><a href="" data-ng-click="compose_message('lg', myself, page.bitmessage, null)">{{page.bitmessage}}</a>
@@ -145,7 +149,7 @@
                  <div style="margin-bottom:10px"><img src="img/ajax-loader.gif" width="25"/> Looking for contracts...</div>
             </div>
 
-            <div data-ng-show="no_listings || !store_listings">No listings available at this time.</div>
+            <div data-ng-show="no_listings || !store_listings">This user is not a merchant at this time.</div>
 
             <div class="div-listing col-sm-4 col-xs-6" style="padding:5px" data-ng-repeat="listing in store_listings">
 

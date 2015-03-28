@@ -4,7 +4,7 @@ def shout(data):
 
 
 def proto_page(uri, pubkey, guid, text, signature, nickname, PGPPubKey, email,
-               bitmessage, arbiter, notary, arbiter_description, sin):
+               bitmessage, arbiter, notary, arbiter_description, sin, homepage):
     data = {
         'type': 'page',
         'uri': uri,
@@ -18,7 +18,8 @@ def proto_page(uri, pubkey, guid, text, signature, nickname, PGPPubKey, email,
         'arbiter': arbiter,
         'notary': notary,
         'arbiter_description': arbiter_description,
-        'sin': sin
+        'sin': sin,
+        'homepage': homepage
     }
     return data
 

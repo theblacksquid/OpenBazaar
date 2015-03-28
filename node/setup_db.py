@@ -151,6 +151,7 @@ _SCHEMA = (
             'obelisk TEXT DEFAULT "obelisk-baltic.airbitz.co:9091"',
             'notaries TEXT',
             'notary BOOLEAN',
+            'homepage TEXT',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
         )
     ),
