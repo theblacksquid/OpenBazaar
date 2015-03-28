@@ -12,7 +12,7 @@ import random
 from StringIO import StringIO
 import traceback
 import re
-import tornado
+from tornado import ioloop
 
 from node import constants
 from node.data_uri import DataURI
@@ -90,13 +90,12 @@ class Market(object):
         self.orders = Orders(transport, self.market_id, db_connection, self.gpg)
 
     def start_listing_republisher(self):
-         # Periodically refresh buckets
-        loop = tornado.ioloop.IOLoop.instance()
-        refresh_cb = tornado.ioloop.PeriodicCallback(self.dht._refresh_node,
+        # Periodically refresh buckets
+        loop = ioloop.IOLoop.instance()
+        refresh_cb = ioloop.PeriodicCallback(self.dht._refresh_node,
                                                      constants.REFRESH_TIMEOUT,
                                                      io_loop=loop)
         refresh_cb.start()
-
 
     def disable_welcome_screen(self):
         """This just flags the welcome screen to not show on startup"""
@@ -359,7 +358,6 @@ class Market(object):
             self.log.debug('Listing: %s', listing)
             self.log.debug('Contract: %s', contract_body)
 
-
             contract = contract_body.get('Contract')
 
             keywords = contract.get('item_keywords') if contract is not None else []
@@ -573,14 +571,14 @@ class Market(object):
         """Get messages from inbox table"""
         messages = self.db_connection.select_entries("inbox", {
             'recipient_guid': self.transport.guid
-        }, order = 'DESC')
+        }, order='DESC')
         return messages
 
     def get_inbox_sent_messages(self):
         """Get messages from inbox table"""
         messages = self.db_connection.select_entries("inbox", {
             'sender_guid': self.transport.guid
-        }, order = 'DESC')
+        }, order='DESC')
         return messages
 
     def get_contracts(self, page=0, remote=False):
@@ -799,7 +797,7 @@ class Market(object):
         self.db_connection.insert_entry(
             'inbox',
             {
-                'subject': msg.get('subject',''),
+                'subject': msg.get('subject', ''),
                 'body': msg.get('body', ''),
                 'sender_guid': msg.get('sender_guid', ''),
                 'recipient_guid': self.transport.guid,
