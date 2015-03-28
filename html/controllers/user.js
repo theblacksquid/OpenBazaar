@@ -89,6 +89,16 @@ angular.module('app')
                 });
             };
 
+            $scope.compose_inbox_message = function(size, myself, guid, subject) {
+                console.log('Composing Inbox Message');
+                $rootScope.$broadcast("compose_inbox_message", {
+                    size: size,
+                    myself: myself,
+                    guid: guid,
+                    subject: subject
+                });
+            };
+
             /**
              * Query the network for a merchant and then
              * show the page

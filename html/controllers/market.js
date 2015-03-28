@@ -856,13 +856,15 @@ angular.module('app')
 
             $scope.NewMessageCtrl = function($scope, $modal, $log) {
 
-                $scope.$on("compose_message", function(event, args) {
-                    $scope.bm_address = args.bm_address;
+                $scope.$on("compose_inbox_message", function(event, args) {
+                    console.log('compose_inbox_message');
+
+                    $scope.guid = args.guid;
                     $scope.size = args.size;
                     $scope.subject = args.subject;
                     $scope.myself = args.myself;
 
-                    $scope.compose($scope.size, $scope.myself, $scope.bm_address, $scope.subject);
+                    $scope.compose($scope.size, $scope.myself, $scope.guid, $scope.subject);
                 });
 
                 $scope.guid_to_nickname = function(guid) {
@@ -892,12 +894,12 @@ angular.module('app')
                             },
                             scope: function() {
                                 return $scope;
-                            },
+                            }
                         },
                         size: size
                     });
                     var afterFunc = function() {
-                        $scope.showDashboardPanel('inbox');
+                        return;
                     };
                     composeModal.result.then(
                         afterFunc,

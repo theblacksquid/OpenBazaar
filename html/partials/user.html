@@ -14,9 +14,10 @@
             <div class="col-sm-1">
                 <identicon icon-size="64" hash="page.senderGUID" title="{{page.senderGUID}}"></identicon>
             </div>
-            <div class="col-sm-11" ng-controller="ComposeMessageCtrl">
+            <div class="col-sm-11">
                 {{page.nickname ? page.nickname : "No nickname"}}<br/>
-                <button data-ng-show="page.bitmessage != '' && settings.bitmessage != ''" class="btn btn-sm btn-info" data-ng-click="compose_message('lg', myself, page.bitmessage, null)">Bitmessage Me</button>
+                <button ng-controller="NewMessageCtrl" class="btn btn-sm btn-info" data-ng-click="compose_inbox_message('lg', myself, guid, null)">Message Me</button>
+                <button ng-controller="ComposeMessageCtrl" data-ng-show="page.bitmessage != '' && settings.bitmessage != ''" class="btn btn-sm btn-info" data-ng-click="compose_message('lg', myself, page.bitmessage, null)">Bitmessage Me</button>
                 <a data-ng-href="mailto:{{page.email}}"><button data-ng-show="page.email != ''" class="btn btn-sm btn-info">Email Me</button></a>
             </div>
         </h2>

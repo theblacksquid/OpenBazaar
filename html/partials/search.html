@@ -21,7 +21,7 @@
         </tr>
         <tr data-ng-repeat="contract in search_results">
 
-            <td width=100 style="border-right:none;"><img data-ng-show="contract.Contract.item_images" ng-src="{{contract.Contract.item_images}}" alt="" class="img-thumbnail" width=100 height=100></td>
+            <td width=100 style="border-right:none;"><img data-ng-show="contract.Contract.item_images" ng-src="{{contract.Contract.item_images[0]}}" alt="" class="img-thumbnail" width=100 height=100></td>
             <td  style="border-left:none;"><a data-ng-href="#user/{{contract.Seller.seller_GUID}}/products"><span style="font-size:20px;">{{contract.Contract.item_title}}</span></a>
                 <div style="padding:3px 0">
                     <span class="glyphicon glyphicon-tags"></span> <strong>Tags:</strong>
