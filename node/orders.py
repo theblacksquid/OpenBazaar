@@ -441,9 +441,10 @@ class Orders(object):
         self.log.info('Shipping order')
 
         del order['qrcode']
-        del order['item_image']
+        del order['item_images']
         del order['total_price']
         del order['item_title']
+        del order['item_desc']
         del order['buyer_bitmessage']
         del order['merchant_bitmessage']
         del order['payment_address_amount']

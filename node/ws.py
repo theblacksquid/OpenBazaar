@@ -645,6 +645,7 @@ class ProtocolHandler(object):
 
                 # Create unsigned transaction
                 unspent = [row[:4] for row in history if row[4] is None]
+                self.log.debug('Unspent Inputs: %s', unspent)
 
                 # Send all unspent outputs (everything in the address) minus
                 # the fee
@@ -666,10 +667,11 @@ class ProtocolHandler(object):
                     self.log.debug('No money in this address any longer.')
                     return
 
-                self.log.debug('Total amount to release to merchant: %s ', total_amount)
+                self.log.debug('Total amount to release to merchant: %s ', send_amount)
 
                 # Get buyer signatures on inputs
                 buyer_signatures = []
+                self.log.debug('merchant tx %s, merchant script: %s', order['merchant_tx'], order['merchant_script'])
                 for x in range(0, len(inputs)):
                     ms = multisign(order['merchant_tx'], x, order['merchant_script'], private_key)
                     buyer_signatures.append(ms)

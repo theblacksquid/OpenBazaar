@@ -44,7 +44,7 @@ angular.module('app')
                 $scope.orders_pages = msg.total % 10;
                 $scope.orders_current_page = msg.page + 1;
 
-            };
+            }
 
             $scope.queryMyOrder = function(merchant) {
                 // Query for orders
@@ -198,6 +198,7 @@ angular.module('app')
                         $log.info('Modal dismissed at: ' + new Date());
                     });
                 };
+
             };
 
 
@@ -224,6 +225,16 @@ angular.module('app')
                         $scope.$apply();
                     }
 
+                };
+
+                $scope.compose_inbox_message = function(size, myself, guid, subject) {
+                    console.log('Composing Inbox Message');
+                    $rootScope.$broadcast("compose_inbox_message", {
+                        size: size,
+                        myself: myself,
+                        guid: guid,
+                        subject: subject
+                    });
                 };
 
                 $scope.markOrderShipped = function(orderId) {

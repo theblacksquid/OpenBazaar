@@ -83,6 +83,7 @@ _SCHEMA = (
             'payment_address TEXT',
             'shipping_address TEXT',
             'refund_requested INT DEFAULT 0',
+            'item_quantity INT DEFAULT 0',
             'refund_address TEXT',
             'cancelled INT DEFAULT 0',
             'buyer TEXT',

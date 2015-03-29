@@ -27,8 +27,10 @@
                         <h3>Shipping & Payment</h3>
                         <form name="releasePaymentForm" novalidate>
 
-                            <p style="padding:10px">This order has been paid for by the buyer. You should verify the funds have been sent and then ship the
+                            <p style="padding:10px" data-ng-show="Market.modalOrder.state == 'Buyer Paid'">This order has been paid for by the buyer. You should verify the funds have been sent and then ship the
                             goods. Once you've done this you can enter your payment address and notify the buyer.</p>
+
+                            <p style="padding:10px" data-ng-show="Market.modalOrder.state == 'Shipped'">You have marked this order as being shipped. If for some reason the buyer informs you that he not been notified you may retry this process again by specifying your payment address below and resending the notification.</p>
 
                             <div class="row" style="margin-top:10px;">
                             <div class="col-sm-5 text-right" style="padding-top:5px">
@@ -42,7 +44,8 @@
                                 <div class="col-sm-5 text-right" style="padding-top:5px">
                                 </div>
                                 <div class="col-sm-7">
-                                    <button id="send-order-button" data-ng-click="markOrderShipped(orderId)" class="{{releasePaymentForm.bitcoinPaymentAddress.$invalid ? 'disabled' : ''}} btn btn-info"><span class="glyphicon glyphicon-share"></span> Request Payment</button>
+                                    <button data-ng-show="Market.modalOrder.state == 'Buyer Paid'" id="send-order-button" data-ng-click="markOrderShipped(orderId)" class="{{releasePaymentForm.bitcoinPaymentAddress.$invalid ? 'disabled' : ''}} btn btn-info"><span class="glyphicon glyphicon-share"></span> Request Payment</button>
+                                    <button data-ng-show="Market.modalOrder.state == 'Shipped'" id="send-order-button" data-ng-click="markOrderShipped(orderId)" class="{{releasePaymentForm.bitcoinPaymentAddress.$invalid ? 'disabled' : ''}} btn btn-info"><span class="glyphicon glyphicon-share"></span> Re-Request Payment</button>
                                 </div>
                             </div>
                         </form>
@@ -51,7 +54,7 @@
                     <div data-ng-show="(Market.modalOrder.state == 'Paid' || Market.modalOrder.state == 'Shipped') && Market.modalOrder.merchant != settings.guid" class="alert alert-warning" role="alert">
                         <h4>Finalize Order</h4>
                         <p style="margin:5px 0">Once you've received your order and are satisfied please release your payment to the seller.</p>
-                        <button data-ng-click="markOrderPaid(orderId);" onclick="$('#mark_paid_panel').hide();" class="btn btn-warning"><span class="glyphicon glyphicon-ok"></span> Resend Payment Notice</button>
+                        <button data-ng-show="Market.modalOrder.state != 'Shipped'" data-ng-click="markOrderPaid(orderId);" onclick="$('#mark_paid_panel').hide();" class="btn btn-warning"><span class="glyphicon glyphicon-ok"></span> Resend Payment Notice</button>
                         <button id="send-order-button" data-ng-click="markOrderReceived(orderId)" class="btn btn btn-info"><span class="glyphicon glyphicon-share"></span> Release Payment to Merchant</button>
                     </div>
 
@@ -147,7 +150,9 @@
 
     <div class="tab-pane" id="shipping-information">
 
-
+        <div class="alert alert-info" style="margin-top:10px;" data-ng-show="Market.modalOrder.shipping_address.recipient_name == '' && Market.modalOrder.shipping_address.street1 == '' && Market.modalOrder.shipping_address.street2 == '' && Market.modalOrder.shipping_address.city == '' && Market.modalOrder.shipping_address.stateRegion == '' && Market.modalOrder.shipping_address.zip == ''">
+            This user has no shipping address data. If you need it we suggest messaging them to get it. They may be interested in sending you their contact information via PGP encrypted messaging or out of band communication.
+        </div>
 
         <div style="padding:20px;">
         <address>
