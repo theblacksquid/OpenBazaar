@@ -97,7 +97,8 @@ angular.module('app')
                     'type': 'shout',
                     'text': $scope.newShout,
                     'pubkey': $scope.myself.pubkey,
-                    'senderGUID': $scope.myself.guid
+                    'senderGUID': $scope.myself.guid,
+                    'avatar_url': $scope.myself.settings.avatar_url
                 };
                 Connection.send('shout', newShout);
                 $scope.shouts.push(newShout);
@@ -183,6 +184,10 @@ angular.module('app')
             $scope.parse_welcome = function(msg) {
 
                 console.log(msg);
+
+            };
+
+            $scope.guid_to_avatar = function(guid) {
 
             };
 
