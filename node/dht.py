@@ -114,7 +114,8 @@ class DHT(object):
                         self.transport.handler.refresh_peers()
 
                 peer.nickname = nickname
-                peer.avatar_url = avatar_url
+                if avatar_url:
+                    peer.avatar_url = avatar_url
                 peer.pub = pubkey
 
                 # DHT contacts
