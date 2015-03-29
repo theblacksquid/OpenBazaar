@@ -91,8 +91,12 @@ angular.module('app')
              * Display it in the interface
              */
             $scope.createShout = function() {
+
+                if($scope.newShout == '') {
+                    return;
+                }
+
                 // launch a shout
-                console.log($scope);
                 var newShout = {
                     'type': 'shout',
                     'text': $scope.newShout,
