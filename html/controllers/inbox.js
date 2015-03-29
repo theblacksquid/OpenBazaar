@@ -40,6 +40,7 @@ angular.module('app')
 
             $scope.load_page = function(msg) {
                 $scope.inboxPanel = true;
+                Connection.send('peers', {});
                 $scope.getInboxMessages();
             };
 
