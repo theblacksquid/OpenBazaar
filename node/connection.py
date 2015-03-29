@@ -19,7 +19,7 @@ from tornado import ioloop
 
 
 class PeerConnection(GUIDMixin, object):
-    def __init__(self, guid, transport, hostname, port=12345, nickname="", peer_socket=None, nat_type=None):
+    def __init__(self, guid, transport, hostname, port=12345, nickname="", avatar_url="", peer_socket=None, nat_type=None):
 
         GUIDMixin.__init__(self, guid)
 
@@ -36,6 +36,7 @@ class PeerConnection(GUIDMixin, object):
         self.hostname = hostname
         self.port = port
         self.nickname = nickname
+        self.avatar_url = avatar_url
         self.nat_type = nat_type
         self.pinging = False
         self.relaying = False
@@ -66,8 +67,11 @@ class PeerConnection(GUIDMixin, object):
                     'nat_type': self.transport.nat_type,
                     'port': self.transport.port,
                     'senderNick': self.transport.nickname,
+                    'avatar_url': self.transport.avatar_url,
                     'v': constants.VERSION
                 }
+
+                self.log.debug('Hello Content: %s', hello_msg)
 
                 if not self.reachable:
                     self.log.error('No response from peer.')
@@ -237,18 +241,19 @@ class PeerConnection(GUIDMixin, object):
 
 class CryptoPeerConnection(PeerConnection):
     def __init__(self, transport, hostname, port, pub=None, guid=None, nickname="",
+                 avatar_url="",
                  sin=None, rudp_connection=None, peer_socket=None, nat_type=None):
 
-        PeerConnection.__init__(self, guid, transport, hostname, port, nickname, peer_socket, nat_type)
+        PeerConnection.__init__(self, guid, transport, hostname, port, nickname, avatar_url, peer_socket, nat_type)
 
         self.pub = pub
         self.sin = sin
         self.waiting = False  # Waiting for ping-pong
 
     def __repr__(self):
-        return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s nat: %s relaying: %s}' % (
+        return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s nat: %s relaying: %s avatar: %s}' % (
             self.guid, self.hostname, self.port, self.pub, self.reachable, self.nat_type,
-            self.relaying
+            self.relaying, self.avatar_url
         )
 
     @staticmethod

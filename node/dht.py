@@ -80,7 +80,7 @@ class DHT(object):
             self.transport.handler.refresh_peers()
 
     @_synchronized
-    def add_peer(self, hostname, port, pubkey=None, guid=None, nickname=None, nat_type=None):
+    def add_peer(self, hostname, port, pubkey=None, guid=None, nickname=None, nat_type=None, avatar_url=None):
         """ This takes a tuple (pubkey, hostname, port, guid) and adds it to the active
         peers list if it doesn't already reside there.
 
@@ -114,6 +114,7 @@ class DHT(object):
                         self.transport.handler.refresh_peers()
 
                 peer.nickname = nickname
+                peer.avatar_url = avatar_url
                 peer.pub = pubkey
 
                 # DHT contacts
@@ -127,6 +128,7 @@ class DHT(object):
                 peer.nat_type = nat_type
                 peer.pub = pubkey
                 peer.nickname = nickname
+                peer.avatar_url = avatar_url
 
                 self.routing_table.add_contact(peer)
 
@@ -135,7 +137,7 @@ class DHT(object):
 
                 return peer
 
-        new_peer = self.transport.get_crypto_peer(guid, hostname, port, pubkey, nickname, nat_type)
+        new_peer = self.transport.get_crypto_peer(guid, hostname, port, pubkey, nickname, nat_type, avatar_url)
 
         if new_peer:
             #if new_peer.guid:
@@ -235,13 +237,16 @@ class DHT(object):
         contact_list = []
         for contact in contacts:
             self.log.debug('Contact: %s', contact)
+            contact.avatar_url = contact.avatar_url if contact.avatar_url else None
+
             contact_list.append((
                 contact.guid,
                 contact.hostname,
                 contact.port,
                 contact.pub,
                 contact.nickname,
-                contact.nat_type
+                contact.nat_type,
+                contact.avatar_url
             ))
 
         return self.dedupe(contact_list)
@@ -275,7 +280,7 @@ class DHT(object):
                     self.log.debug('Found a tuple %s', found_node)
                     if len(found_node) == 3:
                         found_node.append('')
-                    self.add_peer(found_node[1], found_node[2], found_node[3], found_node[0], found_node[4])
+                    self.add_peer(found_node[1], found_node[2], found_node[3], found_node[0], found_node[4], avatar_url=found_node[6])
 
                 for idx, search in enumerate(self.searches):
                     if search.find_id == msg['findID']:
@@ -319,7 +324,8 @@ class DHT(object):
                                 node[3],
                                 node[0],
                                 node[4],
-                                node[5]
+                                node[5],
+                                node[6]
                             )
                             nodes_to_extend.append(node)
 

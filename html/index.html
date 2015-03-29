@@ -90,7 +90,10 @@
                                 <!--<li><a data-ng-href="#/messages" data-ng-click="showDashboardPanel('messages')">Messages <span data-ng-show="BMMessages" class="badge pull-right">1</span></a></li>-->
 
                                 <li><a data-ng-href="#/settings">Settings</a></li>
-                                <li><identicon icon-size="30" hash="myself.guid" title="{{myself.guid}}" ></identicon></li>
+                                <li>
+                                    <img src="{{myself.settings.avatar_url}}" class="thumb thumb-icon" data-ng-show="myself.settings.avatar_url != ''" />
+                                    <identicon icon-size="30" hash="myself.guid" title="{{myself.guid}}" data-ng-show="myself.settings.avatar_url == ''" ></identicon>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -116,7 +119,10 @@
 
                     <tbody>
                     <tr>
-                        <td width="40" style="vertical-align:top"><identicon icon-size="50" hash="myself.guid" title="{{myself.guid}}"></identicon></td>
+                        <td width="40" style="vertical-align:top">
+                            <img src="{{myself.settings.avatar_url}}" class="thumb thumb-small" data-ng-show="myself.settings.avatar_url != ''" />
+                                    <identicon icon-size="50" hash="myself.guid" title="{{myself.guid}}" data-ng-show="myself.settings.avatar_url == ''" ></identicon>
+
                         <td style="font-size:14px;word-wrap:break-word;word-break:break-all">
                             <span title="{{myself.pubkey}}">
                                 <strong>{{settings.nickname ? settings.nickname : 'Your Store'}}</strong>
@@ -142,7 +148,10 @@
                     <table id="favorite-peers" class="peers-table table-hover">
                         <tbody>
                             <tr data-ng-repeat="peer in peers" data-ng-click="goToStore('/user/'+peer.guid+'/products', peer.guid);">
-                                <td width="40" style="vertical-align:top" ><identicon icon-size="50" hash="peer.guid" title="{{peer.guid}}"></identicon></td>
+                                <td width="50" style="vertical-align:top" >
+                                    <img src="{{peer.avatar_url}}" class="thumb thumb-small" data-ng-show="peer.avatar_url != null" />
+                                    <identicon icon-size="50" hash="peer.guid" title="{{peer.guid}}" data-ng-show="peer.avatar_url == null" ></identicon>
+                                </td>
                                 <td>
                                     <span title="{{peer.pubkey}}">
                                         <span class="glyphicon {{peer.reachable ? 'glyphicon-ok' : 'glyphicon-remove'}}"></span>

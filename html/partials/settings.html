@@ -42,6 +42,13 @@
         </div>
 
         <div class="form-group">
+            <label for="inputAvatarURL" class="col-sm-3 control-label">Avatar URL</label>
+            <div class="col-sm-9">
+                <input type="url" data-ng-model="settings.avatar_url" class="form-control" id="inputAvatarURL" placeholder="Avatar URL">
+            </div>
+        </div>
+
+        <div class="form-group">
             <label for="inputNamecoin_id" class="col-sm-3 control-label">Namecoin id</label>
             <div class="col-sm-9">
                 <input data-ng-model="settings.namecoin_id" data-ng-maxlength="39" data-ng-pattern = "/^[a-z0-9\-]+$/" class="form-control" id="inputNamecoin_id" name="inputNamecoin_id" placeholder="Namecoin id">

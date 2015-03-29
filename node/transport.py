@@ -23,7 +23,7 @@ from node.crypto_util import Cryptor
 class TransportLayer(object):
     """TransportLayer manages a list of peers."""
 
-    def __init__(self, ob_ctx, guid, nickname=None):
+    def __init__(self, ob_ctx, guid, nickname=None, avatar_url=None):
         self.peers = {}
         self.callbacks = defaultdict(list)
         self.timeouts = []
@@ -33,6 +33,7 @@ class TransportLayer(object):
         self.guid = guid
         self.market_id = ob_ctx.market_id
         self.nickname = nickname
+        self.avatar_url = avatar_url
         self.handler = None
         self.uri = network_util.get_peer_url(self.hostname, self.port)
         self.listener = None
@@ -93,6 +94,7 @@ class CryptoTransportLayer(TransportLayer):
         self.uri = network_util.get_peer_url(ob_ctx.server_ip, ob_ctx.server_port)
         self.hostname = ob_ctx.server_ip
         self.nickname = ""
+        self.avatar_url = ""
         self.dev_mode = ob_ctx.dev_mode
         self.seed_mode = ob_ctx.seed_mode
         self.mediation_mode = {}
@@ -120,7 +122,7 @@ class CryptoTransportLayer(TransportLayer):
         self._setup_settings()
         ob_ctx.market_id = self.market_id
         self.dht = DHT(self, self.market_id, self.settings, self.db_connection)
-        TransportLayer.__init__(self, ob_ctx, self.guid, self.nickname)
+        TransportLayer.__init__(self, ob_ctx, self.guid, self.nickname, self.avatar_url)
         self.start_listener()
 
         if ob_ctx.enable_ip_checker and not ob_ctx.seed_mode and not ob_ctx.dev_mode:
@@ -640,7 +642,8 @@ class CryptoTransportLayer(TransportLayer):
             msg['pubkey'],
             msg['senderGUID'],
             msg['senderNick'],
-            msg['nat_type']
+            msg['nat_type'],
+            msg['avatar_url']
         )
 
         peer.nat_type = msg['nat_type']
@@ -736,6 +739,7 @@ class CryptoTransportLayer(TransportLayer):
             self.settings.update(newsettings)
 
         self.nickname = self.settings.get('nickname', '')
+        self.avatar_url = self.settings.get('avatar_url', '')
         self.namecoin_id = self.settings.get('namecoin_id', '')
         self.secret = self.settings.get('secret', '')
         self.pubkey = self.settings.get('pubkey', '')
@@ -848,7 +852,7 @@ class CryptoTransportLayer(TransportLayer):
         self.log.info('Searching for myself')
         self.dht.iterative_find('0000000000000000000000000000000000000000', [], 'findNode')
 
-    def get_crypto_peer(self, guid=None, hostname=None, port=None, pubkey=None, nickname=None, nat_type=None):
+    def get_crypto_peer(self, guid=None, hostname=None, port=None, pubkey=None, nickname=None, nat_type=None, avatar_url=None):
         if guid == self.guid:
             self.log.error('Cannot get CryptoPeerConnection for your own node')
             return
@@ -862,7 +866,8 @@ class CryptoTransportLayer(TransportLayer):
                 guid=guid,
                 nickname=nickname,
                 peer_socket=self.listener.socket,
-                nat_type=nat_type
+                nat_type=nat_type,
+                avatar_url=avatar_url
             )
         else:
             # FIXME this is wrong to do here, but it keeps this as close as
@@ -877,6 +882,8 @@ class CryptoTransportLayer(TransportLayer):
                 self.peers[guid].nickname = nickname
             if nat_type:
                 self.peers[guid].nat_type = nat_type
+            if avatar_url:
+                self.peers[guid].avatar_url = avatar_url
 
         return self.peers[guid]
 

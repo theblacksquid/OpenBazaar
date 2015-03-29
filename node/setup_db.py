@@ -126,6 +126,7 @@ _SCHEMA = (
             'namecoin_id TEXT',
             'secret TEXT',
             'bip32_seed TEXT',
+            'avatar_url TEXT',
             'sin TEXT',
             'pubkey TEXT',
             'guid TEXT',

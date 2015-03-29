@@ -1163,8 +1163,8 @@ class ProtocolHandler(object):
                         '\x0F\x02%s' + peer.guid.decode('hex')
                     )
                 peer_item['nick'] = peer.nickname
-
                 peer_item['reachable'] = peer.reachable
+                peer_item['avatar_url'] = peer.avatar_url
 
                 self.log.debug('Peer: %s', peer)
                 peers.append(peer_item)

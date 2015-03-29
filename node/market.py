@@ -774,7 +774,8 @@ class Market(object):
                 settings.get('notary', ''),
                 settings.get('arbiterDescription', ''),
                 self.transport.sin,
-                settings['homepage']))
+                settings['homepage'],
+                settings['avatar_url']))
 
         send_page_query()
 

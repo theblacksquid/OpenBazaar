@@ -14,7 +14,10 @@
             <div class="col-sm-12">
                 <table>
                     <tr>
-                        <td><identicon icon-size="80" hash="page.senderGUID" title="{{page.senderGUID}}"></identicon></td>
+                        <td width="90">
+                            <img src="{{page.avatar_url}}" class="thumb thumb-large" data-ng-show="page.avatar_url != ''" />
+                            <identicon icon-size="80" hash="page.senderGUID" title="{{page.senderGUID}}" data-ng-show="page.avatar_url == ''" ></identicon>
+                        </td>
                         <td>
                             {{page.nickname ? page.nickname : "No nickname"}}<br/>
                             <button ng-controller="NewMessageCtrl" class="btn btn-sm btn-info" data-ng-click="compose_inbox_message('lg', myself, guid, null)">Message Me</button>

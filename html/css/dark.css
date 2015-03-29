@@ -291,6 +291,43 @@ div.contract-description { margin: 10px 0; font-size:16px;  font-family: 'Helvet
     padding: 9px 0;
 }
 
+.thumb {
+    display: block;
+    overflow: hidden;
+    background-position: center center;
+    background-size: cover;
+}
+
+.thumb img {
+    display: block; /* Otherwise it keeps some space around baseline */
+    min-width: 100%;    /* Scale up to fill container width */
+    min-height: 100%;   /* Scale up to fill container height */
+    -ms-interpolation-mode: bicubic; /* Scaled images look a bit better in IE now */
+}
+
+.thumb-normal {
+    width: 100px;
+    height: 100px;
+}
+
+.thumb-small {
+    width: 40px;
+    height: 40px;
+    margin:5px;
+}
+
+.thumb-large {
+    width: 80px;
+    height: 80px;
+}
+
+.thumb-icon {
+    width: 30px;
+    height: 30px;
+}
+
+
+
 .dropdown-menu .sub-menu {
     left: 100%;
     position: absolute;
