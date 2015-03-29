@@ -29,8 +29,13 @@
         <div class="col-sm-12" data-ng-show="merchant == 0 && orders_total == 0" style="padding:0">
             You have not made any purchases yet.
         </div>
-        <div class="col-sm-12" data-ng-show="merchant == 2 && orders_total == 0" style="padding:0">
+        <div class="col-sm-12" data-ng-show="merchant == 2 && orders_total == 0 && myself.settings.notary != 'False'" style="padding:0">
             You have not notarized any contracts yet.
+        </div>
+
+        <div class="alert alert-info" data-ng-show="merchant == 2 && myself.settings.notary == 'False'">
+            You are currently not acting as a notary on the OpenBazaar network. <BR>
+            If you would like to do so please visit the <strong><a href="#/settings/notary">Settings Panel</a></strong>.
         </div>
 
 
