@@ -306,7 +306,8 @@ class MarketApplication(tornado.web.Application):
                     'senderGUID': self.transport.guid,
                     'hostname': self.transport.hostname,
                     'port': self.transport.port,
-                    'senderNick': self.transport.nickname
+                    'senderNick': self.transport.nickname,
+                    'avatar_url': self.transport.avatar_url,
                 })
             )
 

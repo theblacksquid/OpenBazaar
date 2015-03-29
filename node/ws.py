@@ -971,6 +971,7 @@ class ProtocolHandler(object):
         msg['pubkey'] = self.transport.pubkey
         msg['senderGUID'] = self.transport.guid
         msg['senderNick'] = self.transport.nickname
+        msg['avatar_url'] = self.transport.avatar_url
         self.transport.send(protocol.shout(msg))
 
     def on_node_search_value(self, results, key):

@@ -610,6 +610,7 @@ class CryptoTransportLayer(TransportLayer):
                 'hostname': self.hostname,
                 'port': self.port,
                 'senderNICK': self.nickname,
+                'avatar_url': self.avatar_url,
                 'nat_type': self.nat_type
             }
             peer.send_raw(json.dumps(pong_msg))

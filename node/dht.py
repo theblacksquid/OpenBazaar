@@ -190,6 +190,7 @@ class DHT(object):
         nickname = msg['senderNick']
         nat_type = msg['nat_type']
         hostname = msg['hostname']
+        avatar_url = msg['avatar_url']
         port = msg['port']
 
         assert guid is not None and guid != self.transport.guid
@@ -209,6 +210,7 @@ class DHT(object):
                             "port": self.transport.port,
                             "pubkey": self.transport.pubkey,
                             "senderNick": self.transport.nickname,
+                            "avatar_url": self.transport.avatar_url,
                             "findID": find_id}
 
             if msg['findValue']:
@@ -836,6 +838,7 @@ class DHT(object):
                                "key": new_search.key,
                                "findValue": find_value,
                                "senderNick": self.transport.nickname,
+                               "avatar_url": self.transport.avatar_url,
                                "findID": new_search.find_id,
                                "pubkey": contact.transport.pubkey}
                         self.log.debug('Sending findNode to: %s %s', contact.hostname, msg)

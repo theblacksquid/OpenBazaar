@@ -288,6 +288,7 @@ class CryptoPeerConnection(PeerConnection):
         data['senderGUID'] = self.transport.guid
         data['pubkey'] = self.transport.pubkey
         data['senderNick'] = self.transport.nickname
+        data['avatar_url'] = self.transport.avatar_url
         data['senderNamecoin'] = self.transport.namecoin_id
         data['v'] = constants.VERSION
 
