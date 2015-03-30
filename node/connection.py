@@ -19,7 +19,8 @@ from tornado import ioloop
 
 
 class PeerConnection(GUIDMixin, object):
-    def __init__(self, guid, transport, hostname, port=12345, nickname="", avatar_url="", peer_socket=None, nat_type=None):
+    def __init__(self, guid, transport, hostname, port=12345, nickname="",
+                 avatar_url="", peer_socket=None, nat_type=None):
 
         GUIDMixin.__init__(self, guid)
 

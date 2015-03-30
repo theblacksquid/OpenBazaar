@@ -1,5 +1,4 @@
 import unittest
-
 from db.migrations import migrations_util
 
 

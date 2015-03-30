@@ -200,7 +200,7 @@ class DHT(object):
         assert pubkey is not None
 
         querying_peer = self.add_peer(
-            hostname, port, pubkey, guid, nickname, nat_type
+            hostname, port, pubkey, guid, nickname, nat_type, avatar_url
         )
 
         if querying_peer is not None:
@@ -283,7 +283,8 @@ class DHT(object):
                     self.log.debug('Found a tuple %s', found_node)
                     if len(found_node) == 3:
                         found_node.append('')
-                    self.add_peer(found_node[1], found_node[2], found_node[3], found_node[0], found_node[4], avatar_url=found_node[6])
+                    self.add_peer(found_node[1], found_node[2], found_node[3],
+                                  found_node[0], found_node[4], avatar_url=found_node[6])
 
                 for idx, search in enumerate(self.searches):
                     if search.find_id == msg['findID']:
@@ -321,7 +322,7 @@ class DHT(object):
                                 or not node[2] == self.transport.port:
 
                             self.log.debug('Adding a findNode peer')
-                            new_node = self.add_peer(
+                            self.add_peer(
                                 node[1],
                                 node[2],
                                 node[3],

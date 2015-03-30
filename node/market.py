@@ -93,8 +93,8 @@ class Market(object):
         # Periodically refresh buckets
         loop = ioloop.IOLoop.instance()
         refresh_cb = ioloop.PeriodicCallback(self.dht._refresh_node,
-                                                     constants.REFRESH_TIMEOUT,
-                                                     io_loop=loop)
+                                             constants.REFRESH_TIMEOUT,
+                                             io_loop=loop)
         refresh_cb.start()
 
     def disable_welcome_screen(self):

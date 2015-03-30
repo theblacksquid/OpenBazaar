@@ -44,7 +44,7 @@ angular.module('app')
                 $scope.orders_pages = msg.total % 10;
                 $scope.orders_current_page = msg.page + 1;
 
-            }
+            };
 
             $scope.queryMyOrder = function(merchant) {
                 // Query for orders

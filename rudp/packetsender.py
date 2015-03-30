@@ -1,5 +1,5 @@
 import logging
-import constants
+from rudp import constants
 
 class PacketSender(object):
 
@@ -37,4 +37,5 @@ class PacketSender(object):
         else:
             relay_pair = (constants.RELAY_SERVER_IP, constants.RELAY_SERVER_PORT)
             self.log.debug('Relaying packet: %s', relay_pair)
-            self._socket.sendto('relayto %s %s %s %s' % (self._guid, self._address, self._port, send_buffer) , relay_pair)
+            self._socket.sendto('relayto %s %s %s %s' % (self._guid, self._address,
+                                                         self._port, send_buffer), relay_pair)

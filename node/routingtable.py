@@ -47,9 +47,6 @@ class RoutingTable(object):
         """
         Add the given node to the correct KBucket; if it already
         exists, update its status.
-
-        @param contact: The contact to add to this node's KBuckets
-        @type contact: guid.GUIDMixin or str or unicode
         """
         pass
 
@@ -461,7 +458,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
         :param contact:
         :return:
         """
-        bucket_index = self.kbucket_index(contact.guid)
+        # bucket_index = self.kbucket_index(contact.guid)
         # self.buckets[bucket_index].update_contact(contact)
 
     def touch_kbucket(self, node_id, timestamp=None):

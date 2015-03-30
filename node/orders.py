@@ -1,5 +1,4 @@
 import StringIO
-import gnupg
 import hashlib
 import json
 import logging
@@ -126,12 +125,12 @@ class Orders(object):
                 index_of_seller_signature = offer_data.find('-----BEGIN PGP SIGNATURE-----', 0, len(offer_data))
 
             if state in (
-                Orders.State.NEED_TO_PAY,
-                Orders.State.NOTARIZED,
-                Orders.State.WAITING_FOR_MERCHANT,
-                Orders.State.BUYER_PAID,
-                Orders.State.PAID,
-                Orders.State.SHIPPED
+                    Orders.State.NEED_TO_PAY,
+                    Orders.State.NOTARIZED,
+                    Orders.State.WAITING_FOR_MERCHANT,
+                    Orders.State.BUYER_PAID,
+                    Orders.State.PAID,
+                    Orders.State.SHIPPED
             ):
                 offer_data_json = offer_data[0:index_of_seller_signature - 2]
                 offer_data_json = json.loads(offer_data_json)
@@ -1150,8 +1149,10 @@ class Orders(object):
             )
 
             if self.transport.handler:
-                self.transport.handler.send_to_client(None, {"type": "order_notify",
-                                                         "msg": "You just received a new order."})
+                self.transport.handler.send_to_client(None, {
+                    "type": "order_notify",
+                    "msg": "You just received a new order."
+                })
 
             # Send notice to order receipt
             self.transport.send({

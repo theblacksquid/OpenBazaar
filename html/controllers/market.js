@@ -92,7 +92,7 @@ angular.module('app')
              */
             $scope.createShout = function() {
 
-                if($scope.newShout == '') {
+                if($scope.newShout === '') {
                     return;
                 }
 
@@ -258,12 +258,12 @@ angular.module('app')
             $scope.parse_inbox_messages = function(msg) {
                 console.log(msg);
                 $scope.inbox_messages = msg.messages;
-            }
+            };
 
             $scope.parse_inbox_sent_messages = function(msg) {
                 console.log(msg);
                 $scope.inbox_sent_messages = msg.messages;
-            }
+            };
 
             $scope.parse_burn_info = function(msg) {
                 // console.log('Burn info available!');
@@ -320,7 +320,7 @@ angular.module('app')
             $scope.hello_response = function(msg) {
                 console.log('Hello Response', msg);
                 refresh_peers();
-            }
+            };
 
             $scope.update_peers = function(msg) {
                 console.log('Refresh peers: ', msg);
@@ -376,7 +376,7 @@ angular.module('app')
                 //});
 
                 msg.peers.forEach(function(peer) {
-                    if(peer.guid != '') {
+                    if(peer.guid !== '') {
                         $scope.add_peer(peer);
                     }
                 });
@@ -877,14 +877,14 @@ angular.module('app')
                 });
 
                 $scope.guid_to_nickname = function(guid) {
-                    for(peer in $scope.myself.peers) {
+                    for(var peer in $scope.myself.peers) {
                         peer = $scope.myself.peers[peer];
                         if(peer.guid == guid) {
                             return peer.nick;
                         }
                     }
                     return '';
-                }
+                };
 
                 $scope.compose = function(size, myself, recipient, msg) {
 
@@ -950,7 +950,7 @@ angular.module('app')
             $scope.NewMessageInstanceCtrl = function($scope, $modalInstance, myself, recipient, msg, scope) {
 
                 function guid_to_peer(guid) {
-                    for(peer in $scope.myself.peers) {
+                    for(var peer in $scope.myself.peers) {
                         peer = $scope.myself.peers[peer];
                         if(peer.guid == guid) {
                             return peer;
@@ -960,7 +960,7 @@ angular.module('app')
                 }
 
                 $scope.myself = myself;
-                $scope.recipient = (recipient != '') ? guid_to_peer(recipient) : '';
+                $scope.recipient = (recipient !== '') ? guid_to_peer(recipient) : '';
                 $scope.msg = msg;
 
                 // Fill in form if msg is passed - reply mode

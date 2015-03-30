@@ -25,7 +25,6 @@ class Window(object):
     def send(self):
         # Our packets to send.
         pkts = list(self._packets)
-        pkt_count = len(pkts)
 
         if len(pkts) < 1:
             self.ee.emit('done')
@@ -129,7 +128,8 @@ class Sender(object):
         message_id = random.randint(0, 99999)
 
         # Split message into chunks
-        chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE, message_id, data_size)
+        chunks = rudp.helpers.splitArrayLike(data_encoded, rudp.constants.UDP_SAFE_SEGMENT_SIZE,
+                                             message_id, data_size)
         self.log.debug('Sending %d chunks', len(chunks))
 
         # Organize into windows

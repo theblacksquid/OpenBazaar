@@ -103,7 +103,6 @@ class Receiver(object):
         # try:
         # message = self._message
         # except Exception as e:
-        message = self._message
 
         try:
             self.log.debug('%s %s', len(self._message), self._message_size)
@@ -234,7 +233,8 @@ class Receiver(object):
             #         self._message_id = data[0]
             #         self._message_size = data[1]
             #         packet._payload = data[2]
-            #         self.log.debug('Message #%s (%s bytes): %s', self._message_id, self._message_size, packet._payload)
+            #         self.log.debug('Message #%s (%s bytes): %s', self._message_id,
+            #                        self._message_size, packet._payload)
             #
             #     self._packet_sender.send(Packet.createAcknowledgementPacket(
             #         packet._sequenceNumber,

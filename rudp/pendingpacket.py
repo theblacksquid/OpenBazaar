@@ -1,6 +1,4 @@
-import rudp.constants
 from pyee import EventEmitter
-import rudp.helpers
 import logging
 from tornado import ioloop
 

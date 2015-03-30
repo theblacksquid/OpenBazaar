@@ -14,6 +14,7 @@ from bitcoin import (
     multisign,
     scriptaddr
 )
+from tornado import iostream
 import tornado.websocket
 from twisted.internet import reactor
 from node import protocol, trust, constants
@@ -188,7 +189,7 @@ class ProtocolHandler(object):
             ["tail", "-f", "logs/development.log", "logs/production.log"],
             stdout=subprocess.PIPE)
 
-        self.stream = tornado.iostream.PipeIOStream(
+        self.stream = iostream.PipeIOStream(
             self.market.p.stdout.fileno()
         )
         self.stream.read_until("\n", self.line_from_nettail)
@@ -671,7 +672,8 @@ class ProtocolHandler(object):
 
                 # Get buyer signatures on inputs
                 buyer_signatures = []
-                self.log.debug('merchant tx %s, merchant script: %s', order['merchant_tx'], order['merchant_script'])
+                self.log.debug('merchant tx %s, merchant script: %s', order['merchant_tx'],
+                               order['merchant_script'])
                 for x in range(0, len(inputs)):
                     ms = multisign(order['merchant_tx'], x, order['merchant_script'], private_key)
                     buyer_signatures.append(ms)

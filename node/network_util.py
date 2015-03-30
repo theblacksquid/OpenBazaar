@@ -172,13 +172,15 @@ class PacketStats(object):
             self.log.info("Incoming Packet Stats.")
             self.log.info("Total Incoming Packets:       {}".format(self.num_packets_incoming))
             self.log.info("Total Incoming bytes:         {}".format(self.total_bytes_incoming))
-            self.log.info("Average Incoming Packet Size: {}".format(self.total_bytes_incoming/self.num_packets_incoming))
+            self.log.info("Average Incoming Packet Size: {}".format(
+                self.total_bytes_incoming/self.num_packets_incoming))
 
         if outgoing:
             self.log.info("Outgoing Packet Stats.")
             self.log.info("Total Outgoing Packets:       {}".format(self.num_packets_outgoing))
             self.log.info("Total Outgoing bytes:         {}".format(self.total_bytes_outgoing))
-            self.log.info("Average Outgoing Packet Size: {}".format(self.total_bytes_outgoing/self.num_packets_outgoing))
+            self.log.info("Average Outgoing Packet Size: {}".format(
+                self.total_bytes_outgoing/self.num_packets_outgoing))
 
 PACKET_STATS = PacketStats()
 PACKET_STATS_LOGS_EVERY_N_PACKETS = 50
@@ -199,7 +201,7 @@ def count_incoming_packet(packet):
 
     stats = PACKET_STATS
     if packet is not None:
-        if hasattr(packet,'_size'):
+        if hasattr(packet, '_size'):
             stats.add_incoming_packet(packet._size)
         else:
             stats.add_incoming_packet(len(packet))

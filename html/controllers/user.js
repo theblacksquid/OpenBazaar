@@ -334,7 +334,7 @@ angular.module('app')
 
                     notaries = [];
                     console.log('notaries', $scope.settings.notaries);
-                    for(i in $scope.settings.notaries) {
+                    for(var i in $scope.settings.notaries) {
                         console.log('notary', $scope.settings.notaries[i]);
                         notary = $scope.settings.notaries[i];
                         if(notary.online) {

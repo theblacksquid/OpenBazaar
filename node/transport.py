@@ -155,7 +155,8 @@ class CryptoTransportLayer(TransportLayer):
             self.log.debug('Starting mediation')
 
             for peer in self.dht.active_peers:
-                if peer.hostname == '127.0.0.1' or peer.hostname == '205.186.156.31' or peer.hostname == 'seed2.openbazaar.org':
+                if peer.hostname == '127.0.0.1' or peer.hostname == '205.186.156.31' \
+                        or peer.hostname == 'seed2.openbazaar.org':
                     peer.send_raw(json.dumps({
                         'type': 'mediate',
                         'guid': self.guid,
@@ -853,7 +854,8 @@ class CryptoTransportLayer(TransportLayer):
         self.log.info('Searching for myself')
         self.dht.iterative_find('0000000000000000000000000000000000000000', [], 'findNode')
 
-    def get_crypto_peer(self, guid=None, hostname=None, port=None, pubkey=None, nickname=None, nat_type=None, avatar_url=None):
+    def get_crypto_peer(self, guid=None, hostname=None, port=None, pubkey=None,
+                        nickname=None, nat_type=None, avatar_url=None):
         if guid == self.guid:
             self.log.error('Cannot get CryptoPeerConnection for your own node')
             return

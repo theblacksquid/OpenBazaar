@@ -236,13 +236,13 @@ angular.module('app')
                         }
 
                         var remote_images = [];
-                        if($scope.contract.imageURL1 != '' && $scope.contract.imageURL1 !== undefined) {
+                        if($scope.contract.imageURL1 !== '' && $scope.contract.imageURL1 !== undefined) {
                             remote_images.push($scope.contract.imageURL1);
                         }
-                        if($scope.contract.imageURL2 != '' && $scope.contract.imageURL2 !== undefined) {
+                        if($scope.contract.imageURL2 !== '' && $scope.contract.imageURL2 !== undefined) {
                             remote_images.push($scope.contract.imageURL2);
                         }
-                        if($scope.contract.imageURL3 != '' && $scope.contract.imageURL3 !== undefined) {
+                        if($scope.contract.imageURL3 !== '' && $scope.contract.imageURL3 !== undefined) {
                             remote_images.push($scope.contract.imageURL3);
                         }
                         contract.Contract.item_remote_images = remote_images;
