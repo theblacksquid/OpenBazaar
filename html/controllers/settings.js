@@ -111,8 +111,7 @@ angular.module('app')
                 );
 
                 Notifier.success('Success', 'Notary removed successfully.');
-
-                $scope.getNotaries();
+                Connection.send('refresh_settings', {});
 
                 if (!$scope.$$phase) {
                     $scope.$apply();
@@ -143,12 +142,12 @@ angular.module('app')
              */
             $scope.parse_notaries = function(msg) {
                 console.log('Parsing notaries');
-                $scope.settings.notaries = msg.notaries;
-                $scope.trusted_notaries = msg.notaries;
-                console.log(msg.notaries);
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
+                //$scope.settings.notaries = myself.settings.notaries;
+                //$scope.trusted_notaries = msg.notaries;
+                //console.log(msg.notaries);
+                //if (!$scope.$$phase) {
+                //    $scope.$apply();
+                //}
             };
             
             $scope.createBackup = function() {

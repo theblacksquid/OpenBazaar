@@ -15,8 +15,8 @@
                 <table>
                     <tr>
                         <td width="90">
-                            <img src="{{page.avatar_url}}" class="thumb thumb-large" data-ng-show="page.avatar_url != ''" />
-                            <identicon icon-size="80" hash="page.senderGUID" title="{{page.senderGUID}}" data-ng-show="page.avatar_url == ''" ></identicon>
+                            <img src="{{page.avatar_url}}" class="thumb thumb-large" data-ng-show="page.avatar_url != '' && page.avatar_url != null" />
+                            <identicon icon-size="80" hash="page.senderGUID" title="{{page.senderGUID}}" data-ng-show="page.avatar_url == '' || page.avatar_url == null" ></identicon>
                         </td>
                         <td>
                             {{page.nickname ? page.nickname : "No nickname"}}<br/>
@@ -115,13 +115,17 @@
                     </div>
                 </div>
                 <div class="panel-body">
-                    <div data-ng-show="page.notary_description">
-                        <p data-ng-bind="page.notary_description"></p>
+                    <div style="margin-bottom:10px;">
+                        <h4>Fee for Services</h4>
+                        <p>{{page.notary_fee}}% per transaction</p>
                     </div>
 
-                    <div data-ng-show="!page.notary_description">
-                        <p>This individual has not described their notary services.</p>
+                    <div>
+                        <h4>Description of Services</h4>
+                        <p data-ng-show="page.notary_description">{{page.notary_description}}</p>
+                        <p data-ng-show="!page.notary_description">This individual has not described their notary services.</p>
                     </div>
+
                 </div>
             </div>
 

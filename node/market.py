@@ -772,6 +772,8 @@ class Market(object):
                 settings.get('bitmessage', ''),
                 settings.get('arbiter', ''),
                 settings.get('notary', ''),
+                settings.get('notaryDescription', ''),
+                settings.get('notaryFee', 0),
                 settings.get('arbiterDescription', ''),
                 self.transport.sin,
                 settings['homepage'],

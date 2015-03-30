@@ -308,13 +308,30 @@
                 </div>
             </div>
 
-            <h4>Acting as an Notary</h4>
+            <h4>Notary Details</h4>
 
             <div class="form-group">
                 <label class="col-sm-3 control-label">Make me a notary</label>
                 <div class="btn-group col-sm-5">
                     <label class="btn btn-default" data-ng-model="settings.notary" btn-radio="'True'">Yes</label>
                     <label class="btn btn-default" data-ng-model="settings.notary" btn-radio="'False'">No</label>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>Fees</strong><br/>If your services are needed during a dispute a fee can be requested from the participants of the transaction you are involved with. What percentage of each transaction would you like to request for your services?</div>
+
+            <div class="form-group">
+                    <label class="col-sm-3 control-label" for="inputNotaryFee">%</label>
+                <div class="col-sm-2">
+                <input type="number" min="0" max="100" data-ng-model="settings.notaryFee" class="form-control" id="inputNotaryFee" placeholder="0">
+                    </div>
+            </div>
+
+            <div class="form-group">
+                <label for="inputNotaryDescription" class="col-sm-3 control-label">Description of your services</label>
+                <div class="col-sm-9">
+                    <textarea data-ng-model="settings.notaryDescription" data-ng-maxlength="2048" name="inputNotaryDescription" class="form-control" id="inputNotaryDescription" rows="5" placeholder="Enter a short description about your notary services"></textarea>
                 </div>
             </div>
 
@@ -331,14 +348,6 @@
 
     <form id="advanced-form" role="form" class="form-horizontal">
         <h4>Advanced</h4>
-
-        <div class="form-group">
-            <label class="col-sm-3 control-label">Use Testnet</label>
-            <div class="btn-group col-sm-5">
-                <label class="btn btn-default" data-ng-model="settings.testnet" btn-radio="true">Yes</label>
-                <label class="btn btn-default" data-ng-model="settings.testnet" btn-radio="">No</label>
-            </div>
-        </div>
 
         <div class="form-group">
             <div class="col-sm-3 text-right">
