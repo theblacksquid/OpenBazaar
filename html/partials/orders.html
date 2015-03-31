@@ -81,7 +81,7 @@
                                 <identicon icon-size="50" hash="order.buyer" title="{{order.buyer}}"></identicon>
                             </div>
                             <div class="col-sm-10" style="padding-top:0">
-                                <div data-ng-show="order.buyer_nickname" style="margin-top:5px;font-weight:bold;">{{order.buyer_nickname}}</div> {{order.buyer}}
+                                <div style="margin-top:5px;font-weight:bold;">{{guid_to_nickname(order.buyer)}}</div> {{order.buyer}}
                             </div>
                         </td>
 
@@ -91,7 +91,7 @@
                                 <identicon icon-size="50" hash="order.merchant" title="{{order.merchant}}"></identicon>
                             </div>
                             <div class="col-sm-10" style="padding-top:0">
-                                <div data-ng-show="order.merchant_nickname" style="margin-top:5px;font-weight:bold;">{{order.merchant_nickname}}</div> {{order.merchant}}
+                                <div style="margin-top:5px;font-weight:bold;">{{guid_to_nickname(order.merchant)}}</div> {{order.merchant}}
                             </div>
                         </td>
                         <td width="50">

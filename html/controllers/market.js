@@ -879,6 +879,10 @@ angular.module('app')
                 });
 
                 $scope.guid_to_nickname = function(guid) {
+                    if(guid == $scope.myself.guid) {
+                        return $scope.myself.settings.nickname;
+                    }
+
                     for(var peer in $scope.myself.peers) {
                         peer = $scope.myself.peers[peer];
                         if(peer.guid == guid) {

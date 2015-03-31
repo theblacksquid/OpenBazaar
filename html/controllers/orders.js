@@ -25,6 +25,22 @@ angular.module('app')
             Connection.$on('orderinfo', function(e, msg){ $scope.parse_orderinfo(msg); });
             Connection.$on('order_payment_amount', function(e, msg){ $scope.parse_payment_amount(msg); });
 
+            var guid_to_nickname = function(guid) {
+                if(guid == $scope.myself.guid) {
+                    return $scope.myself.settings.nickname;
+                }
+
+                for(var peer in $scope.myself.peers) {
+                    peer = $scope.myself.peers[peer];
+                    if(peer.guid == guid) {
+                        return peer.nick;
+                    }
+                }
+
+                return '';
+            };
+            $scope.guid_to_nickname = guid_to_nickname;
+
             $scope.load_page = function(msg) {
                 console.log($scope.path);
                 if($scope.path === "/orders/sales") {
@@ -226,6 +242,8 @@ angular.module('app')
                     }
 
                 };
+
+                $scope.guid_to_nickname = guid_to_nickname;
 
                 $scope.compose_inbox_message = function(size, myself, guid, subject) {
                     console.log('Composing Inbox Message');

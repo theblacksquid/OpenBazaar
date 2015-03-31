@@ -123,17 +123,21 @@
             <tr>
                 <td width="40"><identicon icon-size="40" hash="Market.modalOrder.buyer" title="{{Market.modalOrder.buyer}}"></identicon></td>
                 <td><strong>Buyer:</strong></td>
-                <td style="word-break:break-all">{{Market.modalOrder.buyer}}</td>
+                <td style="word-break:break-all"><strong>{{guid_to_nickname(Market.modalOrder.buyer)}}</strong><BR>{{Market.modalOrder.buyer}}</td>
             </tr>
             <tr>
                 <td><identicon icon-size="40" hash="Market.modalOrder.merchant" title="{{Market.modalOrder.merchant}}"></identicon></td>
                 <td><strong>Merchant:</strong></td>
-                <td style="word-break:break-all">{{Market.modalOrder.merchant}}</td>
+                <td style="word-break:break-all"><strong>{{guid_to_nickname(Market.modalOrder.merchant)}}</strong><BR>{{Market.modalOrder.merchant}}</td>
             </tr>
             <tr data-ng-show="Market.modalOrder.notary">
                 <td><identicon icon-size="40" hash="Market.modalOrder.notary" title="{{Market.modalOrder.notary}}"></identicon></td>
                 <td><strong>Notary:</strong></td>
-                <td style="word-break:break-all">{{Market.modalOrder.notary}}</td>
+                <td style="word-break:break-all"><strong>{{guid_to_nickname(Market.modalOrder.notary)}}</strong><BR>{{Market.modalOrder.notary}}</td>
+            </tr>
+           <tr data-ng-show="Market.modalOrder">
+                <td colspan="2"><strong>Notary Fee:</strong></td>
+                <td style="word-break:break-all">{{Market.modalOrder.notary_fee}}%</td>
             </tr>
             <tr data-ng-show="Market.modalOrder.address">
                 <td colspan="2"><strong>Payment Address:</strong></td>
