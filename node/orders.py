@@ -211,6 +211,8 @@ class Orders(object):
 
     def get_order(self, order_id, by_buyer_id=False):
 
+        notary_fee = ""
+
         if not by_buyer_id:
             _order = self.db_connection.select_entries("orders", {"order_id": order_id})[0]
         else:
@@ -262,6 +264,8 @@ class Orders(object):
             except Exception as exc:
                 self.log.error('Probably not a number %s', exc)
 
+            notary_fee = notary_json['Notary']['notary_fee']
+
         # Generate QR code
         qr_code = self.get_qr_code(offer_data_json['Contract']['item_title'], _order['address'], total_price)
         merchant_bitmessage = offer_data_json.get('Seller', '').get('seller_Bitmessage')
@@ -288,6 +292,7 @@ class Orders(object):
                  "merchant_bitmessage": merchant_bitmessage,
                  "buyer_bitmessage": buyer_bitmessage,
                  "notary": notary,
+                 "notary_fee": notary_fee,
                  "payment_address": _order.get('payment_address'),
                  "payment_address_amount": _order.get('payment_address_amount'),
                  "qrcode": 'data:image/png;base64,' + qr_code,
@@ -856,7 +861,7 @@ class Orders(object):
             'notary_GUID': self.transport.guid,
             'notary_BTC_uncompressed_pubkey': notary_pubkey,
             'notary_pgp': self.transport.settings['PGPPubKey'],
-            'notary_fee': "",
+            'notary_fee': self.transport.settings['notaryFee'],
             'notary_order_id': order_id
         }
 

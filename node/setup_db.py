@@ -80,6 +80,7 @@ _SCHEMA = (
             'address TEXT',
             'buyer_order_id TEXT',
             'notary TEXT',
+            'notary_fee TEXT',
             'payment_address TEXT',
             'shipping_address TEXT',
             'refund_requested INT DEFAULT 0',
@@ -153,7 +154,7 @@ _SCHEMA = (
             'obelisk TEXT DEFAULT "obelisk-baltic.airbitz.co:9091"',
             'notaries TEXT',
             'notary BOOLEAN',
-            'notaryFee TEXT',
+            'notaryFee TEXT DEFAULT "0"',
             'notaryDescription TEXT',
             'homepage TEXT',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
