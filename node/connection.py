@@ -252,10 +252,13 @@ class CryptoPeerConnection(PeerConnection):
         self.waiting = False  # Waiting for ping-pong
 
     def __repr__(self):
-        return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s nat: %s relaying: %s avatar: %s}' % (
-            self.guid, self.hostname, self.port, self.pub, self.reachable, self.nat_type,
-            self.relaying, self.avatar_url
-        )
+        try:
+            return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s nat: %s relaying: %s avatar: %s}' % (
+                self.guid, self.hostname, self.port, self.pub, self.reachable, self.nat_type,
+                self.relaying, self.avatar_url
+            )
+        except AttributeError as e:
+            self.log.error('Attribute is missing: %s', e)
 
     @staticmethod
     def generate_sin(guid):
