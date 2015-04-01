@@ -831,17 +831,17 @@ class CryptoTransportLayer(TransportLayer):
         for known_peer in known_peers:
 
             hostname, port = known_peer[0], known_peer[1]
-            peer_obj = self.get_crypto_peer(None, hostname, port)
 
-            self.dht.active_peers.append(peer_obj)
-
+            peer_obj = connection.CryptoPeerConnection(
+                self,
+                hostname,
+                port,
+                peer_socket=self.listener.socket
+            )
             peer_obj.seed = True
             peer_obj.reachable = True  # Seeds should be reachable always
 
-        # # Populate routing table by searching for non-existent key
-        # def join_callback():
-        #     self.search_for_my_node()
-        # ioloop.IOLoop.instance().call_later(10, join_callback)
+            self.dht.active_peers.append(peer_obj)
 
         if callback is not None:
             callback('Joined')

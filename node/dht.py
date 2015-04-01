@@ -744,7 +744,8 @@ class DHT(object):
             shortlist = []
 
             for closeNode in close_nodes:
-                shortlist.append((closeNode.hostname, closeNode.port, closeNode.guid))
+                if closeNode.guid:
+                    shortlist.append((closeNode.hostname, closeNode.port, closeNode.guid))
 
             if len(shortlist) > 0:
                 new_search.add_to_shortlist(shortlist)
@@ -773,7 +774,7 @@ class DHT(object):
         new_search.slow_node_count[0] = len(new_search.active_probes)
 
         for i, x in enumerate(self.active_peers):
-            if not x.guid:
+            if not x.guid and not x.seed:
                 self.log.debug('Deleting active peer with no GUID')
                 del self.active_peers[i]
 
