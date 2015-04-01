@@ -141,8 +141,8 @@ class OpenBazaarContext(object):
                 'seed_mode': False,
                 'seeds': [
                     #('seed.openbazaar.org', 12345),
-                    ('205.186.156.31', 12345),
-                    ('80.223.89.199', 10002)
+                    ('205.186.156.31', 12345)
+                    # ('80.223.89.199', 10002)
                     #('seed.openlabs.co', 12345),
                     #('us.seed.bizarre.company', 12345),
                     #('eu.seed.bizarre.company', 12345)

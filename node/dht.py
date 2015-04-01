@@ -80,7 +80,7 @@ class DHT(object):
             self.transport.handler.refresh_peers()
 
     @_synchronized
-    def add_peer(self, hostname, port, pubkey=None, guid=None, nickname=None, nat_type=None, avatar_url=None):
+    def add_peer(self, hostname, port, pubkey=None, guid=None, nickname=None, nat_type=None, avatar_url=''):
         """ This takes a tuple (pubkey, hostname, port, guid) and adds it to the active
         peers list if it doesn't already reside there.
 
@@ -114,8 +114,7 @@ class DHT(object):
                         self.transport.handler.refresh_peers()
 
                 peer.nickname = nickname
-                if avatar_url:
-                    peer.avatar_url = avatar_url
+                peer.avatar_url = avatar_url
                 peer.pub = pubkey
 
                 # DHT contacts
@@ -553,6 +552,12 @@ class DHT(object):
                        original_publisher_id=original_publisher_id, age=age:
                 self.store_key_value(msg, findKey, value, original_publisher_id, age)
             )
+
+            nodes_to_store = []
+            for node in self.transport.dht.active_peers:
+                nodes_to_store.append((node.hostname, node.port, node.guid))
+
+            self.store_key_value(nodes_to_store, key, value_to_store, original_publisher_id, age)
 
     @_synchronized
     def store_key_value(self, nodes, key, value, original_publisher_id, age):

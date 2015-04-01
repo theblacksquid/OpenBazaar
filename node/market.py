@@ -752,6 +752,7 @@ class Market(object):
     def on_query_page(self, msg):
         """Return your page info if someone requests it on the network"""
         self.log.info("Someone is querying for your page")
+        settings = []
         settings = self.get_settings()
 
         peer = self.dht.routing_table.get_contact(msg['senderGUID'])
@@ -760,6 +761,7 @@ class Market(object):
             """Send a request for the local identity page"""
 
             self.log.debug('Sending page')
+
             peer.send(proto_page(
                 self.transport.uri,
                 self.transport.pubkey,
@@ -771,7 +773,7 @@ class Market(object):
                 settings.get('email', ''),
                 settings.get('bitmessage', ''),
                 settings.get('arbiter', ''),
-                settings.get('notary', ''),
+                settings.get('notary', False),
                 settings.get('notaryDescription', ''),
                 settings.get('notaryFee', 0),
                 settings.get('arbiterDescription', ''),

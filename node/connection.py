@@ -259,6 +259,7 @@ class CryptoPeerConnection(PeerConnection):
             )
         except AttributeError as e:
             self.log.error('Attribute is missing: %s', e)
+            return ''
 
     @staticmethod
     def generate_sin(guid):

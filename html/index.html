@@ -137,12 +137,7 @@
                     </tbody>
                 </table>
 
-                <h3>Connected Markets</h3>
-                <div class="alert-warning alert store-count-box">
-                    <span data-ng-show="peers.length > 0"><strong>{{peers.length}}</strong> stores connected.</span>
-                    <span data-ng-show="peers.length < 1">There are no stores connected to you.</span>
-                    <button data-ng-controller="AddNodeModalCtrl" class="btn-xs btn btn-primary" data-ng-click="open()" style="">Add Node</button>
-                </div>
+                <h3>Other Markets <button data-ng-controller="AddNodeModalCtrl" class="btn-xs btn btn-primary" data-ng-click="open()" style="margin-bottom:5px;margin-left:5px;"><span class="glyphicon glyphicon-plus"></span> Add Store</button></h3>
 
                 <div class="peers-area" >
                     <table id="favorite-peers" class="peers-table table-hover">
@@ -172,7 +167,7 @@
                     <h3>Chat Stream</h3>
 
                     <form class="form" data-ng-submit="createShout(newShout)">
-                        <input class="shout-input form-control" type="text" data-ng-model="newShout" placeholder="Type a message" required>
+                        <input class="shout-input form-control" type="text" data-ng-model="newShout" placeholder="Type a message and press Enter" required>
                     </form>
 
                     <div class="shout-chats">

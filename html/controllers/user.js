@@ -26,21 +26,14 @@ angular.module('app')
 
                     var listeners = Connection.$$listeners;
 
-
-                    console.log(listeners);
-
                     listeners.load_page = [];
                     Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
-
-                    if(!listeners.hasOwnProperty('store_contracts')) {
-                        Connection.$on('store_contracts', function(e, msg){ $scope.parse_store_listings(msg); });
-                    }
+                    listeners.store_contracts = [];
+                    Connection.$on('store_contracts', function(e, msg){ $scope.parse_store_listings(msg); });
                     listeners.store_contract = [];
                     Connection.$on('store_contract', function(e, msg){ $scope.parse_store_contract(msg); });
-
                     listeners.page = [];
                     Connection.$on('page', function(e, msg){ $scope.parse_page(msg); });
-
                     Connection.$on('store_products', function(e, msg){ $scope.parse_store_products(msg); });
                     //if(!listeners.hasOwnProperty('new_listing')) {
                     //    Connection.$on('new_listing', function(e, msg){ $scope.parse_new_listing(msg); });
@@ -209,7 +202,7 @@ angular.module('app')
                     contract.item_images = "img/no-photo.png";
                 }
 
-                if(!contract_exists) {
+                if(!contract_exists && $scope.guid == contract.senderGUID) {
                     $scope.store_listings.push(contract);
                 }
 
