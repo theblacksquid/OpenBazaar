@@ -120,8 +120,8 @@
                     <tbody>
                     <tr>
                         <td width="40" style="vertical-align:top">
-                            <img src="{{myself.settings.avatar_url}}" class="thumb thumb-small" data-ng-show="myself.settings.avatar_url != ''" />
-                                    <identicon icon-size="50" hash="myself.guid" title="{{myself.guid}}" data-ng-show="myself.settings.avatar_url == ''" ></identicon>
+                            <img src="{{myself.settings.avatar_url}}" class="thumb thumb-small" data-ng-show="myself.settings.avatar_url !== ''" />
+                                    <identicon icon-size="50" hash="myself.guid" title="{{myself.guid}}" data-ng-show="myself.settings.avatar_url === ''" ></identicon>
 
                         <td style="font-size:14px;word-wrap:break-word;word-break:break-all">
                             <span title="{{myself.pubkey}}">
@@ -147,10 +147,10 @@
                 <div class="peers-area" >
                     <table id="favorite-peers" class="peers-table table-hover">
                         <tbody>
-                            <tr data-ng-repeat="peer in peers" data-ng-click="goToStore('/user/'+peer.guid+'/products', peer.guid);">
+                            <tr data-ng-repeat="peer in peers" data-ng-if="peer.reachable" data-ng-click="goToStore('/user/'+peer.guid+'/products', peer.guid);">
                                 <td width="50" style="vertical-align:top" >
-                                    <img src="{{peer.avatar_url}}" class="thumb thumb-small" data-ng-show="peer.avatar_url != null" />
-                                    <identicon icon-size="50" hash="peer.guid" title="{{peer.guid}}" data-ng-show="peer.avatar_url == null" ></identicon>
+                                    <img src="{{peer.avatar_url}}" class="thumb thumb-small" data-ng-show="peer.avatar_url !== null" />
+                                    <identicon icon-size="50" hash="peer.guid" title="{{peer.guid}}" data-ng-show="peer.avatar_url === null" ></identicon>
                                 </td>
                                 <td>
                                     <span title="{{peer.pubkey}}">
@@ -179,7 +179,7 @@
                         <div data-ng-repeat="shout in shouts.slice().reverse()" style="padding-bottom:5px;">
                             <div>
                                 <img src="{{shout.avatar_url}}" class="thumb thumb-tiny" data-ng-show="shout.avatar_url != null"  style="float:left;margin-right:10px;"/>
-                                <identicon icon-size="25" hash="shout.senderGUID" title="{{shout.senderGUID}}" data-ng-show="shout.avatar_url == null"  style="float:left;margin-right:10px;"></identicon>
+                                <identicon icon-size="25" hash="shout.senderGUID" title="{{shout.senderGUID}}" data-ng-show="shout.avatar_url === null"  style="float:left;margin-right:10px;"></identicon>
 
                             </div><div>{{shout.text}}</div>
                         </div>

@@ -58,7 +58,7 @@
                         <th>Purchase</th>
                         <th data-ng-show="merchant">Buyer</th>
                         <th data-ng-show="!merchant">Merchant</th>
-                        <th></th>
+
                     </tr>
 
                     <tr data-ng-repeat="order in orders" >
@@ -93,10 +93,6 @@
                             <div class="col-sm-10" style="padding-top:0">
                                 <div style="margin-top:5px;font-weight:bold;">{{guid_to_nickname(order.merchant)}}</div> {{order.merchant}}
                             </div>
-                        </td>
-                        <td width="50">
-                            <button data-ng-show="!merchant && order.merchant_bitmessage" class="btn btn-sm btn-info" data-ng-click="compose_message('lg', myself, order.merchant_bitmessage, null)"><span class="glyphicon glyphicon-envelope"></span> Message</button>
-                            <button data-ng-show="merchant && order.buyer_bitmessage" class="btn btn-sm btn-info" data-ng-click="compose_message('lg', myself, order.buyer_bitmessage, null)"><span class="glyphicon glyphicon-envelope"></span> Message</button>
                         </td>
                     </tr>
 

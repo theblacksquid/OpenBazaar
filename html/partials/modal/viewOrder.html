@@ -58,6 +58,42 @@
                         <button id="send-order-button" data-ng-click="markOrderReceived(orderId)" class="btn btn btn-info"><span class="glyphicon glyphicon-share"></span> Release Payment to Merchant</button>
                     </div>
 
+                    <div data-ng-show="(Market.modalOrder.state == 'Notarized') && Market.modalOrder.notary == settings.guid" class="alert alert-warning" role="alert">
+                        <h4>Notary Actions</h4>
+                        <p style="margin-bottom:10px;">As the authorized notary for this transaction you have several actions that you can take if necessary.</p>
+
+                        <h5>Choose an action:</h5>
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+                        <div class="radio">
+                          <label>
+                            <input type="radio" name="refundOptions" id="refundOptions1" value="1" checked>
+                            Refund the <strong>Buyer</strong>
+                          </label>
+                        </div>
+                        <div class="radio">
+                          <label>
+                            <input type="radio" name="refundOptions" id="refundOptions2" value="2">
+                            Release money to the <strong>Merchant</strong>
+                          </label>
+                        </div>
+                        <div class="radio">
+                          <label>
+                            <input type="radio" name="refundOptions" id="refundOptions3" value="3">
+                            50/50 split between <strong>Merchant</strong> and <strong>Buyer</strong>
+                          </label>
+                        </div>
+                            </div>
+
+
+                            </div>
+
+                        <input type="button" class="btn btn-success" value="Arbitrate!"/>
+
+
+
+                    </div>
+
                     <!--<button data-ng-show="Market.modalOrder.flagForArbitration" id="send-order-button" data-ng-click="flagOrderForArbitration(orderId)" class="btn btn-sm btn-danger"><span class="glyphicon glyphicon-flag"></span> Flag for Arbiter</button>-->
 
                     <!-- Nav tabs -->

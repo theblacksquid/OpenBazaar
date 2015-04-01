@@ -102,7 +102,7 @@ angular.module('app')
                     'text': $scope.newShout,
                     'pubkey': $scope.myself.pubkey,
                     'senderGUID': $scope.myself.guid,
-                    'avatar_url': $scope.myself.settings.avatar_url
+                    'avatar_url': $scope.myself.settings.avatar_url ? $scope.myself.settings.avatar_url : ''
                 };
                 Connection.send('shout', newShout);
                 $scope.shouts.push(newShout);
