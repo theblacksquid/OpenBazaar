@@ -97,7 +97,7 @@ class DHT(object):
             if peer.guid == guid:
 
                 # Check if hostname/port combo changed
-                if nat_type != 'Symmetric NAT' and (hostname != peer.hostname or port != peer.port):
+                if (hostname != peer.hostname or port != peer.port):
                     peer.hostname = hostname
                     peer.port = port
                     peer.nat_type = nat_type
