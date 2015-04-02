@@ -564,7 +564,8 @@ class Market(object):
                 'body': msg.get('body'),
                 'sender_guid': self.transport.guid,
                 'created': time.time(),
-                'message_id': message_id.hexdigest()
+                'message_id': message_id.hexdigest(),
+                'v': constants.VERSION
             })
 
     def get_inbox_messages(self):
@@ -852,7 +853,10 @@ class Market(object):
 
         if len(contracts['contracts']) == 0:
             self.transport.send(
-                {"type": "no_listing_result"},
+                {
+                    "type": "no_listing_result",
+                    'v': constants.VERSION
+                },
                 peer['senderGUID'])
             return
         else:
@@ -878,7 +882,8 @@ class Market(object):
                 'tx': tx,
                 'script': script,
                 'buyer_order_id': buyer_order_id,
-                'signatures': signatures
+                'signatures': signatures,
+                'v': constants.VERSION
             },
             guid
         )

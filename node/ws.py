@@ -139,7 +139,11 @@ class ProtocolHandler(object):
             bitcoins = round(bitcoins, 4)
             self.market.pages[sin]['reputation_pledge'] = bitcoins
             self.send_to_client(
-                None, {'type': 'reputation_pledge_update', 'value': bitcoins}
+                None, {
+                    'type': 'reputation_pledge_update',
+                    'value': bitcoins,
+                    'v': constants.VERSION
+                }
             )
 
         trust.get_global(
@@ -169,6 +173,7 @@ class ProtocolHandler(object):
             # 'sin': self.transport.sin,
             # 'uri': self.transport.uri,
             'countryCodes': country_codes,
+            'v': constants.VERSION
         }
 
         self.send_to_client(None, message)
@@ -179,7 +184,8 @@ class ProtocolHandler(object):
             self.send_to_client(None, {
                 'type': 'burn_info_available',
                 'amount': amount,
-                'addr': burn_addr
+                'addr': burn_addr,
+                'v': constants.VERSION
             })
 
         trust.get_unspent(burn_addr, found_unspent)
@@ -879,16 +885,20 @@ class ProtocolHandler(object):
         def on_backup_done(backupPath):
             self.log.info('Backup successfully created at %s', backupPath)
             self.send_to_client(None,
-                                {'type': 'create_backup_result',
-                                 'result': 'success',
-                                 'detail': backupPath})
+                                {
+                                    'type': 'create_backup_result',
+                                    'result': 'success',
+                                    'detail': backupPath,
+                                    'v': constants.VERSION
+                                })
 
         def on_backup_error(error):
             self.log.info('Backup error: %s', error.strerror)
             self.send_to_client(None,
                                 {'type': 'create_backup_result',
                                  'result': 'failure',
-                                 'detail': error.strerror})
+                                 'detail': error.strerror,
+                                 'v': constants.VERSION})
 
         BackupTool.backup(BackupTool.get_installation_path(),
                           BackupTool.get_backup_path(),
@@ -903,10 +913,12 @@ class ProtocolHandler(object):
                            Backup.get_backups(BackupTool.get_backup_path())]
                 self.send_to_client(None, {'type': 'on_get_backups_response',
                                            'result': 'success',
-                                           'backups': backups})
+                                           'backups': backups,
+                                           'v': constants.VERSION})
             except Exception:
                 self.send_to_client(None, {'type': 'on_get_backups_response',
-                                           'result': 'failure'})
+                                           'result': 'failure',
+                                           'v': constants.VERSION})
 
     def on_find_products_by_store(self, results):
         """Results should come in as a dictionary like:
@@ -1090,7 +1102,8 @@ class ProtocolHandler(object):
         response = {'type': 'peer',
                     'pubkey': peer.pub if peer.pub else 'unknown',
                     'guid': peer.guid if peer.guid else '',
-                    'uri': peer.address}
+                    'uri': peer.address,
+                    'v': constants.VERSION}
 
         self.send_to_client(None, response)
 

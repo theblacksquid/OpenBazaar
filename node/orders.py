@@ -19,6 +19,7 @@ from node.multisig import Multisig
 import obelisk
 from twisted.internet import reactor
 import bitcoin
+from node import constants
 
 
 
@@ -650,7 +651,12 @@ class Orders(object):
                 except Exception as exc:
                     self.log.error('Cannot update DB %s', exc)
 
-                order_to_notary = {'type': 'order', 'rawContract': contract, 'state': Orders.State.BID}
+                order_to_notary = {
+                    'type': 'order',
+                    'rawContract': contract,
+                    'state': Orders.State.BID,
+                    'v': constants.VERSION
+                }
 
                 merchant = self.transport.dht.routing_table.get_contact(
                     contract_data_json['Seller']['seller_GUID']
@@ -971,7 +977,8 @@ class Orders(object):
         notarized_order = {
             "type": "order",
             "state": "Notarized",
-            "rawContract": str(signed_data)
+            "rawContract": str(signed_data),
+            'v': constants.VERSION
         }
 
         if new_peer is not None:
@@ -1164,6 +1171,7 @@ class Orders(object):
                 'type': 'order',
                 'state': Orders.State.WAITING_FOR_PAYMENT,
                 'buyer_order_id': bid_data_json['Buyer']['buyer_order_id'],
+                'v': constants.VERSION
             }, bid_data_json['Buyer']['buyer_GUID'])
 
         else:

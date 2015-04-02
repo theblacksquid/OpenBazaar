@@ -213,7 +213,8 @@ class DHT(object):
                             "pubkey": self.transport.pubkey,
                             "senderNick": self.transport.nickname,
                             "avatar_url": self.transport.avatar_url,
-                            "findID": find_id}
+                            "findID": find_id,
+                            'v': constants.VERSION}
 
             if msg['findValue']:
                 if key in self.data_store and self.data_store[key] is not None:
@@ -497,7 +498,11 @@ class DHT(object):
         peer = self.routing_table.get_contact(key)
 
         if peer:
-            peer.send({'type': 'query_listings', 'key': key})
+            peer.send({
+                'type': 'query_listings',
+                'key': key,
+                'v': constants.VERSION
+            })
         else:
             self.log.error('Peer is not available for listings.')
 
@@ -850,7 +855,8 @@ class DHT(object):
                                "senderNick": self.transport.nickname,
                                "avatar_url": self.transport.avatar_url,
                                "findID": new_search.find_id,
-                               "pubkey": contact.transport.pubkey}
+                               "pubkey": contact.transport.pubkey,
+                               'v': constants.VERSION}
                         self.log.debug('Sending findNode to: %s %s', contact.hostname, msg)
 
                         contact.send(msg)

@@ -1,3 +1,6 @@
+from node import constants
+
+
 def shout(data):
     data['type'] = 'shout'
     return data
@@ -23,13 +26,18 @@ def proto_page(uri, pubkey, guid, text, signature, nickname, PGPPubKey, email,
         'arbiter_description': arbiter_description,
         'sin': sin,
         'homepage': homepage,
-        'avatar_url': avatar_url
+        'avatar_url': avatar_url,
+        'v': constants.VERSION
     }
     return data
 
 
 def query_page(guid):
-    data = {'type': 'query_page', 'findGUID': guid}
+    data = {
+        'type': 'query_page',
+        'findGUID': guid,
+        'v': constants.VERSION
+    }
     return data
 
 
@@ -39,6 +47,7 @@ def proto_store(key, value, originalPublisherID, age):
         'key': key,
         'value': value,
         'originalPublisherID': originalPublisherID,
-        'age': age
+        'age': age,
+        'v': constants.VERSION
     }
     return data

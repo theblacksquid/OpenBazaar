@@ -18,6 +18,7 @@ from node.market import Market
 from node.transport import CryptoTransportLayer
 from node.util import open_default_webbrowser, is_mac
 from node.ws import WebSocketHandler
+from node import constants
 
 if is_mac():
     from node.util import osx_check_dyld_library_path
@@ -309,6 +310,7 @@ class MarketApplication(tornado.web.Application):
                     'port': self.transport.port,
                     'senderNick': self.transport.nickname,
                     'avatar_url': self.transport.avatar_url,
+                    'v': constants.VERSION
                 })
             )
 
