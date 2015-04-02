@@ -31,7 +31,7 @@ class PacketSender(object):
 
         self.log.debug('PacketSender: %s %s', self.relaying, self._nat_type)
 
-        if not self.relaying and self._nat_type != 'Symmetric NAT':
+        if (not self.relaying and self._nat_type != 'Symmetric NAT') or self._transport.ob_ctx.seed_mode:
             self.log.debug('Sending packet over the wire: [%s] to %s:%s', send_buffer, self._address, self._port)
             self._socket.sendto(send_buffer, (self._address, self._port))
         else:
