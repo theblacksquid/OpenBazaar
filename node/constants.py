@@ -58,7 +58,7 @@ DB_PASSPHRASE = "passphrase"
 
 DB_PATH = "db/ob.db"
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 
 SATOSHIS_IN_BITCOIN = 100000000
 
