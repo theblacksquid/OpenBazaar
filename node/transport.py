@@ -832,16 +832,14 @@ class CryptoTransportLayer(TransportLayer):
 
             hostname, port = known_peer[0], known_peer[1]
 
-            peer_obj = connection.CryptoPeerConnection(
-                self,
-                hostname,
-                port,
-                peer_socket=self.listener.socket
-            )
+            peer_obj = self.get_crypto_peer(None, hostname, port)
+
+            self.dht.active_peers.append(peer_obj)
+
             peer_obj.seed = True
             peer_obj.reachable = True  # Seeds should be reachable always
 
-            self.dht.active_peers.append(peer_obj)
+            # self.dht.active_peers.append(peer_obj)
 
         if callback is not None:
             callback('Joined')

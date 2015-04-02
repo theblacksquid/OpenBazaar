@@ -142,10 +142,10 @@
                 <div class="peers-area" >
                     <table id="favorite-peers" class="peers-table table-hover">
                         <tbody>
-                            <tr data-ng-repeat="peer in peers" data-ng-if="peer.reachable" data-ng-click="goToStore('/user/'+peer.guid+'/products', peer.guid);">
+                            <tr data-ng-repeat="peer in peers" data-ng-click="goToStore('/user/'+peer.guid+'/products', peer.guid);">
                                 <td width="50" style="vertical-align:top" >
-                                    <img src="{{peer.avatar_url}}" class="thumb thumb-small" data-ng-show="peer.avatar_url !== null" />
-                                    <identicon icon-size="50" hash="peer.guid" title="{{peer.guid}}" data-ng-show="peer.avatar_url === null" ></identicon>
+                                    <img src="{{peer.avatar_url}}" class="thumb thumb-small" data-ng-show="peer.avatar_url !== null && peer.avatar_url !== ''" />
+                                    <identicon icon-size="50" hash="peer.guid" title="{{peer.guid}}" data-ng-show="peer.avatar_url === null || peer.avatar_url == ''" ></identicon>
                                 </td>
                                 <td>
                                     <span title="{{peer.pubkey}}">

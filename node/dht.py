@@ -80,7 +80,7 @@ class DHT(object):
             self.transport.handler.refresh_peers()
 
     @_synchronized
-    def add_peer(self, hostname, port, pubkey=None, guid=None, nickname=None, nat_type=None, avatar_url=''):
+    def add_peer(self, hostname, port, pubkey=None, guid=None, nickname=None, nat_type=None, avatar_url=None):
         """ This takes a tuple (pubkey, hostname, port, guid) and adds it to the active
         peers list if it doesn't already reside there.
 
@@ -114,7 +114,8 @@ class DHT(object):
                         self.transport.handler.refresh_peers()
 
                 peer.nickname = nickname
-                peer.avatar_url = avatar_url
+                if avatar_url:
+                    peer.avatar_url = avatar_url
                 peer.pub = pubkey
 
                 # DHT contacts
@@ -128,7 +129,8 @@ class DHT(object):
                 peer.nat_type = nat_type
                 peer.pub = pubkey
                 peer.nickname = nickname
-                peer.avatar_url = avatar_url
+                if avatar_url:
+                    peer.avatar_url = avatar_url
 
                 self.routing_table.add_contact(peer)
 
@@ -460,11 +462,11 @@ class DHT(object):
 
         for node in found_nodes:
 
-            node_guid, node_hostname, node_port, node_pubkey, node_nick, node_nat_type = node
+            node_guid, node_hostname, node_port, node_pubkey, node_nick, node_nat_type, avatar_url = node
 
             # Add to shortlist
-            if (node_hostname, node_port, node_guid, node_nick, node_nat_type) not in search.shortlist:
-                search.add_to_shortlist([(node_hostname, node_port, node_guid, node_pubkey, node_nick)])
+            if (node_hostname, node_port, node_guid, node_nick, node_nat_type, avatar_url) not in search.shortlist:
+                search.add_to_shortlist([(node_hostname, node_port, node_guid, node_pubkey, node_nick, avatar_url)])
 
             # Skip ourselves if returned
             if node_guid == self.settings['guid']:
@@ -477,7 +479,7 @@ class DHT(object):
 
             if node_guid != self.settings['guid']:
                 self.log.debug('Adding new peer to active peers list: %s', node)
-                self.add_peer(node_hostname, node_port, node_pubkey, node_guid, node_nick)
+                self.add_peer(node_hostname, node_port, node_pubkey, node_guid, node_nick, avatar_url=avatar_url)
 
         self.log.datadump('Short list after: %s', search.shortlist)
 
