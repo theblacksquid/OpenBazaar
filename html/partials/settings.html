@@ -389,12 +389,24 @@
         </div>
 
         <div style="margin:20px 0">
-            <h4>Previous Backups</h4>
 
-            <div id="previous-backups-container"
-                 data-ng-model="backups"
-                 data-ng-repeat="backup in backups">
-                <div ng-hide="!backups.length"><a class="col-sm-8" href="/html/backups/{{backup.file_name}}">{{backup.file_name}}</a> &nbsp;&nbsp; <!-- <a href="#" data-ng-click="deleteBackup('{{backup.file_name}}')">Delete</a> --></div>
+
+            <div >
+                <table ng-hide="!backups.length" class="table">
+                    <thead>
+                    <tr>
+                        <th>Backup Name</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr data-ng-model="backups" data-ng-repeat="backup in backups">
+                        <td><a href="/html/backups/{{backup.file_name}}">{{backup.file_name}}</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+
+
+                <!--<div ng-hide="!backups.length"> &nbsp;&nbsp; &lt;!&ndash; <a href="#" data-ng-click="deleteBackup('{{backup.file_name}}')">Delete</a> &ndash;&gt;</div>-->
                 <div ng-hide="backups.length">No backup</div>
             </div>
         </div>
