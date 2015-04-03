@@ -34,7 +34,6 @@ def get_unspent(addr, callback):
 
     def get_unspent():
         try:
-            # history = bitcoin.history(addr)
             unspent = bitcoin.unspent(addr)
         except Exception as e:
             _log.debug('Error retrieving from Blockchain.info: %s', e)

@@ -241,6 +241,7 @@ class Orders(object):
             def cb(total):
                 if self.transport.handler is not None:
                     self.transport.handler.send_to_client(None, {"type": "order_payment_amount",
+                                                                 "order_id": order_id,
                                                                  "value": total})
 
             pubkeys = [
