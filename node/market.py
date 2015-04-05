@@ -66,6 +66,7 @@ class Market(object):
             'query_myorders',
             'peer',
             'query_page',
+            'query_listing',
             'query_listings',
             'inbox_message'
         )
@@ -582,6 +583,20 @@ class Market(object):
         }, order='DESC')
         return messages
 
+    def get_contract_by_id(self, contract_id):
+        """Get Contract by ID"""
+        contract = self.db_connection.select_entries(
+            "contracts",
+            {
+                "deleted": 0,
+                "key": contract_id
+            }
+        )
+        if len(contract) == 1:
+            return contract
+        else:
+            return None
+
     def get_contracts(self, page=0, remote=False):
         """Select contracts for market from database"""
         self.log.info(
@@ -840,6 +855,26 @@ class Market(object):
             self.transport.handler.send_to_client(
                 None,
                 {"type": "inbox_count", "count": len(messages)}
+            )
+
+    def validate_on_query_listing(self, *data):
+        self.log.debug('Validating on query listing message.')
+        return True
+
+    def on_query_listing(self, msg):
+        """Run if someone is querying for a specific listing ID"""
+        sender_guid = msg.get('senderGUID')
+        listing_id = msg.get('listing_id')
+
+        listing = self.get_contract_by_id(listing_id)
+        if listing:
+            self.transport.send(
+                {
+                    "type": "query_listing_result",
+                    "v": constants.VERSION,
+                    "listing": listing
+                },
+                sender_guid
             )
 
     def validate_on_query_listings(self, *data):
