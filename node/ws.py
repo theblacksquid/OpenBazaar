@@ -973,12 +973,23 @@ class ProtocolHandler(object):
                     self.log.debug('Results contract %s', contract)
                     key = contract.get('key', contract)
 
-                    self.transport.dht.iterative_find_value(
-                        key,
-                        callback=lambda msg, key=key: (
-                            self.on_global_search_value(msg, key)
-                        )
+                    self.transport.send(
+                        {
+                            'type': 'query_listing',
+                            'v': constants.VERSION,
+                            'listing_id': key,
+                            'senderGUID': self.transport.guid
+                        },
+                        contract.get('guid')
                     )
+
+                    # TODO: Find listings on DHT when they're published there
+                    # self.transport.dht.iterative_find_value(
+                    #     key,
+                    #     callback=lambda msg, key=key: (
+                    #         self.on_global_search_value(msg, key)
+                    #     )
+                    # )
 
     def client_shout(self, socket_handler, msg):
         #msg['uri'] = self.transport.uri
