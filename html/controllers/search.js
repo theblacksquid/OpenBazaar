@@ -17,8 +17,15 @@ angular.module('app')
              * Establish message handlers
              * @msg - message from websocket to pass on to handler
              */
+
+            var listeners = Connection.$$listeners;
+
+            listeners.load_page = [];
             Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
             Connection.$on('global_search_result', function(e, msg){ $scope.parse_search_result(msg); });
+            listeners.query_listing_result = [];
+            Connection.$on('query_listing_result', function(e, msg){ $scope.parse_query_listing_result(msg); });
+
 
             $scope.load_page = function(msg) {
                 console.log($location.search());
@@ -50,15 +57,41 @@ angular.module('app')
                 };
                 $scope.searching = $scope.search;
 
-                $scope.search_results = [];
-                $scope.awaitingShop = $scope.search;
+                $scope.search_results = {};
+                $scope.awaitingQuery = $scope.search;
                 Connection.send('search', query);
                 $scope.search = "";
                 $scope.showDashboardPanel('search');
 
             };
 
-            $scope.search_results = [];
+            $scope.isEmpty = function(obj) {
+                for(var prop in obj) {
+                    if(obj.hasOwnProperty(prop))
+                        return false;
+                }
+
+                return true;
+            };
+
+
+            $scope.parse_query_listing_result = function(msg) {
+
+                var contract_data = msg.listing[0];
+                var key = contract_data.key;
+                var contract_body = JSON.parse(contract_data.contract_body);
+                console.log(contract_body.Seller);
+
+                if(!(key in $scope.search_results)) {
+                    $scope.search_results[key] = contract_body;
+                }
+
+                //$scope.search_results.push(contract_body);
+                console.log('Search Results', $scope.search_results);
+
+            }
+
+            $scope.search_results = {};
             $scope.parse_search_result = function(msg) {
                 console.log('Global Search Result', msg);
                 var contract_data = msg.data;

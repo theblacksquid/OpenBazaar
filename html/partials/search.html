@@ -3,25 +3,24 @@
 
     <h4>Search Results</h4>
 
-    <div data-ng-show="search_results.length == 0" class="alert alert-info" role="alert">
+    <div data-ng-show="isEmpty(search_results)" class="alert alert-info" role="alert">
         <div>No results found yet{{search.length > 0 ?
             " for " + search + "." :
              "."}}
         </div>
     </div>
 
-
-
-    <table data-ng-show="search_results.length > 0" class="table table-striped table-bordered" style="margin-top:30px;">
+    <table data-ng-show="!isEmpty(search_results)" class="table table-striped table-bordered" style="margin-top:30px;">
         <tr>
             <th colspan=2>Contract</th>
             <th width=50>Quantity</th>
             <th width=75>Price</th>
             <th></th>
         </tr>
-        <tr data-ng-repeat="contract in search_results">
+        <tr data-ng-repeat="(key, contract) in search_results">
 
-            <td width=100 style="border-right:none;"><img data-ng-show="contract.Contract.item_images" ng-src="{{contract.Contract.item_images[0]}}" alt="" class="img-thumbnail" width=100 height=100></td>
+
+            <td width=100 style="border-right:none;"><img ng-src="{{(contract.Contract.item_remote_images[0]) ? contract.Contract.item_remote_images[0] : 'img/no-photo.png'}}" alt="" class="img-thumbnail" width=100 height=100></td>
             <td  style="border-left:none;"><a data-ng-href="#user/{{contract.Seller.seller_GUID}}/products"><span style="font-size:20px;">{{contract.Contract.item_title}}</span></a>
                 <div style="padding:3px 0">
                     <span class="glyphicon glyphicon-tags"></span> <strong>Tags:</strong>
