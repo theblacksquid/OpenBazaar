@@ -9,6 +9,7 @@ angular.module('app')
     .controller('Search', ['$scope', '$interval', '$routeParams', '$location', 'Connection',
         function($scope, $interval, $routeParams, $location, Connection) {
 
+            //alert('test');
             $scope.searchPanel = true;
             $scope.path = $location.path();
             $scope.$emit('sidebar', false);
@@ -26,29 +27,6 @@ angular.module('app')
             listeners.query_listing_result = [];
             Connection.$on('query_listing_result', function(e, msg){ $scope.parse_query_listing_result(msg); });
 
-
-            $scope.load_page = function(msg) {
-                console.log($location.search());
-                $('#dashboard-container').removeClass('col-sm-8').addClass('col-sm-12');
-                $scope.searchNetwork();
-            };
-
-            function getJsonFromUrl() {
-                var query = location.search.substr(1);
-                var result = {};
-                query.split("&").forEach(function(part) {
-                    var item = part.split("=");
-                    result[item[0]] = decodeURIComponent(item[1]);
-                });
-                return result;
-            }
-
-            var url_json = getJsonFromUrl();
-            $scope.search = url_json.searchterm;
-
-            $scope.search = $scope.search.replace("+", " ");
-            console.log('Search term: ', $scope.search);
-
             $scope.searchNetwork = function() {
 
                 var query = {
@@ -64,6 +42,33 @@ angular.module('app')
                 $scope.showDashboardPanel('search');
 
             };
+
+            $scope.load_page = function(msg) {
+                console.log($location.search());
+                $('#dashboard-container').removeClass('col-sm-8').addClass('col-sm-12');
+                $scope.searchNetwork();
+            };
+
+            function getJsonFromUrl() {
+
+                console.log($routeParams);
+                return $routeParams.search;
+                var query = location.search.substr(1);
+                var result = {};
+                query.split("&").forEach(function(part) {
+                    var item = part.split("=");
+                    result[item[0]] = decodeURIComponent(item[1]);
+                });
+                return result;
+            }
+
+            //var url_json = getJsonFromUrl();
+            $scope.search = $routeParams.search;
+            $scope.searchlabel = $routeParams.search;
+            $scope.searchNetwork();
+
+            //$scope.search = $scope.search.replace("+", " ");
+            console.log('Search term: ', $scope.search);
 
             $scope.isEmpty = function(obj) {
                 for(var prop in obj) {
