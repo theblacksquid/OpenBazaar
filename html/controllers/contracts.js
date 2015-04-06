@@ -17,13 +17,16 @@ angular.module('app')
              * Establish message handlers
              * @msg - message from websocket to pass on to handler
              */
+            var listeners = Connection.$$listeners;
+
             Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
             Connection.$on('contracts', function(e, msg){ $scope.parse_contracts(msg); });
+            Connection.$on('btc_ticker', function(e, msg){ $scope.parse_btc_ticker(msg); });
 
             $scope.load_page = function(msg) {
                 console.log($scope.path);
-                    $scope.sidebar = false;
-                    $scope.queryContracts();
+                $scope.sidebar = false;
+                $scope.queryContracts();
             };
 
             $scope.queryContracts = function() {
@@ -31,9 +34,11 @@ angular.module('app')
                 Connection.send('query_contracts', query);
             };
 
-            if(Connection.websocket.readyState == 1) {
-                $scope.load_page();
-            }
+            $scope.parse_btc_ticker = function(msg) {
+                var data = JSON.parse(msg.data);
+                console.log('BTC Ticker', data.USD);
+                $scope.last_price_usd = data.USD.last;
+            };
 
             $scope.undoRemoveContract = function(contract_id) {
                 Connection.send("undo_remove_contract", {
@@ -267,6 +272,10 @@ angular.module('app')
                 };
 
             };
+
+            if (Connection.websocket.readyState == 1) {
+                $scope.load_page({});
+            }
 
         }
     ]);

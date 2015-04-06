@@ -4,14 +4,40 @@ angular.module('app').service('Connection', ['$rootScope', '$timeout', function 
 
         var socket_uri = document.URL.replace(/https?:(.*)\/html\/.*/, "ws:$1/ws");
         console.log('Started websocket:', socket_uri);
-        var websocket = new WebSocket(socket_uri);
+        websocket = new WebSocket(socket_uri);
 
-        websocket.onopen = function (evt) {
+        this.websocket = websocket;
+        var self = this;
+
+        websocket.onopen = function() {
             self.websocket.send(JSON.stringify({"id": 42, "command": "load_page", "params": {}}));
             self.websocket.send(JSON.stringify({"id": 42, "command": "check_order_count", "params": {}}));
             self.websocket.send(JSON.stringify({"id": 42, "command": "check_inbox_count", "params": {}}));
-            //self.websocket.send(JSON.stringify({"id":42, "command":"read_log", "params":{}}));
         };
+
+        loadit = function() {
+            setTimeout(
+                function () {
+                    console.log(self.websocket.readyState);
+                    if (self.websocket.readyState == 1) {
+                        self.websocket.send(JSON.stringify({"id": 42, "command": "load_page", "params": {}}));
+                        self.websocket.send(JSON.stringify({"id": 42, "command": "check_order_count", "params": {}}));
+                        self.websocket.send(JSON.stringify({"id": 42, "command": "check_inbox_count", "params": {}}));
+                        //self.websocket.send(JSON.stringify({"id":42, "command":"read_log", "params":{}}));
+                        return;
+                    } else {
+                        loadit();
+                    }
+                }, 5
+            );
+        };
+        loadit();
+
+        //window.onload = function() {
+        //    alert('test');
+        //    console.log(websocket);
+        //    websocket.send(JSON.stringify({"id": 42, "command": "load_page", "params": {}}));
+        //}
 
         websocket.onclose = function (evt) {
             console.log("closed", evt);
@@ -35,8 +61,7 @@ angular.module('app').service('Connection', ['$rootScope', '$timeout', function 
 
         };
 
-        this.websocket = websocket;
-        var self = this;
+        console.log(self.websocket);
 
         this.send = function (command, msg) {
             if (msg === undefined) {
@@ -62,6 +87,8 @@ angular.module('app').service('Connection', ['$rootScope', '$timeout', function 
             }
 
         };
+
+
     };
 
     var scope = $rootScope.$new(true);
