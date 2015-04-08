@@ -156,6 +156,7 @@ _SCHEMA = (
             'notary BOOLEAN',
             'notaryFee TEXT DEFAULT "0"',
             'notaryDescription TEXT',
+            'refundAddress TEXT',
             'homepage TEXT',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
         )

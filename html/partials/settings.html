@@ -31,6 +31,7 @@
                 <li data-ng-show="profileForm.inputNamecoin_id.$error.maxlength">Make sure your Namecoin id is less than 40 characters.</li>
                 <li data-ng-show="profileForm.inputNamecoin_id.$error.pattern">Make sure your Namecoin id contains only lower case letters, numbers or dashes.</li>
                 <li data-ng-show="profileForm.inputStoreDescription.$invalid">Make sure your description is less than 2048 characters.</li>
+                <li data-ng-show="profileForm.inputRefundAddress.$invalid">Mark sure you enter a valid Bitcoin address.</li>
             </ul>
         </div>
 
@@ -52,6 +53,13 @@
             <label for="inputNamecoin_id" class="col-sm-3 control-label">Namecoin id</label>
             <div class="col-sm-9">
                 <input data-ng-model="settings.namecoin_id" data-ng-maxlength="39" data-ng-pattern = "/^[a-z0-9\-]+$/" class="form-control" id="inputNamecoin_id" name="inputNamecoin_id" placeholder="Namecoin id">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="inputRefundAddress" class="col-sm-3 control-label">Bitcoin Address</label>
+            <div class="col-sm-9">
+                <input data-ng-model="settings.refundAddress" data-ng-maxlength="35" data-ng-pattern = "/^[a-zA-Z0-9\-]+$/" class="form-control" id="inputRefundAddress" name="inputRefundAddress" placeholder="Bitcoin address to send all incoming fees or refunds to">
             </div>
         </div>
 
