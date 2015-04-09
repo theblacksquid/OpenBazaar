@@ -115,7 +115,7 @@
 
             <h4>Shipping Information</h4>
 
-            <div class="alert alert-danger" data-ng-show="myself.settings.recipient_name == '' && myself.settings.street1 == '' && myself.settings.street2 == '' && myself.settings.city == '' && myself.settings.stateRegion == ''"><span class="glyphicon glyphicon-flag"></span> <em>You have no shipping address specified. Please update your info in the Settings panel.</em></div>
+            <div class="alert alert-danger" data-ng-show="myself.settings.recipient_name == '' && myself.settings.street1 == '' && myself.settings.street2 == '' && myself.settings.city == '' && myself.settings.stateRegion == ''"><span class="glyphicon glyphicon-flag"></span> <em>You have no shipping address specified. Please update your info in the <a href="#/settings" data-ng-click="cancel()">Settings Panel</a>.</em></div>
 
             <div style="padding:0 10px;">
 
@@ -144,6 +144,13 @@
             </table>
 
             <br clear="all"/>
+
+            <h4>Refund Information</h4>
+
+            <div class="form-group">
+            <label for="inputRefundAddress">Bitcoin address for refunds:</label>
+            <input type="text" id="inputRefundAddress" name="inputRefundAddress" class="form-control col-sm-4" placeholder="Bitcoin Address" data-ng-model="order.buyerRefundAddress" value="{{myself.settings.refundAddress}}"/>
+            </div>
 
             <!-- Hidden form fields for item -->
             <input type="hidden" id="rawContract" ng-model="order.rawContract" value="{{rawContract}}"/>

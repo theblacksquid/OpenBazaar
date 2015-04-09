@@ -199,6 +199,9 @@ class Market(object):
                 self.transport.guid
             )
 
+    def refund_recipient(self, recipient_id, order_id):
+        self.log.debug('Refunding recipient')
+
     def generate_new_pubkey(self, contract_id):
         self.log.debug('Generating new pubkey for contract')
 
@@ -237,6 +240,7 @@ class Market(object):
         seller['seller_contract_id'] = contract_id
         seller['seller_GUID'] = self.settings['guid']
         seller['seller_Bitmessage'] = self.settings['bitmessage']
+        seller['seller_refund_addr'] = self.settings['refundAddress']
 
         # Process and crop thumbs for images
         if 'item_images' in msg['Contract']:
@@ -908,7 +912,7 @@ class Market(object):
     def on_peer(self, peer):
         pass
 
-    def release_funds_to_merchant(self, buyer_order_id, tx, script, signatures, guid):
+    def release_funds_to_recipient(self, buyer_order_id, tx, script, signatures, guid, buyer_id, refund=0):
         """Send TX to merchant"""
         self.log.debug("Release funds to merchant: %s %s %s %s", buyer_order_id, tx, signatures, guid)
         self.transport.send(
@@ -918,6 +922,8 @@ class Market(object):
                 'script': script,
                 'buyer_order_id': buyer_order_id,
                 'signatures': signatures,
+                'buyer_id': buyer_id,
+                'refund': refund,
                 'v': constants.VERSION
             },
             guid

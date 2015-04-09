@@ -67,24 +67,21 @@
                             <div class="panel-body">
                         <div class="radio">
                           <label>
-                            <input type="radio" name="refundOptions" id="refundOptions1" value="1" checked>
+                            <input type="radio" name="refundOptions" data-ng-model="Market.modalOrder.refundRecipientId" id="refundOptions1" value="1" checked>
                             Refund the <strong>Buyer</strong>
                           </label>
                         </div>
                         <div class="radio">
                           <label>
-                            <input type="radio" name="refundOptions" id="refundOptions2" value="2">
+                            <input type="radio" name="refundOptions" data-ng-model="Market.modalOrder.refundRecipientId" id="refundOptions2" value="2">
                             Release money to the <strong>Merchant</strong>
                           </label>
                         </div>
                             </div>
 
-
                             </div>
 
-                        <input type="button" class="btn btn-success" value="Send Resolution"/>
-
-
+                        <input type="button" class="btn btn-info" value="Send Resolution" data-ng-click="refundRecipient()"/>
 
                     </div>
 
@@ -133,7 +130,7 @@
                             <td><strong>Payment Address:</strong></td>
                             <td style="word-break:break-all"><a href="https://blockchain.info/address/{{Market.modalOrder.address}}" target="_blank">{{Market.modalOrder.address}}</a></td>
                         </tr>
-                        <tr data-ng-show="Market.modalOrder.payment_amount">
+                        <tr>
                             <td><strong>Amount in Payment Address:</strong></td>
                             <td style="word-break:break-all">&#3647;{{Market.modalOrder.payment_amount}}</td>
                         </tr>

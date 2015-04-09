@@ -20,6 +20,7 @@ import obelisk
 from twisted.internet import reactor
 import bitcoin
 from node import constants
+import threading
 
 
 
@@ -68,21 +69,26 @@ class Orders(object):
 
         if state == self.State.NEW:
             self.new_order(msg)
+            return
 
         if state == self.State.BID:
             self.handle_bid_order(msg)
+            return
 
         if state == self.State.NOTARIZED:
             self.log.info('You received a notarized contract')
             self.handle_notarized_order(msg)
+            return
 
         if state == self.State.WAITING_FOR_PAYMENT:
             self.log.info('The merchant accepted your order')
             self.handle_accepted_order(msg)
+            return
 
         if state == self.State.PAID:
             self.log.info('You received a payment notification')
             self.handle_paid_order(msg)
+            return
 
         if state == self.State.SHIPPED:
             self.log.info('You received a shipping notification')
@@ -253,7 +259,10 @@ class Orders(object):
             script = mk_multisig_script(pubkeys, 2, 3)
             payment_address = scriptaddr(script)
 
-            trust.get_unspent(payment_address, cb)
+            def get_unspent():
+                trust.get_unspent(payment_address, cb)
+
+            threading.Thread(target=get_unspent).start()
 
             if 'shipping_price' in _order:
                 shipping_price = _order['shipping_price'] if _order['shipping_price'] != '' else 0
@@ -444,7 +453,7 @@ class Orders(object):
 
 
     def ship_order(self, order, order_id, payment_address):
-        self.log.info('Shipping order')
+        self.log.info('Shipping order %s', order)
 
         del order['qrcode']
         del order['item_images']
@@ -758,6 +767,7 @@ class Orders(object):
             'hex')
         buyer['Buyer']['note_for_seller'] = msg['message']
         buyer['Buyer']['buyer_order_id'] = order_id
+        buyer['Buyer']['buyer_refund_addr'] = msg.get('buyerRefundAddress', '')
 
         # Add to contract and sign
         seed_contract = msg.get('rawContract')
@@ -864,11 +874,14 @@ class Orders(object):
         notary_section = {}
         notary_pubkey = self.generate_new_order_pubkey(order_id)
 
+        settings = self.get_settings()
+
         notary_section['Notary'] = {
             'notary_GUID': self.transport.guid,
+            'notary_refund_addr': settings.get('refundAddress'),
             'notary_BTC_uncompressed_pubkey': notary_pubkey,
-            'notary_pgp': self.transport.settings['PGPPubKey'],
-            'notary_fee': self.transport.settings['notaryFee'],
+            'notary_pgp': settings['PGPPubKey'],
+            'notary_fee': settings.get('notaryFee', '0'),
             'notary_order_id': order_id
         }
 

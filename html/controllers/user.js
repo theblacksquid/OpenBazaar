@@ -475,7 +475,8 @@ angular.module('app')
                         'rawContract': $scope.rawContract,
                         'notary': $scope.order.notary,
                         'btc_pubkey': $scope.order.btc_pubkey,
-                        'arbiter': $scope.order.arbiter
+                        'arbiter': $scope.order.arbiter,
+                        'buyerRefundAddress': $scope.order.buyerRefundAddress
                     };
                     console.log(newOrder);
                     Connection.send('order', newOrder);

@@ -125,6 +125,7 @@ angular.module('app')
                 console.log(msg.order);
 
                 $scope.modalOrder = msg.order;
+                $scope.modalOrder.refundRecipientId = 1;
                 console.log(msg.order);
 
                 if (msg.order.state == 'Accepted' || msg.order.state == 'Waiting for Payment') {
@@ -148,7 +149,7 @@ angular.module('app')
                     $scope.modalOrder.notary = $scope.myself.guid;
                 }
 
-                if(typeof $scope.modalOrder.shipping_address == "string") {
+                if(typeof $scope.modalOrder.shipping_address === "string" && $scope.modalOrder.shipping_address !== "") {
                     $scope.modalOrder.shipping_address = JSON.parse($scope.modalOrder.shipping_address);
                 }
 
@@ -158,12 +159,12 @@ angular.module('app')
             };
 
             $scope.parse_payment_amount = function(msg) {
+                console.log(msg.value);
+                $scope.order_balances = {};
+                $scope.order_balances[msg.order_id] = msg.value;
+
                 if(msg.value && $scope.modalOrder) {
                     $scope.modalOrder.payment_amount = parseInt(msg.value)/100000000;
-
-                    if (!$scope.$$phase) {
-                        $scope.$apply();
-                    }
                 }
             };
 
@@ -241,6 +242,14 @@ angular.module('app')
                         $scope.$apply();
                     }
 
+                };
+
+                $scope.refundRecipient = function() {
+                    console.log($scope.Market.modalOrder.refundRecipientId);
+                    Connection.send("refund_recipient", {
+                        recipientId: $scope.Market.modalOrder.refundRecipientId,
+                        orderId: orderId
+                    })
                 };
 
                 $scope.guid_to_nickname = guid_to_nickname;

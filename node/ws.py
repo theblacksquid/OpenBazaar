@@ -6,6 +6,7 @@ import gnupg
 import obelisk
 import json
 import random
+import urllib2
 from bitcoin import (
     apply_multisignatures,
     eligius_pushtx,
@@ -82,6 +83,7 @@ class ProtocolHandler(object):
             "send_inbox_message": self.client_send_inbox_message,
             "get_inbox_messages": self.client_get_inbox_messages,
             "get_inbox_sent_messages": self.client_get_inbox_sent_messages,
+            "get_btc_ticker": self.client_get_btc_ticker,
             "update_settings": self.client_update_settings,
             "query_order": self.client_query_order,
             "pay_order": self.client_pay_order,
@@ -101,6 +103,7 @@ class ProtocolHandler(object):
             "get_backups": self.get_backups,
             "undo_remove_contract": self.client_undo_remove_contract,
             "refresh_settings": self.client_refresh_settings,
+            "refund_recipient": self.client_refund_recipient,
         }
 
         self.timeouts = []
@@ -154,6 +157,132 @@ class ProtocolHandler(object):
     def client_refresh_settings(self, socket_handler, msg):
         self.log.debug('Refreshing user settings')
         self.send_opening()
+
+    def client_refund_recipient(self, socket_handler, msg):
+        self.log.debug('Refunding recipient: %s', msg)
+        self.refund_recipient(msg.get('recipientId'), msg.get('orderId'))
+
+    def refund_recipient(self, recipient_id, order_id):
+        # Get Order
+        order = self.market.orders.get_order(order_id)
+
+        contract = order['signed_contract_body']
+
+        # Find Seller Data in Contract
+        offer_data = ''.join(contract.split('\n')[8:])
+        index_of_seller_signature = offer_data.find(
+            '- - -----BEGIN PGP SIGNATURE-----', 0, len(offer_data)
+        )
+        offer_data_json = offer_data[:index_of_seller_signature]
+        offer_data_json = json.loads(offer_data_json)
+        self.log.info('Offer Data: %s', offer_data_json)
+
+        # Find Buyer Data in Contract
+        bid_data_index = offer_data.find(
+            '"Buyer"', index_of_seller_signature, len(offer_data)
+        )
+        end_of_bid_index = offer_data.find(
+            '- -----BEGIN PGP SIGNATURE', bid_data_index, len(offer_data)
+        )
+        bid_data_json = "{"
+        bid_data_json += offer_data[bid_data_index:end_of_bid_index]
+        bid_data_json = json.loads(bid_data_json)
+
+        # Find Notary Data in Contract
+        notary_data_index = offer_data.find(
+            '"Notary"', end_of_bid_index, len(offer_data)
+        )
+        end_of_notary_index = offer_data.find(
+            '-----BEGIN PGP SIGNATURE', notary_data_index, len(offer_data)
+        )
+        notary_data_json = "{"
+        notary_data_json += offer_data[notary_data_index:end_of_notary_index]
+        notary_data_json = json.loads(notary_data_json)
+
+        try:
+            client = obelisk.ObeliskOfLightClient(
+                'tcp://%s' % self.transport.settings['obelisk']
+            )
+
+            seller = offer_data_json['Seller']
+            buyer = bid_data_json['Buyer']
+            notary = notary_data_json['Notary']
+
+            pubkeys = [
+                seller['seller_BTC_uncompressed_pubkey'],
+                buyer['buyer_BTC_uncompressed_pubkey'],
+                notary['notary_BTC_uncompressed_pubkey']
+            ]
+
+            script = mk_multisig_script(pubkeys, 2, 3)
+            multi_address = scriptaddr(script)
+
+            def get_history_callback(escrow, history, order):
+
+                settings = self.market.get_settings()
+                private_key = self.get_signing_key(order_id)
+
+                if escrow is not None:
+                    self.log.error("Error fetching history: %s", escrow)
+                    # TODO: Send error message to GUI
+                    return
+
+                # Create unsigned transaction
+                unspent = [row[:4] for row in history if row[4] is None]
+
+                # Send all unspent outputs (everything in the address) minus
+                # the fee
+                total_amount = 0
+                inputs = []
+                for row in unspent:
+                    assert len(row) == 4, 'Obelisk returned a wonky row'
+                    inputs.append("%s:%s" % (row[0].encode('hex'), row[1]))
+                    value = row[3]
+                    total_amount += value
+
+                # Constrain fee so we don't get negative amount to send
+                network_fee = min(total_amount, 10000)
+                send_amount = total_amount - network_fee
+
+                # Notary Fee (% of post-network fee amount)
+                notary_fee = int((float(notary['notary_fee'])/100) * send_amount)
+                notary_address = notary.get('notary_refund_addr')
+
+                # Amount to Refund to User(s)
+                refund_amount = max(send_amount-notary_fee, 0)
+
+                self.log.debug('Notary Fee: %s satoshis', notary_fee)
+                self.log.debug('Recipient Will Get: %s satoshis', refund_amount)
+
+                if(recipient_id == 1):
+                    recipient_guid = buyer.get('buyer_GUID')
+                    recipient_address = buyer.get('buyer_refund_addr')
+                else:
+                    recipient_guid = seller.get('seller_GUID')
+                    recipient_address = seller.get('seller_refund_addr')
+
+                transaction = mktx(inputs, [
+                    "%s:%s" % (recipient_address, refund_amount),
+                    "%s:%s" % (notary_address, notary_fee)
+                ])
+
+                signatures = [multisign(transaction, x, script, private_key)
+                              for x in range(len(inputs))]
+
+                self.market.release_funds_to_recipient(
+                    buyer['buyer_order_id'], transaction, script, signatures,
+                    recipient_guid, buyer.get('buyer_GUID'), refund=recipient_id
+                )
+
+            def get_history():
+                client.fetch_history(
+                    multi_address,
+                    lambda escrow, history, order=order: get_history_callback(escrow, history, order))
+
+            reactor.callFromThread(get_history)
+
+        except Exception as exc:
+            self.log.error('%s', exc)
 
     def send_opening(self):
         peers = self.get_peers()
@@ -405,8 +534,18 @@ class ProtocolHandler(object):
         messages = self.market.get_inbox_sent_messages()
         self.send_to_client(None, {"type": "inbox_sent_messages", "messages": messages})
 
-    def client_republish_contracts(self, socket_handler, msg):
+    def client_get_btc_ticker(self, socket_handler, msg):
+        self.log.info('Get BTC Ticker')
+        url = 'https://blockchain.info/ticker'
+        usock = urllib2.urlopen(url)
+        data = usock.read()
+        usock.close()
+        self.send_to_client(None, {
+            'type': 'btc_ticker',
+            'data': data
+        })
 
+    def client_republish_contracts(self, socket_handler, msg):
         self.log.info("Republishing contracts")
         self.market.republish_contracts()
 
@@ -516,7 +655,7 @@ class ProtocolHandler(object):
             def get_history_callback(escrow, history, order):
 
                 settings = self.market.get_settings()
-                private_key = settings.get('privkey')
+                private_key = self.get_signing_key(msg['orderId'])
 
                 if escrow is not None:
                     self.log.error("Error fetching history: %s", escrow)
@@ -546,7 +685,7 @@ class ProtocolHandler(object):
                 signatures = [multisign(transaction, x, script, private_key)
                               for x in range(len(inputs))]
 
-                self.market.release_funds_to_merchant(
+                self.market.release_funds_to_recipient(
                     buyer['buyer_order_id'], transaction, script, signatures,
                     order.get('merchant')
                 )
@@ -580,6 +719,27 @@ class ProtocolHandler(object):
 
         else:
             self.log.error('No keys found for that contract id: #%s', order_id)
+            return
+
+    def get_signing_key_by_contract_id(self, contract_id):
+        # Get BIP32 child signing key for this order id
+        rows = self.db_connection.select_entries("keystore", {
+            'contract_id': contract_id
+        })
+
+        if len(rows):
+            key_id = rows[0]['id']
+
+            settings = self.transport.settings
+
+            wallet = bitcoin.bip32_ckd(bitcoin.bip32_master_key(settings.get('bip32_seed')), 1)
+            wallet_chain = bitcoin.bip32_ckd(wallet, 0)
+            bip32_identity_priv = bitcoin.bip32_ckd(wallet_chain, key_id)
+            # bip32_identity_pub = bitcoin.bip32_privtopub(bip32_identity_priv)
+            return bitcoin.encode_privkey(bitcoin.bip32_extract_key(bip32_identity_priv), 'wif')
+
+        else:
+            self.log.error('No keys found for that contract id: #%s', contract_id)
             return
 
     def client_release_payment(self, socket_handler, msg):
@@ -736,8 +896,21 @@ class ProtocolHandler(object):
 
         self.log.info('Receiving signed tx from buyer %s', msg)
 
-        buyer_order_id = "%s-%s", msg.get('senderGUID'), msg.get('buyer_id')
-        order = self.market.orders.get_order(buyer_order_id, by_buyer_id=True)
+        recipient_id = int(msg.get('refund'))
+
+        if recipient_id == 0 or recipient_id == 2:
+            buyer_order_id = "%s-%s" % (msg.get('buyer_id'), msg.get('buyer_order_id'))
+
+            if recipient_id == 2:
+                order = self.market.orders.get_order(buyer_order_id, by_buyer_id=True)
+            else:
+                order = self.market.orders.get_order(buyer_order_id, by_buyer_id=True)
+                signing_key = self.get_signing_key(order.get('order_id'))
+
+        else:
+            order = self.market.orders.get_order(msg.get('buyer_order_id'))
+            signing_key = self.get_signing_key(order.get('order_id'))
+
         contract = order['signed_contract_body']
 
         # Find Seller Data in Contract
@@ -748,6 +921,9 @@ class ProtocolHandler(object):
         offer_data_json = offer_data[0:index_of_seller_signature]
         offer_data_json = json.loads(offer_data_json)
         self.log.info('Offer Data: %s', offer_data_json)
+
+        if recipient_id == 2:
+            signing_key = self.get_signing_key_by_contract_id(offer_data_json['Seller']['seller_contract_id'])
 
         # Find Buyer Data in Contract
         bid_data_index = offer_data.find(
@@ -799,9 +975,11 @@ class ProtocolHandler(object):
 
                 seller_signatures = []
 
+                settings = self.market.get_settings()
+
                 for inpt in range(0, len(inputs)):
                     mltsgn = multisign(
-                        transaction, inpt, script, self.transport.settings['privkey']
+                        transaction, inpt, script, signing_key
                     )
                     print 'seller sig', mltsgn
                     seller_signatures.append(mltsgn)
@@ -812,7 +990,7 @@ class ProtocolHandler(object):
                     )
 
                 print 'FINAL SCRIPT: %s' % transaction
-                print 'Sent', eligius_pushtx(transaction)
+                print 'Sent', bitcoin.pushtx(transaction)
 
                 self.send_to_client(
                     None,
