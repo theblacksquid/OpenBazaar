@@ -89,7 +89,7 @@ angular.module('app')
 
                     var modalInstance = $modal.open({
                         templateUrl: 'partials/modal/addContract.html',
-                        controller: ProductModalInstance,
+                        controller: $scope.ProductModalInstance,
                         size: size,
                         backdrop: backdrop,
                         resolve: {
@@ -100,6 +100,9 @@ angular.module('app')
                             },
                             edit: function() {
                                 return false;
+                            },
+                            scope: function() {
+                                return $scope;
                             }
                         }
                     });
@@ -121,7 +124,7 @@ angular.module('app')
 
                     var modalInstance = $modal.open({
                         templateUrl: 'partials/modal/addContract.html',
-                        controller: ProductModalInstance,
+                        controller: $scope.ProductModalInstance,
                         size: size,
                         backdrop: backdrop,
                         resolve: {
@@ -145,9 +148,9 @@ angular.module('app')
 
             };
 
-            var ProductModalInstance = function($scope, $modalInstance, contract, edit) {
+            $scope.ProductModalInstance = function($scope, $modalInstance, contract, edit, scope) {
 
-                console.log(edit);
+                console.log('Last USD Price: ', scope.$parent.last_price_usd);
 
                 if(edit) {
                     contract = contract.contract;
@@ -174,6 +177,7 @@ angular.module('app')
                     $scope.contract.productShippingPrice = 0;
                     $scope.contract.remoteImages = [];
                     $scope.edit = false;
+                    $scope.last_price_usd = scope.$parent.last_price_usd;
                 }
 
                 console.log($scope.contract);

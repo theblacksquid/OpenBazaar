@@ -40,9 +40,9 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-sm-2">
+                        <div class="col-sm-3">
                             <div class="form-group {{newContractForm.inputProductPrice.$invalid ? 'has-error' : ''}}">
-                                <label class="control-label" for="inputProductPrice">Price (&#3647;)</label>
+                                <label class="control-label" for="inputProductPrice">Price (${{last_price_usd*contract.productPrice | number:2}} USD)</label>
                                 <!--<number-only-input input-value="contract.productPrice" input-name="inputProductPrice"/>-->
                                 <input required type="text" min="0" class="form-control" ng-model="contract.productPrice" id="inputProductPrice" name="inputProductPrice" placeholder="0.01"/>
                             </div>
@@ -59,7 +59,7 @@
                                 <input type="number" class="form-control" ng-model="contract.productQuantity" name="inputProductQuantity" id="inputProductQuantity" min="1" value="1"/>
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-sm-5">
                             <label for="inputProductCondition">Condition</label>
                             <select class="form-control" id="inputProductCondition" ng-model="contract.productCondition">
                               <option value="New" selected="selected">New</option>
