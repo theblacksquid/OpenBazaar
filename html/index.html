@@ -174,8 +174,8 @@
                     <div class="shout-chats">
                         <div data-ng-repeat="shout in shouts.slice().reverse()" style="margin-bottom:10px;">
                             <div>
-                                <img src="{{shout.avatar_url}}" class="thumb thumb-tiny" data-ng-show="shout.avatar_url != null"  style="float:left;margin-right:10px;"/>
-                                <identicon icon-size="25" hash="shout.senderGUID" title="{{shout.senderGUID}}" data-ng-show="shout.avatar_url === null"  style="float:left;margin-right:10px;"></identicon>
+                                <img src="{{shout.avatar_url}}" class="thumb thumb-tiny" data-ng-show="shout.avatar_url !== null && shout.avatar_url !== ''"  style="float:left;margin-right:10px;"/>
+                                <identicon icon-size="25" hash="shout.senderGUID" title="{{shout.senderGUID}}" data-ng-show="shout.avatar_url === null || shout.avatar_url === ''"  style="float:left;margin-right:10px;"></identicon>
 
                             </div><div>{{shout.text}}</div>
                         </div>
