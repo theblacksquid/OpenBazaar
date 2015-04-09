@@ -26,6 +26,8 @@ angular.module('app')
 
             $scope.$emit('sidebar', true);
 
+            Connection.send('get_btc_ticker', {});
+
             /**
              * Establish message handlers
              * @msg - message from websocket to pass on to handler
@@ -55,6 +57,7 @@ angular.module('app')
                 }
                 Connection.$on('myself', function(e, msg){ $scope.parse_myself(msg); });
                 Connection.$on('shout', function(e, msg){ $scope.parse_shout(msg); });
+                Connection.$on('btc_ticker', function(e, msg){ $scope.parse_btc_ticker(msg); });
                 Connection.$on('log_output', function(e, msg){ $scope.parse_log_output(msg); });
                 Connection.$on('messages', function(e, msg){ $scope.parse_messages(msg); });
                 Connection.$on('notaries', function(e, msg){ $scope.parse_notaries(msg); });
@@ -84,7 +87,7 @@ angular.module('app')
                 Connection.send('peers', {});
             };
 
-            //$interval(refresh_peers,20000,0,true);
+            $interval(refresh_peers, 5000, 0, true);
 
             /**
              * Create a shout and send it to all connected peers
@@ -164,8 +167,6 @@ angular.module('app')
                     $scope.reviews[pubkey].push(review);
                 }
             };
-
-
 
             /**
              * Send log line to GUI
@@ -389,6 +390,12 @@ angular.module('app')
             $scope.parse_shout = function(msg) {
                 $scope.shouts.push(msg);
                 console.log('Shout', $scope.shouts);
+            };
+
+            $scope.parse_btc_ticker = function(msg) {
+                var data = JSON.parse(msg.data);
+                console.log('BTC Ticker', data.USD);
+                $scope.last_price_usd = data.USD.last;
             };
 
             $scope.checkOrderCount = function() {
