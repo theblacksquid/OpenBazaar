@@ -122,3 +122,67 @@ h4 {
     padding:8px 10px;
     margin:0 0 5px 0
 }
+
+body {
+    font-family: arial;
+  }
+
+.rtable {
+  border: 1px solid #ccc;
+  width: 100%;
+  margin:0;
+  padding:0;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.rtable .rtr {
+  border: 1px solid #ddd;
+  padding: 5px;
+}
+
+.rtable .rth, .rtable .rtd {
+  padding: 10px;
+  text-align: center;
+}
+
+.rtable .rth {
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+@media screen and (max-width: 600px) {
+
+  .rtable {
+    border: 0;
+  }
+
+  .rtable .rthead {
+    display: none;
+  }
+
+  .rtable .rtr {
+    margin-bottom: 10px;
+    display: block;
+    border-bottom: 2px solid #ddd;
+  }
+
+  .rtable .rtd {
+    display: block;
+    text-align: right;
+    font-size: 18px;
+    border-bottom: 1px dotted #ccc;
+  }
+
+  .rtable .rtd:last-child {
+    border-bottom: 0;
+  }
+
+  .rtable .rtd:before {
+    content: attr(data-label);
+    float: left;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+}

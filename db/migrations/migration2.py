@@ -3,7 +3,7 @@
 from pysqlcipher import dbapi2
 
 from db.migrations import migrations_util
-from node import constants
+from node import constants # pylint: disable=import-error
 
 
 def upgrade(db_path):

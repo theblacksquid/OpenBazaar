@@ -47,9 +47,6 @@ class RoutingTable(object):
         """
         Add the given node to the correct KBucket; if it already
         exists, update its status.
-
-        @param contact: The contact to add to this node's KBuckets
-        @type contact: guid.GUIDMixin or str or unicode
         """
         pass
 
@@ -79,7 +76,7 @@ class RoutingTable(object):
         else:
             key2 = node_id2
 
-        if len(key1) != constants.HEX_NODE_ID_LEN:
+        if key1 and len(key1) != constants.HEX_NODE_ID_LEN:
             raise ValueError(
                 "node_id1 has invalid length %d; must be %d" % (
                     len(key1),
@@ -87,7 +84,7 @@ class RoutingTable(object):
                 )
             )
 
-        if len(key2) != constants.HEX_NODE_ID_LEN:
+        if key2 and len(key2) != constants.HEX_NODE_ID_LEN:
             raise ValueError(
                 "node_id2 has invalid length %d; must be %d" % (
                     len(key2),
@@ -95,6 +92,7 @@ class RoutingTable(object):
                 )
             )
 
+        # print key1, key2, type(key1), type(key2)
         val_key1 = int(key1, base=16)
         val_key2 = int(key2, base=16)
         return val_key1 ^ val_key2
@@ -271,69 +269,72 @@ class OptimizedTreeRoutingTable(RoutingTable):
         bucket_index = self.kbucket_index(contact.guid)
         old_contact = self.buckets[bucket_index].get_contact(contact.guid)
 
-        if not old_contact:
-            try:
-                self.buckets[bucket_index].add_contact(contact)
-            except kbucket.BucketFull:
-                # The bucket is full; see if it can be split (by checking if
-                # its range includes the host node's id)
-                if self.buckets[bucket_index].key_in_range(self.parent_node_id):
-                    self.split_bucket(bucket_index)
-                    # Retry the insertion attempt
-                    self.add_contact(contact)
-                else:
-                    # We can't split the KBucket
-                    # NOTE: This implementation follows section 4.1 of the 13
-                    # page version of the Kademlia paper (optimized contact
-                    # accounting without PINGs - results in much less network
-                    # traffic, at the expense of some memory)
-
-                    # Put the new contact in our replacement cache for the
-                    # corresponding KBucket (or update it's position if it
-                    # exists already)
-                    if bucket_index not in self.replacement_cache:
-                        self.replacement_cache[bucket_index] = []
-                    if contact in self.replacement_cache[bucket_index]:
-                        self.replacement_cache[bucket_index].remove(contact)
-                    # TODO: Using k to limit the size of the contact
-                    # replacement cache - maybe define a separate value for
-                    # this in constants.py?
-                    elif len(self.replacement_cache) >= constants.K:
-                        self.replacement_cache.pop(0)
-                    self.replacement_cache[bucket_index].append(contact)
-        elif old_contact.address != contact.address:
-            self.log.info('Remove contact')
+        if old_contact:
             self.remove_contact(contact.guid)
 
-            try:
-                self.buckets[bucket_index].add_contact(contact)
-            except kbucket.BucketFull:
-                # The bucket is full; see if it can be split (by checking
-                # if its range includes the host node's id)
-                if self.buckets[bucket_index].key_in_range(self.parent_node_id):
-                    self.split_bucket(bucket_index)
-                    # Retry the insertion attempt
-                    self.add_contact(contact)
-                else:
-                    # We can't split the KBucket
-                    # NOTE: This implementation follows section 4.1 of the
-                    # 13 page version of the Kademlia paper (optimized
-                    # contact accounting without PINGs - results in much
-                    # less network traffic, at the expense of some memory)
+        try:
+            self.buckets[bucket_index].add_contact(contact)
+        except kbucket.BucketFull:
+            # The bucket is full; see if it can be split (by checking if
+            # its range includes the host node's id)
+            if self.buckets[bucket_index].key_in_range(self.parent_node_id):
+                self.split_bucket(bucket_index)
+                # Retry the insertion attempt
+                self.add_contact(contact)
+            else:
+                # We can't split the KBucket
+                # NOTE: This implementation follows section 4.1 of the 13
+                # page version of the Kademlia paper (optimized contact
+                # accounting without PINGs - results in much less network
+                # traffic, at the expense of some memory)
 
-                    # Put the new contact in our replacement cache for the
-                    # corresponding KBucket (or update it's position if
-                    # it exists already)
-                    if bucket_index not in self.replacement_cache:
-                        self.replacement_cache[bucket_index] = []
-                    if contact in self.replacement_cache[bucket_index]:
-                        self.replacement_cache[bucket_index].remove(contact)
-                    # TODO: Using k to limit the size of the contact
-                    # replacement cache - maybe define a separate value
-                    # for this in constants.py?
-                    elif len(self.replacement_cache) >= constants.K:
-                        self.replacement_cache.pop(0)
-                    self.replacement_cache[bucket_index].append(contact)
+                # Put the new contact in our replacement cache for the
+                # corresponding KBucket (or update it's position if it
+                # exists already)
+
+                if bucket_index not in self.replacement_cache:
+                    self.replacement_cache[bucket_index] = []
+                if contact in self.replacement_cache[bucket_index]:
+                    self.replacement_cache[bucket_index].remove(contact)
+                # TODO: Using k to limit the size of the contact
+                # replacement cache - maybe define a separate value for
+                # this in constants.py?
+                elif len(self.replacement_cache) >= constants.K:
+                    self.replacement_cache.pop(0)
+                self.replacement_cache[bucket_index].append(contact)
+        # elif old_contact.port == contact.port:
+        #     self.log.info('Remove contact')
+        #     self.remove_contact(contact.guid)
+        #
+        #     try:
+        #         self.buckets[bucket_index].add_contact(contact)
+        #     except kbucket.BucketFull:
+        #         # The bucket is full; see if it can be split (by checking
+        #         # if its range includes the host node's id)
+        #         if self.buckets[bucket_index].key_in_range(self.parent_node_id):
+        #             self.split_bucket(bucket_index)
+        #             # Retry the insertion attempt
+        #             self.add_contact(contact)
+        #         else:
+        #             # We can't split the KBucket
+        #             # NOTE: This implementation follows section 4.1 of the
+        #             # 13 page version of the Kademlia paper (optimized
+        #             # contact accounting without PINGs - results in much
+        #             # less network traffic, at the expense of some memory)
+        #
+        #             # Put the new contact in our replacement cache for the
+        #             # corresponding KBucket (or update it's position if
+        #             # it exists already)
+        #             if bucket_index not in self.replacement_cache:
+        #                 self.replacement_cache[bucket_index] = []
+        #             if contact in self.replacement_cache[bucket_index]:
+        #                 self.replacement_cache[bucket_index].remove(contact)
+        #             # TODO: Using k to limit the size of the contact
+        #             # replacement cache - maybe define a separate value
+        #             # for this in constants.py?
+        #             elif len(self.replacement_cache) >= constants.K:
+        #                 self.replacement_cache.pop(0)
+        #             self.replacement_cache[bucket_index].append(contact)
 
     def find_close_nodes(self, key, count, node_id=None):
         """
@@ -345,10 +346,10 @@ class OptimizedTreeRoutingTable(RoutingTable):
 
         @param count: the amount of contacts to return
         @type count: int
-        @param nodeID: Used during RPC, this is the sender's Node ID.
-                       The ID passed in the paramater is excluded from
+        @param node_id: Used during RPC, this is the sender's Node ID.
+                       The ID passed in the parameter is excluded from
                        the list of contacts returned.
-        @type nodeID: str
+        @type node_id: str
 
         @return: A list of node contacts (C{guid.GUIDMixin instances})
                  closest to the specified key.
@@ -450,6 +451,16 @@ class OptimizedTreeRoutingTable(RoutingTable):
         finally:
             self.log.datadump('Contacts: %s', self.buckets[bucket_index].contacts)
 
+    def update_contact(self, contact):
+        """
+        Replace existing contact with updated contact
+
+        :param contact:
+        :return:
+        """
+        # bucket_index = self.kbucket_index(contact.guid)
+        # self.buckets[bucket_index].update_contact(contact)
+
     def touch_kbucket(self, node_id, timestamp=None):
         """
         Update the "last accessed" timestamp of the KBucket which covers
@@ -459,6 +470,7 @@ class OptimizedTreeRoutingTable(RoutingTable):
         """
         if timestamp is None:
             timestamp = int(time.time())
+
         bucket_index = self.kbucket_index(node_id)
         self.buckets[bucket_index].last_accessed = timestamp
 

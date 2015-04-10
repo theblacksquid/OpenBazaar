@@ -1,6 +1,6 @@
 #pylint: disable=function-redefined
 from behave import given, then, when
-from zmq.eventloop import ioloop
+from tornado import ioloop
 
 from node.db_store import Obdb
 from node.setup_db import setup_db

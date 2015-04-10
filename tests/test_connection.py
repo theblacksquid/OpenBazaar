@@ -4,6 +4,7 @@ import mock
 
 from node import connection, guid
 import json
+import socket
 
 
 class TestPeerConnection(unittest.TestCase):
@@ -15,28 +16,34 @@ class TestPeerConnection(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.protocol = "tcp"
-        cls.hostname = "crypto.io"
+        cls.hostname = "localhost"
         cls.port = 54321
         cls.address = cls._mk_address(cls.protocol, cls.hostname, cls.port)
         cls.nickname = "OpenBazaar LightYear"
         cls.pub = "YELLOW SUBMARINE"
         cls.transport = mock.Mock()
 
+        cls.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # cls.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # cls.socket.bind((cls.hostname, cls.port))
+
         cls.default_nickname = ""
 
     def setUp(self):
-        self.pc1 = connection.PeerConnection(self.transport, self.address)
+        self.pc1 = connection.PeerConnection(self.transport, self.hostname, self.port, peer_socket=self.socket)
         self.pc2 = connection.PeerConnection(
             self.transport,
-            self.address,
-            self.nickname
+            self.hostname,
+            self.port,
+            self.nickname,
+            self.socket
         )
 
     def test_init(self):
         self.assertEqual(self.pc1.transport, self.transport)
-        self.assertEqual(self.pc1.address, self.address)
+        self.assertEqual(self.pc1.hostname, self.hostname)
         self.assertEqual(self.pc1.nickname, self.default_nickname)
-        self.assertIsNotNone(self.pc1.ctx)
+        # self.assertIsNotNone(self.pc1.ctx)
 
         self.assertEqual(self.pc2.nickname, self.nickname)
 
@@ -58,18 +65,22 @@ class TestCryptoPeerConnection(TestPeerConnection):
     def _mk_default_CPC(cls):
         return connection.CryptoPeerConnection(
             cls.transport,
-            cls.address,
+            cls.hostname,
+            cls.port,
+            peer_socket=cls.socket
         )
 
     @classmethod
     def _mk_complete_CPC(cls):
         return connection.CryptoPeerConnection(
             cls.transport,
-            cls.address,
+            cls.hostname,
+            cls.port,
             cls.pub,
             cls.guid,
             cls.nickname,
             cls.sin,
+            peer_socket=cls.socket
         )
 
     def setUp(self):
@@ -91,9 +102,8 @@ class TestCryptoPeerConnection(TestPeerConnection):
     def test_init(self):
         super(TestCryptoPeerConnection, self).test_init()
 
-        self.assertEqual(self.pc1.ip, self.hostname)
+        self.assertEqual(self.pc1.hostname, self.hostname)
         self.assertEqual(self.pc1.port, self.port)
-        self.assertEqual(self.pc1.address, self.address)
 
         self.assertEqual(self.pc1.pub, self.default_pub)
         self.assertEqual(self.pc1.sin, self.default_sin)
@@ -107,16 +117,18 @@ class TestCryptoPeerConnection(TestPeerConnection):
         self.assertEqual(self.pc1, self._mk_default_CPC())
 
         other_addresses = (
-            self._mk_address("http", self.hostname, self.port),
-            self._mk_address(self.protocol, "openbazaar.org", self.port),
-            self._mk_address(self.protocol, self.hostname, 8080)
+            (self.hostname, self.port),
+            ("openbazaar.org", self.port),
+            (self.hostname, 8080)
         )
         for address in other_addresses:
             self.assertEqual(
                 self.pc1,
                 connection.CryptoPeerConnection(
                     self.transport,
-                    address
+                    address[0],
+                    address[1],
+                    peer_socket=self.socket
                 )
             )
 
@@ -130,11 +142,13 @@ class TestCryptoPeerConnection(TestPeerConnection):
             self.pc2,
             connection.CryptoPeerConnection(
                 self.transport,
-                self.address,
+                self.hostname,
+                self.port,
                 self.pub,
                 another_guid,
                 self.nickname,
-                self.sin
+                self.sin,
+                peer_socket=self.socket
             )
         )
         self.assertNotEqual(self.pc1, int(self.guid))

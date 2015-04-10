@@ -9,7 +9,7 @@ ALPHA = 3
 
 # Maximum number of contacts stored in a bucket
 # NOTE: Should be an even number.
-K = 8 # pylint: disable=invalid-name
+K = 8  # pylint: disable=invalid-name
 
 # Maximum number of contacts stored in the
 # replacement cache of a bucket
@@ -58,7 +58,7 @@ DB_PASSPHRASE = "passphrase"
 
 DB_PATH = "db/ob.db"
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 
 SATOSHIS_IN_BITCOIN = 100000000
 

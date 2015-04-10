@@ -1,26 +1,24 @@
 import sys
-
+from urlparse import urlparse
+import re
+import logging
 import IPy
 import requests
 import rfc3986
 import stun
-from urlparse import urlparse
-import re
 
 
 # List taken from natvpn project and tested manually.
 # NOTE: This needs periodic updating.
 _STUN_SERVERS = (
-    'stun.ekiga.net',
-    'stun.ideasip.com',
-    'stun.voiparound.com',
-    'stun.voipbuster.com',
-    'stun.voipstunt.com',
-    'stun.voxgratia.org'
+    'stun.l.google.com',
+    'stun1.l.google.com',
+    'stun2.l.google.com',
+    'stun3.l.google.com',
+    'stun4.l.google.com',
 )
 
 IP_DETECT_SITE = 'https://icanhazip.com'
-
 
 def set_stun_servers(servers=_STUN_SERVERS):
     """Manually set the list of good STUN servers."""
@@ -32,7 +30,7 @@ def get_NAT_status(stun_host=None):
     Given a server hostname, initiate a STUN request to it;
     and return the response in the form of a dict.
     """
-    response = stun.get_ip_info(stun_host=stun_host, source_port=0)
+    response = stun.get_ip_info(stun_host=stun_host, source_port=0, stun_port=19302)
     return {'nat_type': response[0],
             'external_ip': response[1],
             'external_port': response[2]}
@@ -79,7 +77,7 @@ def is_ipv6_address(ip):
 
 def get_peer_url(address, port, protocol='tcp'):
     """
-    Return a URL which can be used by ZMQ.
+    Return a URL.
 
     @param address: An IPv4 address, an IPv6 address or a DNS name.
     @type address: str
@@ -143,6 +141,71 @@ def is_valid_uri(uri):
         and is_valid_hostname(hostname)
     )
 
+
+class PacketStats(object):
+    def __init__(self):
+        self.log = logging.getLogger(
+            '%s' % self.__class__.__name__
+        )
+        # incoming
+        self.num_packets_incoming = 0
+        self.total_bytes_incoming = 0
+        # outgoing
+        self.num_packets_outgoing = 0
+        self.total_bytes_outgoing = 0
+
+    def add_incoming_packet(self, packet_size):
+        if packet_size is None or packet_size < 0:
+            return
+        self.num_packets_incoming += 1
+        self.total_bytes_incoming += packet_size
+
+    def add_outgoing_packet(self, packet_size):
+        if packet_size is None or packet_size < 0:
+            return
+        self.num_packets_outgoing += 1
+        self.total_bytes_outgoing += packet_size
+
+    def logStats(self, incoming=True, outgoing=True):
+        if incoming:
+            self.log.info("Incoming Packet Stats.")
+            self.log.info("Total Incoming Packets:       %d", self.num_packets_incoming)
+            self.log.info("Total Incoming bytes:         %d", self.total_bytes_incoming)
+            self.log.info("Average Incoming Packet Size: %d",
+                          self.total_bytes_incoming/self.num_packets_incoming)
+
+        if outgoing:
+            self.log.info("Outgoing Packet Stats.")
+            self.log.info("Total Outgoing Packets:       %d", self.num_packets_outgoing)
+            self.log.info("Total Outgoing bytes:         %d", self.total_bytes_outgoing)
+            self.log.info("Average Outgoing Packet Size: %d",
+                          self.total_bytes_outgoing/self.num_packets_outgoing)
+
+PACKET_STATS = PacketStats()
+PACKET_STATS_LOGS_EVERY_N_PACKETS = 50
+
+def count_outgoing_packet(data):
+    if PACKET_STATS is None:
+        return
+
+    stats = PACKET_STATS
+    if data is not None:
+        stats.add_outgoing_packet(len(data))
+    if stats.num_packets_outgoing % PACKET_STATS_LOGS_EVERY_N_PACKETS == 0:
+        stats.logStats(incoming=False)
+
+def count_incoming_packet(packet):
+    if PACKET_STATS is None:
+        return
+
+    stats = PACKET_STATS
+    if packet is not None:
+        if hasattr(packet, '_size'):
+            stats.add_incoming_packet(packet._size)
+        else:
+            stats.add_incoming_packet(len(packet))
+    if stats.num_packets_incoming % PACKET_STATS_LOGS_EVERY_N_PACKETS == 0:
+        stats.logStats(outgoing=False)
 
 def main():
     test_stun_servers()

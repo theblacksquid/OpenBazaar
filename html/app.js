@@ -39,6 +39,10 @@ app.config(['$routeProvider',
         templateUrl: 'partials/messages.html',
         controller: 'Messages'
       }).
+      when('/inbox', {
+        templateUrl: 'partials/inbox.html',
+        controller: 'Inbox'
+      }).
       when('/user/:userId/products', {
         templateUrl: 'partials/user.html',
         controller: 'User'
@@ -150,6 +154,7 @@ app.directive("validateOnBlur", [function() {
  * Site-wide jQuery event handlers.
  */
 $(document).ready(function() {
+
   // Ensure merchant store details are immediately visible when selected, even if scrolled far down the page.
   $(".peers-table").on("click", function() {
     $("html, body").animate({scrollTop: 0}, 300);

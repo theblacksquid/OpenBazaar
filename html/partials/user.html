@@ -1,7 +1,9 @@
 <div data-ng-show="page_loading" style="margin-top:40px;padding:0 20px">
-
      <h3><img src="img/ajax-loader.gif" width="50"/> Loading merchant...</h3>
+</div>
 
+<div data-ng-show="page_unreachable && !page" style="margin-top:40px;padding:0 20px">
+<h3>Store cannot be reached. Try again later.</h3>
 </div>
 
 
@@ -9,13 +11,24 @@
 
     <div>
         <h2 class="row">
-            <div class="col-sm-1">
-                <identicon icon-size="64" hash="page.senderGUID" title="{{page.senderGUID}}"></identicon>
-            </div>
-            <div class="col-sm-11" ng-controller="ComposeMessageCtrl">
-                {{page.nickname ? page.nickname : "No nickname"}}<br/>
-                <button data-ng-show="page.bitmessage != '' && settings.bitmessage != ''" class="btn btn-sm btn-info" data-ng-click="compose_message('lg', myself, page.bitmessage, null)">Bitmessage Me</button>
-                <a data-ng-href="mailto:{{page.email}}"><button data-ng-show="page.email != ''" class="btn btn-sm btn-info">Email Me</button></a>
+            <div class="col-sm-12">
+                <table>
+                    <tr>
+                        <td width="90">
+                            <img src="{{page.avatar_url}}" class="thumb thumb-large" data-ng-show="page.avatar_url != '' && page.avatar_url != null" />
+                            <identicon icon-size="80" hash="page.senderGUID" title="{{page.senderGUID}}" data-ng-show="page.avatar_url == '' || page.avatar_url == null" ></identicon>
+                        </td>
+                        <td>
+                            {{page.nickname ? page.nickname : "No nickname"}}<br/>
+                            <button ng-controller="NewMessageCtrl" class="btn btn-sm btn-info" data-ng-click="compose_inbox_message('lg', myself, guid, null)">Message Me</button>
+                            <button ng-controller="ComposeMessageCtrl" data-ng-show="page.bitmessage != '' && settings.bitmessage != ''" class="btn btn-sm btn-info" data-ng-click="compose_message('lg', myself, page.bitmessage, null)">Bitmessage Me</button>
+                            <a data-ng-href="mailto:{{page.email}}"><button data-ng-show="page.email != ''" class="btn btn-sm btn-info">Email Me</button></a>
+                        </td>
+                    </tr>
+                </table>
+
+
+
             </div>
         </h2>
 
@@ -43,6 +56,10 @@
                 <tr data-ng-show="page.email">
                     <td class="col-xs-3">Email Address</td>
                     <td style="word-wrap:break-word"><a href="mailto:{{page.email}}">{{page.email}}</a></td>
+                </tr>
+                <tr data-ng-show="page.homepage">
+                    <td class="col-xs-3">Web Site</td>
+                    <td style="word-wrap:break-word"><a href="{{page.homepage}}" target="_blank">{{page.homepage}}</a></td>
                 </tr>
                 <tr data-ng-show="page.bitmessage">
                     <td class="col-xs-3">Bitmessage Address</td>
@@ -98,13 +115,17 @@
                     </div>
                 </div>
                 <div class="panel-body">
-                    <div data-ng-show="page.notary_description">
-                        <p data-ng-bind="page.notary_description"></p>
+                    <div style="margin-bottom:10px;">
+                        <h4>Fee for Services</h4>
+                        <p>{{page.notary_fee}}% per transaction</p>
                     </div>
 
-                    <div data-ng-show="!page.notary_description">
-                        <p>This individual has not described their notary services.</p>
+                    <div>
+                        <h4>Description of Services</h4>
+                        <p data-ng-show="page.notary_description">{{page.notary_description}}</p>
+                        <p data-ng-show="!page.notary_description">This individual has not described their notary services.</p>
                     </div>
+
                 </div>
             </div>
 
@@ -135,12 +156,14 @@
                  <div style="margin-bottom:10px"><img src="img/ajax-loader.gif" width="25"/> Looking for contracts...</div>
             </div>
 
-            <div data-ng-show="no_listings">No listings available at this time.</div>
+            <div data-ng-show="no_listings || !store_listings">This user is not a merchant at this time.</div>
 
             <div class="div-listing col-sm-4 col-xs-6" style="padding:5px" data-ng-repeat="listing in store_listings">
 
-                <a href="" data-ng-click="open('lg', myself, page.pubkey, listing, trusted_notaries, settings.trustedArbiters, settings.btc_pubkey)"><img class="img-thumbnail" data-ng-src="{{listing.contract_body.Contract.item_images}}" width="100%"/></a>
-                        <h4 style="margin-bottom:0"><a href="" data-ng-click="open('lg', myself, page.pubkey, listing.contract_body.Contract.item_title, listing.contract_body.Contract.item_price, listing.contract_body.Contract.item_description, listing.contract_body.Contract.item_images, listing.key, listing.signed_contract_body, settings.notaries, settings.trustedArbiters, settings.btc_pubkey, listing.contract_body.Seller.seller_GUID)" class="trim-info">{{listing.contract_body.Contract.item_title}}</a></h4>
+                <a href="" data-ng-click="open('lg', myself, page.pubkey, listing, trusted_notaries, settings.trustedArbiters, settings.btc_pubkey)">
+                    <img class="img-thumbnail" data-ng-src="{{(listing.item_remote_images[0]) ? listing.item_remote_images[0] : 'img/no-photo.png'}}" width="100%"/></a>
+
+                        <h4 style="margin-bottom:0"><a href="" data-ng-click="open('lg', myself, page.pubkey, listing, trusted_notaries, settings.trustedArbiters, settings.btc_pubkey)" class="trim-info">{{listing.contract_body.Contract.item_title}}</a></h4>
                         <span style="font-size:16px;">&#3647;{{listing.contract_body.Contract.item_price}}</span>
             </div>
 

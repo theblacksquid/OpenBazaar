@@ -1,7 +1,7 @@
 import os
 
-from pysqlcipher import dbapi2
 from node import constants
+from sqlite3 import dbapi2
 
 _PASSPHRASE = constants.DB_PASSPHRASE
 
@@ -34,7 +34,7 @@ _SCHEMA = (
             'deleted INT DEFAULT 0',
             'item_desc TEXT',
             'item_condition TEXT',
-            'item_quantity_available',  # XXX: No type for this field!
+            'item_quantity_available INT',  # XXX: No type for this field!
             'state TEXT',
             'key TEXT',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
@@ -80,9 +80,11 @@ _SCHEMA = (
             'address TEXT',
             'buyer_order_id TEXT',
             'notary TEXT',
+            'notary_fee TEXT',
             'payment_address TEXT',
             'shipping_address TEXT',
             'refund_requested INT DEFAULT 0',
+            'item_quantity INT DEFAULT 0',
             'refund_address TEXT',
             'cancelled INT DEFAULT 0',
             'buyer TEXT',
@@ -92,6 +94,9 @@ _SCHEMA = (
             'text TEXT',
             'contract_key TEXT',
             'signed_contract_body TEXT',
+            'merchant_sigs TEXT',
+            'merchant_script TEXT',
+            'merchant_tx TEXT',
             'updated INT',
             'created INT',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
@@ -101,7 +106,8 @@ _SCHEMA = (
         'peers',
         (
             'id INTEGER PRIMARY KEY AUTOINCREMENT',
-            'uri TEXT',
+            'hostname TEXT',
+            'port TEXT',
             'pubkey TEXT',
             'nickname TEXT',
             # not sure if peers.market_id is actually supposed to be a TEXT
@@ -120,6 +126,8 @@ _SCHEMA = (
             'nickname TEXT',
             'namecoin_id TEXT',
             'secret TEXT',
+            'bip32_seed TEXT',
+            'avatar_url TEXT',
             'sin TEXT',
             'pubkey TEXT',
             'guid TEXT',
@@ -143,9 +151,13 @@ _SCHEMA = (
             'arbiterDescription TEXT',
             'trustedArbiters TEXT',
             'privkey TEXT',
-            'obelisk TEXT',
+            'obelisk TEXT DEFAULT "obelisk-baltic.airbitz.co:9091"',
             'notaries TEXT',
             'notary BOOLEAN',
+            'notaryFee TEXT DEFAULT "0"',
+            'notaryDescription TEXT',
+            'refundAddress TEXT',
+            'homepage TEXT',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
         )
     ),
@@ -180,6 +192,31 @@ _SCHEMA = (
             'originalPublisherID TEXT',
             'value TEXT',
             'FOREIGN KEY(market_id) REFERENCES markets(id)'
+        )
+    ),
+    (
+        'keystore',
+        (
+            'id INTEGER PRIMARY KEY AUTOINCREMENT',
+            'order_id INT',
+            'contract_id INT',
+            'FOREIGN KEY(order_id) REFERENCES orders(order_id)',
+            'FOREIGN KEY(contract_id) REFERENCES contracts(id)'
+        )
+    ),
+    (
+        'inbox',
+        (
+            'id INTEGER PRIMARY KEY AUTOINCREMENT',
+            'message_id INT',
+            'parent_id INT',
+            'subject TEXT',
+            'body TEXT',
+            'sender_guid TEXT',
+            'recipient_guid TEXT',
+            'confirmed INT',
+            'created INT',
+            'received INT'
         )
     )
 )

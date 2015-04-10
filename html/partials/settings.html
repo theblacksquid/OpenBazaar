@@ -11,7 +11,7 @@
         <li id="settings-storeinfo"><a href="#/settings/storeinfo">Store Info</a></li>
         <li id="settings-keys"><a href="#/settings/keys">Keys</a></li>
         <li id="settings-communication"><a href="#/settings/communication">Communication</a></li>
-        <li id="settings-arbiter"><a href="#/settings/arbiter">Arbiter</a></li>
+        <!--<li id="settings-arbiter"><a href="#/settings/arbiter">Arbiter</a></li>-->
         <li id="settings-notary"><a href="#/settings/notary">Notary</a></li>
         <li id="settings-advanced"><a href="#/settings/advanced">Advanced</a></li>
         <li id="settings-backup"><a href="#/settings/backup">Backup</a></li>
@@ -31,6 +31,7 @@
                 <li data-ng-show="profileForm.inputNamecoin_id.$error.maxlength">Make sure your Namecoin id is less than 40 characters.</li>
                 <li data-ng-show="profileForm.inputNamecoin_id.$error.pattern">Make sure your Namecoin id contains only lower case letters, numbers or dashes.</li>
                 <li data-ng-show="profileForm.inputStoreDescription.$invalid">Make sure your description is less than 2048 characters.</li>
+                <li data-ng-show="profileForm.inputRefundAddress.$invalid">Mark sure you enter a valid Bitcoin address.</li>
             </ul>
         </div>
 
@@ -42,9 +43,23 @@
         </div>
 
         <div class="form-group">
+            <label for="inputAvatarURL" class="col-sm-3 control-label">Avatar URL</label>
+            <div class="col-sm-9">
+                <input type="url" data-ng-model="settings.avatar_url" class="form-control" id="inputAvatarURL" placeholder="Avatar URL">
+            </div>
+        </div>
+
+        <div class="form-group">
             <label for="inputNamecoin_id" class="col-sm-3 control-label">Namecoin id</label>
             <div class="col-sm-9">
                 <input data-ng-model="settings.namecoin_id" data-ng-maxlength="39" data-ng-pattern = "/^[a-z0-9\-]+$/" class="form-control" id="inputNamecoin_id" name="inputNamecoin_id" placeholder="Namecoin id">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="inputRefundAddress" class="col-sm-3 control-label">Bitcoin Receiving Address</label>
+            <div class="col-sm-9">
+                <input data-ng-model="settings.refundAddress" data-ng-maxlength="35" data-ng-pattern = "/^[a-zA-Z0-9\-]+$/" class="form-control" id="inputRefundAddress" name="inputRefundAddress" placeholder="Bitcoin address to send all incoming fees or refunds to">
             </div>
         </div>
 
@@ -147,16 +162,16 @@
         <h4>OpenBazaar Keys</h4>
 
         <div class="form-group">
-            <label for="inputPubkey" class="col-sm-3 control-label">Bitcoin Public Key</label>
+            <label for="inputPubkey" class="col-sm-3 control-label">Bitcoin Public Key (Uncompressed)</label>
             <div class="col-sm-9" style="word-break:break-all">
-                <input data-ng-model="settings.btc_pubkey" class="form-control" id="inputPubkey" placeholder="" readonly>
+                <textarea class="form-control"  data-ng-model="settings.pubkey" class="form-control" id="inputPubkey" rows="2" placeholder="" readonly></textarea>
             </div>
         </div>
 
         <div class="form-group">
-            <label for="inputSecret" class="col-sm-3 control-label">Bitcoin Private Key</label>
+            <label for="inputSecret" class="col-sm-3 control-label">BIP32 Seed</label>
             <div class="col-sm-9">
-                <input data-ng-model="settings.privkey" class="form-control" id="inputSecret" placeholder="" readonly>
+                <input data-ng-model="settings.bip32_seed" class="form-control" id="inputSecret" placeholder="" readonly>
                 <!--<a href="#" data-ng-click="generateNewSecret($event)">Generate a new secret</a>-->
             </div>
         </div>
@@ -178,6 +193,13 @@
             <label for="inputEmail" class="col-sm-3 control-label">Email</label>
             <div class="col-sm-9">
                 <input type="email" data-ng-model="settings.email" class="form-control" id="inputEmail" placeholder="Email">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="inputHomepage" class="col-sm-3 control-label">Your Web Site</label>
+            <div class="col-sm-9">
+                <input type="url" data-ng-model="settings.homepage" class="form-control" id="inputHomepage" placeholder="Homepage">
             </div>
         </div>
 
@@ -294,13 +316,30 @@
                 </div>
             </div>
 
-            <h4>Acting as an Notary</h4>
+            <h4>Notary Details</h4>
 
             <div class="form-group">
                 <label class="col-sm-3 control-label">Make me a notary</label>
                 <div class="btn-group col-sm-5">
-                    <label class="btn btn-default" data-ng-model="settings.notary" btn-radio="true">Yes</label>
-                    <label class="btn btn-default" data-ng-model="settings.notary" btn-radio="">No</label>
+                    <label class="btn btn-default" data-ng-model="settings.notary" btn-radio="'True'">Yes</label>
+                    <label class="btn btn-default" data-ng-model="settings.notary" btn-radio="'False'">No</label>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>Fees</strong><br/>If your services are needed during a dispute a fee can be requested from the participants of the transaction you are involved with. What percentage of each transaction would you like to request for your services?</div>
+
+            <div class="form-group">
+                    <label class="col-sm-3 control-label" for="inputNotaryFee">%</label>
+                <div class="col-sm-2">
+                <input type="number" min="0" max="100" data-ng-model="settings.notaryFee" class="form-control" id="inputNotaryFee" placeholder="0">
+                    </div>
+            </div>
+
+            <div class="form-group">
+                <label for="inputNotaryDescription" class="col-sm-3 control-label">Description of your services</label>
+                <div class="col-sm-9">
+                    <textarea data-ng-model="settings.notaryDescription" data-ng-maxlength="2048" name="inputNotaryDescription" class="form-control" id="inputNotaryDescription" rows="5" placeholder="Enter a short description about your notary services"></textarea>
                 </div>
             </div>
 
@@ -319,19 +358,11 @@
         <h4>Advanced</h4>
 
         <div class="form-group">
-            <label class="col-sm-3 control-label">Use Testnet</label>
-            <div class="btn-group col-sm-5">
-                <label class="btn btn-default" data-ng-model="settings.testnet" btn-radio="true">Yes</label>
-                <label class="btn btn-default" data-ng-model="settings.testnet" btn-radio="">No</label>
-            </div>
-        </div>
-
-        <div class="form-group">
             <div class="col-sm-3 text-right">
             <label for="inputObelisk" class="control-label">Obelisk Server</label>
                 </div>
             <div class="col-sm-5">
-            <input type="text" id="inputObelisk" class="form-control text" data-ng-model="settings.obelisk" placeholder="tcp://85.25.198.97:8081" />
+            <input type="text" id="inputObelisk" class="form-control text" data-ng-model="settings.obelisk" placeholder="85.25.198.97:8081" />
             </div>
         </div>
 
@@ -366,12 +397,24 @@
         </div>
 
         <div style="margin:20px 0">
-            <h4>Previous Backups</h4>
 
-            <div id="previous-backups-container"
-                 data-ng-model="backups"
-                 data-ng-repeat="backup in backups">
-                <div ng-hide="!backups.length"><a class="col-sm-8" href="/html/backups/{{backup.file_name}}">{{backup.file_name}}</a> &nbsp;&nbsp; <!-- <a href="#" data-ng-click="deleteBackup('{{backup.file_name}}')">Delete</a> --></div>
+
+            <div >
+                <table ng-hide="!backups.length" class="table">
+                    <thead>
+                    <tr>
+                        <th>Backup Name</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr data-ng-model="backups" data-ng-repeat="backup in backups">
+                        <td><a href="/html/backups/{{backup.file_name}}">{{backup.file_name}}</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+
+
+                <!--<div ng-hide="!backups.length"> &nbsp;&nbsp; &lt;!&ndash; <a href="#" data-ng-click="deleteBackup('{{backup.file_name}}')">Delete</a> &ndash;&gt;</div>-->
                 <div ng-hide="backups.length">No backup</div>
             </div>
         </div>

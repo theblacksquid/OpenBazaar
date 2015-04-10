@@ -19,7 +19,7 @@
 
         <div class="col-sm-12 text-right">
 
-            <pagination class="pull-right" style="margin-left:10px;" data-ng-show="orders_total > 10" total-items="orders_total" num-pages="orders_pages" data-ng-change="orders_page_changed()" data-ng-model="orders_current_page" max-size="4" class="pagination-sm" previous-text="&lsaquo;" next-text="&rsaquo;" first-text="&laquo;" last-text="&raquo;" boundary-links="true"></pagination>
+            <data-pagination class="pull-right" style="margin-left:10px;" data-ng-show="orders_total > 10" total-items="orders_total" num-pages="orders_pages" data-ng-change="orders_page_changed()" data-ng-model="orders_current_page" max-size="4" class="pagination-sm" previous-text="&lsaquo;" next-text="&rsaquo;" first-text="&laquo;" last-text="&raquo;" boundary-links="true"></data-pagination>
 
         </div>
 
@@ -29,8 +29,13 @@
         <div class="col-sm-12" data-ng-show="merchant == 0 && orders_total == 0" style="padding:0">
             You have not made any purchases yet.
         </div>
-        <div class="col-sm-12" data-ng-show="merchant == 2 && orders_total == 0" style="padding:0">
+        <div class="col-sm-12" data-ng-show="merchant == 2 && orders_total == 0 && myself.settings.notary != 'False'" style="padding:0">
             You have not notarized any contracts yet.
+        </div>
+
+        <div class="alert alert-info" data-ng-show="merchant == 2 && myself.settings.notary == 'False'">
+            You are currently not acting as a notary on the OpenBazaar network. <BR>
+            If you would like to do so please visit the <strong><a href="#/settings/notary">Settings Panel</a></strong>.
         </div>
 
 
@@ -53,7 +58,7 @@
                         <th>Purchase</th>
                         <th data-ng-show="merchant">Buyer</th>
                         <th data-ng-show="!merchant">Merchant</th>
-                        <th></th>
+
                     </tr>
 
                     <tr data-ng-repeat="order in orders" >
@@ -64,8 +69,8 @@
                         </td>
                         <td width=136>{{order.updated * 1000 | date: 'short'}}</td>
                         <td>
-                            <div class="pull-left" style="margin-right:10px;">
-                                <img ng-src="{{order.item_image}}" width="50"/>
+                            <div class="pull-left" style="margin-right:10px;" data-ng-show="order.item_images.length > 0">
+                                <img ng-src="{{order.item_images[0]}}" width="50"/>
                             </div>
                             <div style="word-break:word-wrap">
                                 {{order.item_title}}
@@ -76,7 +81,7 @@
                                 <identicon icon-size="50" hash="order.buyer" title="{{order.buyer}}"></identicon>
                             </div>
                             <div class="col-sm-10" style="padding-top:0">
-                                <div data-ng-show="order.buyer_nickname" style="margin-top:5px;font-weight:bold;">{{order.buyer_nickname}}</div> {{order.buyer}}
+                                <div style="margin-top:5px;font-weight:bold;">{{guid_to_nickname(order.buyer)}}</div> {{order.buyer}}
                             </div>
                         </td>
 
@@ -86,12 +91,8 @@
                                 <identicon icon-size="50" hash="order.merchant" title="{{order.merchant}}"></identicon>
                             </div>
                             <div class="col-sm-10" style="padding-top:0">
-                                <div data-ng-show="order.merchant_nickname" style="margin-top:5px;font-weight:bold;">{{order.merchant_nickname}}</div> {{order.merchant}}
+                                <div style="margin-top:5px;font-weight:bold;">{{guid_to_nickname(order.merchant)}}</div> {{order.merchant}}
                             </div>
-                        </td>
-                        <td width="50">
-                            <button data-ng-show="!merchant && order.merchant_bitmessage" class="btn btn-sm btn-info" data-ng-click="compose_message('lg', myself, order.merchant_bitmessage, null)"><span class="glyphicon glyphicon-envelope"></span> Message</button>
-                            <button data-ng-show="merchant && order.buyer_bitmessage" class="btn btn-sm btn-info" data-ng-click="compose_message('lg', myself, order.buyer_bitmessage, null)"><span class="glyphicon glyphicon-envelope"></span> Message</button>
                         </td>
                     </tr>
 

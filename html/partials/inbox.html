@@ -1,0 +1,97 @@
+<!-- Inbox -->
+<div ng-show="inboxPanel" class="animated fadeInLeft">
+
+    <div ng-controller="NewMessageCtrl">
+
+        <h3>Inbox</h3>
+
+        <div class="col-sm-12 alert alert-info" data-ng-show="inbox_messages.length < 1 && inbox_sent_messages.length < 1">
+            <p>Your inbox is empty and looking pretty sad. Maybe you'd like to message someone?</p>
+            <div><button class="btn btn-info" data-ng-click="compose('lg', myself, '', null)" style="margin-top:10px;"><span class="glyphicon glyphicon-pencil"></span> Send a Message</button></div>
+        </div>
+
+        <div data-ng-show="inbox_sent_messages.length > 0 || inbox_messages.length > 0">
+            <div class="" style="text-align:right"><button class="btn btn-info" ng-click="refresh_peers();compose('lg', myself, '', null)"><span class="glyphicon glyphicon-pencil"></span> Send a Message</button></div>
+
+
+        <div role="tabpanel">
+
+                      <ul id="inbox-tabs" class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a data-target="inbox-inbox" aria-controls="inbox" role="tab" data-toggle="tab" href="#" data-ng-click="getInboxMessages()" onclick="$('#inbox-inbox').show();$('#inbox-inbox').siblings().hide();return false;">Inbox</a></li>
+                        <li role="presentation"><a data-target="sent" aria-controls="sent" role="tab" data-toggle="tab" href="#" data-ng-click="getInboxSentMessages()" onclick="$('#inbox-sent').show();$('#inbox-sent').siblings().hide();return false;">Sent</a></li>
+                      </ul>
+
+                      <!-- Tab panes -->
+                      <div class="tab-content">
+                        <div role="tabpanel" class="inbox-tab-pane tab-pane active" id="inbox-inbox">
+
+                            <div ng-show="inbox_messages">
+                                <table class="table table-striped table-bordered" style="margin-top:10px;">
+                                    <tr ng-repeat="message in inbox_messages">
+                                        <td width="15" style="vertical-align:middle"><input type="checkbox" /></td>
+                                        <td width="300">
+                                            <table>
+                                                <tr>
+                                                    <td><identicon icon-size="50" hash="message.sender_guid" title="{{message.sender_guid}}"></identicon></td>
+                                                    <td>
+                                                        <strong>{{guid_to_nickname(message.sender_guid)}}</strong>
+                                                        <br/>
+                                                        {{message.received * 1000 | date:'medium'}}
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td style="vertical-align:middle;">
+                                            <strong><a href="" ng-click="view('lg', myself, message)">{{message.subject}}</a></strong>
+                                            <br/>
+                                            {{message.body | limitTo:105}}
+                                        </td>
+                                        <td width="40" style="border-left:none;"><a href="#"
+                                            ng-click="compose('lg', myself, message.fromAddress, message)"><button class="btn btn-info">Reply</button></a></td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                      </div>
+
+                      <div role="tabpanel" class="inbox-tab-pane tab-pane" id="inbox-sent">
+
+                            <div ng-show="inbox_sent_messages">
+                                <table class="table table-striped table-bordered" style="margin-top:10px;">
+                                    <tr ng-repeat="message in inbox_sent_messages">
+                                        <td width="15" style="vertical-align:middle"><input type="checkbox" /></td>
+                                        <td width="300">
+                                            <table>
+                                                <tr>
+                                                    <td><identicon icon-size="50" hash="message.recipient_guid" title="{{message.recipient_guid}}"></identicon></td>
+                                                    <td>
+                                                        <strong>{{guid_to_nickname(message.recipient_guid)}}</strong>
+                                                        <br/>
+                                                        {{message.created * 1000 | date:'medium'}}
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td style="vertical-align:middle;">
+                                            <strong><a href="" ng-click="view('lg', myself, message)">{{message.subject}}</a></strong>
+                                            <br/>
+                                            {{message.body | limitTo:105}}
+                                        </td>
+                                        <td width="40" style="border-left:none;"><a href="#"
+                                            ng-click="compose('lg', myself, message.fromAddress, message)"><button class="btn btn-info">Reply</button></a></td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                      </div>
+
+                    </div>
+
+        </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>

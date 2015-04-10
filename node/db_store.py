@@ -2,8 +2,8 @@ import functools
 import logging
 import threading
 
-from pysqlcipher import dbapi2
 from node import constants
+from sqlite3 import dbapi2
 
 
 class Obdb(object):
@@ -166,9 +166,10 @@ class Obdb(object):
         query = "INSERT INTO %s(%s) VALUES(%s)" % (
             table, updatefield_part, setfield_part
         )
+        self._log.debug("query: %s", query)
         cur.execute(query, tuple(sets))
         lastrowid = cur.lastrowid
-        self._log.debug("query: %s", query)
+
         if lastrowid:
             return lastrowid
 

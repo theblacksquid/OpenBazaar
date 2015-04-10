@@ -12,15 +12,14 @@ import random
 from StringIO import StringIO
 import traceback
 import re
-
-from bitcoin.main import privkey_to_pubkey
-import tornado
+from tornado import ioloop
 
 from node import constants
-from node.crypto_util import Cryptor
 from node.data_uri import DataURI
 from node.orders import Orders
 from node.protocol import proto_page, query_page
+import bitcoin
+import time
 
 
 class Market(object):
@@ -52,7 +51,7 @@ class Market(object):
         self.market_id = transport.market_id
         self.peers = self.dht.get_active_peers()
         self.db_connection = db_connection
-        self.orders = Orders(transport, self.market_id, db_connection)
+
         self.pages = {}
         self.mypage = None
         self.signature = None
@@ -60,13 +59,16 @@ class Market(object):
         self.log = logging.getLogger(
             "[%s] %s" % (self.market_id, self.__class__.__name__))
         self.settings = self.transport.settings
+
         self.gpg = gnupg.GPG()
 
         self.all_messages = (
             'query_myorders',
             'peer',
             'query_page',
-            'query_listings'
+            'query_listing',
+            'query_listings',
+            'inbox_message'
         )
 
         # Register callbacks for incoming events
@@ -83,11 +85,17 @@ class Market(object):
 
         self.nickname = self.settings.get('nickname', '')
 
+        # Recurring republish for DHT
+        self.start_listing_republisher()
+
+        self.orders = Orders(transport, self.market_id, db_connection, self.gpg)
+
+    def start_listing_republisher(self):
         # Periodically refresh buckets
-        loop = tornado.ioloop.IOLoop.instance()
-        refresh_cb = tornado.ioloop.PeriodicCallback(self.dht._refresh_node,
-                                                     constants.REFRESH_TIMEOUT,
-                                                     io_loop=loop)
+        loop = ioloop.IOLoop.instance()
+        refresh_cb = ioloop.PeriodicCallback(self.dht._refresh_node,
+                                             constants.REFRESH_TIMEOUT,
+                                             io_loop=loop)
         refresh_cb.start()
 
     def disable_welcome_screen(self):
@@ -117,7 +125,7 @@ class Market(object):
         image = Image.open(StringIO(image_data))
         cropped_image = ImageOps.fit(image, (200, 200), centering=(0.5, 0.5))
         data = StringIO()
-        cropped_image.save(data, format='PNG')
+        cropped_image.save(data, format='PNG', quality=75, optimize=True)
         new_uri = DataURI.make(
             'image/png',
             charset=charset,
@@ -191,6 +199,32 @@ class Market(object):
                 self.transport.guid
             )
 
+    def refund_recipient(self, recipient_id, order_id):
+        self.log.debug('Refunding recipient')
+
+    def generate_new_pubkey(self, contract_id):
+        self.log.debug('Generating new pubkey for contract')
+
+        # Retrieve next key id from DB
+        next_key_id = len(self.db_connection.select_entries("keystore", select_fields="id")) + 1
+
+        # Store updated key in DB
+        self.db_connection.insert_entry(
+            "keystore",
+            {
+                'contract_id': contract_id
+            }
+        )
+
+        # Generate new child key (m/1/0/n)
+        wallet = bitcoin.bip32_ckd(bitcoin.bip32_master_key(self.settings.get('bip32_seed')), 1)
+        wallet_chain = bitcoin.bip32_ckd(wallet, 0)
+        bip32_identity_priv = bitcoin.bip32_ckd(wallet_chain, next_key_id)
+        bip32_identity_pub = bitcoin.bip32_privtopub(bip32_identity_priv)
+        pubkey = bitcoin.encode_pubkey(bitcoin.bip32_extract_key(bip32_identity_pub), 'hex')
+
+        return pubkey
+
     def save_contract(self, msg):
         """Sign, store contract in the database and update the keyword in the
         network
@@ -202,9 +236,11 @@ class Market(object):
 
         seller = msg['Seller']
         seller['seller_PGP'] = self.gpg.export_keys(self.settings['PGPPubkeyFingerprint'])
-        seller['seller_BTC_uncompressed_pubkey'] = self.settings['btc_pubkey']
+        seller['seller_BTC_uncompressed_pubkey'] = self.generate_new_pubkey(contract_id)
+        seller['seller_contract_id'] = contract_id
         seller['seller_GUID'] = self.settings['guid']
         seller['seller_Bitmessage'] = self.settings['bitmessage']
+        seller['seller_refund_addr'] = self.settings['refundAddress']
 
         # Process and crop thumbs for images
         if 'item_images' in msg['Contract']:
@@ -269,6 +305,8 @@ class Market(object):
             notaries = []
         elif not isinstance(notaries, list):
             notaries = json.loads(notaries)
+        else:
+            notaries = notaries
 
         for notary in notaries:
             self.log.info(notary)
@@ -293,6 +331,7 @@ class Market(object):
 
     def remove_trusted_notary(self, guid):
         """Not trusted to selected notary. Dlete notary from the local list"""
+        self.log.debug('Notaries %s', self.settings)
         notaries = self.settings.get('notaries')
         notaries = ast.literal_eval(notaries)
 
@@ -320,31 +359,31 @@ class Market(object):
             )
 
             # Push keyword index out again
-            contract = listing.get('Contract')
+            contract_body = json.loads(listing.get('contract_body'))
+            self.log.debug('Listing: %s', listing)
+            self.log.debug('Contract: %s', contract_body)
+
+            contract = contract_body.get('Contract')
+
             keywords = contract.get('item_keywords') if contract is not None else []
+            self.log.debug('Found keywords to republish: %s', keywords)
 
             self.update_keywords_on_network(listing.get('key'), keywords)
 
         # Updating the DHT index of your store's listings
         self.update_listings_index()
 
-    def get_notaries(self, online_only=False):
+    def get_notaries(self):
         """Getting notaries and exchange contact in network"""
-        self.log.debug('Getting notaries')
+        self.log.debug('Retrieving trusted notaries')
         notaries = []
         settings = self.get_settings()
+        self.log.debug(settings.get('notaries'))
 
-        # Untested code
-        if online_only:
-            for notary in settings['notaries']:
-                peer = self.dht.routing_table.get_contact(notary.guid)
-                if peer is not None:
-                    peer.start_handshake()
-                    notaries.append(notary)
-            return notaries
-        # End of untested code
+        self.log.debug('Notaries Online: %s', notaries)
+        return notaries
 
-        return settings['notaries']
+        # return settings['notaries']
 
     @staticmethod
     def valid_guid(guid):
@@ -399,8 +438,7 @@ class Market(object):
         # Sign listing index for validation and tamper resistance
         data_string = str({'guid': self.transport.guid,
                            'contracts': my_contracts})
-        cryptor = Cryptor(privkey_hex=self.transport.settings['secret'])
-        signature = cryptor.sign(data_string)
+        signature = self.transport.cryptor.sign(data_string)
 
         value = {
             'signature': signature.encode('hex'),
@@ -439,6 +477,7 @@ class Market(object):
 
         contract = json.loads(contract['contract_body'])
         contract_keywords = contract['Contract']['item_keywords']
+        self.log.debug('Keywords to remove: %s', contract_keywords)
 
         for keyword in contract_keywords:
             # Remove keyword from index
@@ -502,7 +541,67 @@ class Market(object):
             self.log.error(traceback.format_exc())
             return {}
 
-    def get_contracts(self, page=0):
+    def send_inbox_message(self, msg):
+        """Send message for market internally"""
+        self.log.info(
+            "Sending message for market: %s", self.transport.market_id)
+        self.log.debug('Inbox Message: %s', msg)
+
+        # Save message to DB
+        message_id = hashlib.sha256()
+        message_id.update('%d%s%s' % (time.time(), self.transport.guid, msg.get('recipient')))
+
+        self.db_connection.insert_entry('inbox', {
+            'created': time.time(),
+            'subject': msg.get('subject', ''),
+            'body': msg.get('body', ''),
+            'sender_guid': self.transport.guid,
+            'recipient_guid': msg.get('recipient', ''),
+            'message_id': message_id.hexdigest()
+        })
+
+        # Send to peer
+        peer = self.dht.routing_table.get_contact(msg.get('recipient'))
+        if peer:
+            peer.send({
+                'type': 'inbox_message',
+                'subject': msg.get('subject'),
+                'body': msg.get('body'),
+                'sender_guid': self.transport.guid,
+                'created': time.time(),
+                'message_id': message_id.hexdigest(),
+                'v': constants.VERSION
+            })
+
+    def get_inbox_messages(self):
+        """Get messages from inbox table"""
+        messages = self.db_connection.select_entries("inbox", {
+            'recipient_guid': self.transport.guid
+        }, order='DESC')
+        return messages
+
+    def get_inbox_sent_messages(self):
+        """Get messages from inbox table"""
+        messages = self.db_connection.select_entries("inbox", {
+            'sender_guid': self.transport.guid
+        }, order='DESC')
+        return messages
+
+    def get_contract_by_id(self, contract_id):
+        """Get Contract by ID"""
+        contract = self.db_connection.select_entries(
+            "contracts",
+            {
+                "deleted": 0,
+                "key": contract_id
+            }
+        )
+        if len(contract) == 1:
+            return contract
+        else:
+            return None
+
+    def get_contracts(self, page=0, remote=False):
         """Select contracts for market from database"""
         self.log.info(
             "Getting contracts for market: %s", self.transport.market_id)
@@ -560,6 +659,7 @@ class Market(object):
                 'item_desc': contract_field.get('item_desc'),
                 'item_condition': contract_field.get('item_condition'),
                 'item_quantity_available': contract_field.get('item_quantity'),
+                'item_remote_images': contract_field.get('item_remote_images')
             })
 
         return {
@@ -596,6 +696,7 @@ class Market(object):
                 self.transport.store(key, data, self.transport.guid)
 
         # Validate that the namecoin id received is well formed
+        self.log.debug(msg)
         if not re.match(r'^[a-z0-9\-]{1,39}$', msg['namecoin_id']):
             msg['namecoin_id'] = ''
 
@@ -607,6 +708,8 @@ class Market(object):
             del msg['burnAmount']
         if 'burnAddr' in msg:
             del msg['burnAddr']
+
+        msg['notaries'] = json.dumps(msg['notaries'])
 
         # Update local settings
         self.db_connection.update_entries(
@@ -629,15 +732,18 @@ class Market(object):
         if settings['notary'] == 1:
             settings['notary'] = True
 
-        for key in ('notaries', 'trustedArbiters'):
-            # Fix key not found, None and empty string
-            value = settings.get(key) or '[]'
-            settings[key] = ast.literal_eval(value)
+        settings['notaries'] = json.loads(settings['notaries']) if settings['notaries'] else []
+        for i, notary in enumerate(settings['notaries']):
+            guid = notary.get('guid')
+            if guid:
+                peer = self.dht.routing_table.get_contact(guid)
+                if peer:
+                    settings['notaries'][i]['online'] = True
+                else:
+                    settings['notaries'][i]['online'] = False
 
-        if 'secret' not in settings:
-            settings['privkey'] = ''
+        settings['trustedArbiters'] = json.loads(settings['trustedArbiters']) if settings['trustedArbiters'] else []
 
-        settings['btc_pubkey'] = privkey_to_pubkey(settings.get('privkey'))
         settings['secret'] = settings.get('secret')
 
         if settings:
@@ -649,7 +755,9 @@ class Market(object):
         """Query network for node"""
         self.log.info("Searching network for node: %s", find_guid)
         msg = query_page(find_guid)
-        msg['uri'] = self.transport.uri
+        msg['hostname'] = self.transport.hostname
+        msg['port'] = self.transport.port
+        msg['nat_type'] = self.transport.nat_type
         msg['senderGUID'] = self.transport.guid
         msg['sin'] = self.transport.sin
         msg['pubkey'] = self.transport.pubkey
@@ -658,26 +766,23 @@ class Market(object):
 
     def validate_on_query_page(self, *data):
         self.log.debug('Validating on query page message.')
-        keys = ("senderGUID", "uri", "pubkey", "senderNick")
+        keys = ("senderGUID", "hostname", "port", "pubkey", "senderNick")
         return all(k in data[0] for k in keys)
 
-    def on_query_page(self, peer):
+    def on_query_page(self, msg):
         """Return your page info if someone requests it on the network"""
         self.log.info("Someone is querying for your page")
+        settings = []
         settings = self.get_settings()
 
-        new_peer = self.transport.get_crypto_peer(
-            peer['senderGUID'],
-            peer['uri'],
-            pubkey=peer['pubkey'],
-            nickname=peer['senderNick']
-        )
+        peer = self.dht.routing_table.get_contact(msg['senderGUID'])
 
         def send_page_query():
             """Send a request for the local identity page"""
-            new_peer.start_handshake()
 
-            new_peer.send(proto_page(
+            self.log.debug('Sending page')
+
+            peer.send(proto_page(
                 self.transport.uri,
                 self.transport.pubkey,
                 self.transport.guid,
@@ -688,9 +793,13 @@ class Market(object):
                 settings.get('email', ''),
                 settings.get('bitmessage', ''),
                 settings.get('arbiter', ''),
-                settings.get('notary', ''),
+                settings.get('notary', False),
+                settings.get('notaryDescription', ''),
+                settings.get('notaryFee', 0),
                 settings.get('arbiterDescription', ''),
-                self.transport.sin))
+                self.transport.sin,
+                settings['homepage'],
+                settings['avatar_url']))
 
         send_page_query()
 
@@ -702,6 +811,76 @@ class Market(object):
         """Run if someone is querying for your page"""
         self.log.debug("Someone is querying for your page: %s", peer)
 
+    def validate_on_inbox_message(self, *data):
+        self.log.debug('Validating on inbox message.')
+        return True
+
+    def on_inbox_message(self, msg):
+        """Accept incoming inbox message"""
+        self.log.debug('Inbox Message: %s', msg)
+
+        # Save to DB
+        self.db_connection.insert_entry(
+            'inbox',
+            {
+                'subject': msg.get('subject', ''),
+                'body': msg.get('body', ''),
+                'sender_guid': msg.get('sender_guid', ''),
+                'recipient_guid': self.transport.guid,
+                'message_id': msg.get('message_id', ''),
+                'parent_id': msg.get('parent_id', ''),
+                'created': msg.get('created', ''),
+                'received': time.time()
+            }
+        )
+
+        # Send to client
+        if self.transport.handler:
+            self.transport.handler.send_to_client(None, {
+                "type": "inbox_notify",
+                "msg": msg
+            })
+
+            messages = self.get_inbox_messages()
+            self.transport.handler.send_to_client(None, {"type": "inbox_messages", "messages": messages})
+
+            self.check_inbox_count()
+
+    def check_inbox_count(self):
+        messages = self.db_connection.select_entries(
+            "inbox",
+            {
+                "recipient_guid": self.transport.guid
+            },
+            select_fields="id"
+        )
+
+        if self.transport.handler:
+            self.transport.handler.send_to_client(
+                None,
+                {"type": "inbox_count", "count": len(messages)}
+            )
+
+    def validate_on_query_listing(self, *data):
+        self.log.debug('Validating on query listing message.')
+        return True
+
+    def on_query_listing(self, msg):
+        """Run if someone is querying for a specific listing ID"""
+        sender_guid = msg.get('senderGUID')
+        listing_id = msg.get('listing_id')
+
+        listing = self.get_contract_by_id(listing_id)
+        if listing:
+            self.transport.send(
+                {
+                    "type": "query_listing_result",
+                    "v": constants.VERSION,
+                    "listing": listing
+                },
+                sender_guid
+            )
+
     def validate_on_query_listings(self, *data):
         self.log.debug('Validating on query listings message.')
         return "senderGUID" in data[0]
@@ -709,11 +888,14 @@ class Market(object):
     def on_query_listings(self, peer, page=0):
         """Run if someone is querying your listings"""
         self.log.info("Someone is querying your listings: %s", peer)
-        contracts = self.get_contracts(page)
+        contracts = self.get_contracts(page, remote=True)
 
         if len(contracts['contracts']) == 0:
             self.transport.send(
-                {"type": "no_listing_result"},
+                {
+                    "type": "no_listing_result",
+                    'v': constants.VERSION
+                },
                 peer['senderGUID'])
             return
         else:
@@ -721,6 +903,7 @@ class Market(object):
                 contract = contract
                 contract['type'] = "listing_result"
                 self.transport.send(contract, peer['senderGUID'])
+                self.log.info('Send listing result')
 
     def validate_on_peer(self, *data):
         self.log.debug('Validating on peer message.')
@@ -729,7 +912,7 @@ class Market(object):
     def on_peer(self, peer):
         pass
 
-    def release_funds_to_merchant(self, buyer_order_id, tx, script, signatures, guid):
+    def release_funds_to_recipient(self, buyer_order_id, tx, script, signatures, guid, buyer_id, refund=0):
         """Send TX to merchant"""
         self.log.debug("Release funds to merchant: %s %s %s %s", buyer_order_id, tx, signatures, guid)
         self.transport.send(
@@ -738,7 +921,10 @@ class Market(object):
                 'tx': tx,
                 'script': script,
                 'buyer_order_id': buyer_order_id,
-                'signatures': signatures
+                'signatures': signatures,
+                'buyer_id': buyer_id,
+                'refund': refund,
+                'v': constants.VERSION
             },
             guid
         )

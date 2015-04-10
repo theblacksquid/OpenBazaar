@@ -57,7 +57,8 @@ def create_argument_parser():
         ('--bm-port',),
         ('--dev-nodes', '-n'),
         ('--http-port', '-q'),
-        ('--server-port', '-p')
+        ('--server-port', '-p'),
+        ('--mediator-port',)
     )
     for switches in int_args:
         key = arg_to_key(switches[0])
@@ -70,7 +71,8 @@ def create_argument_parser():
         ('--disable-stun-check',),
         ('--disable-upnp', '-j'),
         ('--enable-ip-checker',),
-        ('--seed-mode', '-S')
+        ('--seed-mode', '-S'),
+        ('--mediator', '-m')
     )
     for switches in flags:
         key = arg_to_key(switches[0])
@@ -168,6 +170,12 @@ openbazaar [options] <command>
     --bm-port
         Bitmessage API port
 
+    --mediator-port
+        Act as a UDP mediator on this port
+
+    --mediator
+        Have traffic mediated through mediator server
+
     -u, --market-id
         Market ID
 
@@ -218,7 +226,7 @@ def create_openbazaar_contexts(arguments, nat_status):
     # market port
     server_port = arguments.server_port
 
-    if nat_status is not None:
+    if nat_status is not None and not arguments.disable_stun_check:
         # unless --disable-stun-check has been passed
         # override the server ip and port for p2p communications with the ones
         # obtained from the STUN server.
@@ -261,6 +269,8 @@ def create_openbazaar_contexts(arguments, nat_status):
                                          arguments.bm_user,
                                          arguments.bm_pass,
                                          arguments.bm_port,
+                                         arguments.mediator_port,
+                                         arguments.mediator,
                                          arguments.seeds,
                                          arguments.seed_mode,
                                          arguments.dev_mode,
@@ -285,7 +295,7 @@ def create_openbazaar_contexts(arguments, nat_status):
 
             if i:
                 seed_mode = False
-                seeds = ['localhost']
+                seeds = [('127.0.0.1', 12345)]
             else:
                 seed_mode = True
                 seeds = []
@@ -302,6 +312,8 @@ def create_openbazaar_contexts(arguments, nat_status):
                                              arguments.bm_user,
                                              arguments.bm_pass,
                                              arguments.bm_port,
+                                             arguments.mediator_port + i,
+                                             arguments.mediator,
                                              seeds,
                                              seed_mode,
                                              arguments.dev_mode,
@@ -347,10 +359,20 @@ def start(arguments):
         arguments.disable_upnp = True
 
     # Try to get NAT escape UDP port
-    nat_status = None
+    if not arguments.dev_mode:
+        nat_status = network_util.get_NAT_status()
+    else:
+        nat_status = {
+            'nat_type': 'Restric NAT'
+        }
+
     if not arguments.disable_stun_check:
         print "Checking NAT Status..."
-        nat_status = network_util.get_NAT_status()
+        if nat_status.get('nat_type') == 'Blocked':
+            print "openbazaar: Could not start. The network you are on currently blocks usage",
+            print "of OpenBazaar."
+            print "(We currently do not support usage on completely closed networks.)"
+            sys.exit(1)
     elif not arguments.dev_mode and network_util.is_private_ip_address(arguments.server_ip):
         print "openbazaar: Could not start. The given/default server IP address",
         print arguments.server_ip, "is not a public ip address."

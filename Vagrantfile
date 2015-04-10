@@ -12,12 +12,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Every Vagrant virtual environment requires a box to build off of.
   config.vm.box = "trusty32"
   config.vm.box_url = "https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-i386-vagrant-disk1.box"
- 
   config.vm.provision "ansible" do |ansible|
      ansible.playbook = "ansible-provisioning/openbazaar_linux.yml"
      ansible.verbose = true
      # can change provisioning config using extra vars:
-     # ansible.extra_vars = { from_github: false, copy_from_local_directory: '/home/users/Projects/OpenBazaar-clean/' } 
   end
 
   #This stanza makes use of the vagrant-cachier tool to cache apt updates while refreshing virtual machines -sbl

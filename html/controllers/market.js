@@ -26,23 +26,46 @@ angular.module('app')
 
             $scope.$emit('sidebar', true);
 
+            Connection.send('get_btc_ticker', {});
+
             /**
              * Establish message handlers
              * @msg - message from websocket to pass on to handler
              */
             $scope.$evalAsync( function( $scope ) {
 
+                var listeners = Connection.$$listeners;
+                if(!listeners.hasOwnProperty('order_notify')) {
+                    Connection.$on('order_notify', function(e, msg){ $scope.order_notify(msg); });
+                }
+                if(!listeners.hasOwnProperty('republish_notify')) {
+                    Connection.$on('republish_notify', function(e, msg){ $scope.republish_notify(msg); });
+                }
+                if(!listeners.hasOwnProperty('inbox_notify')) {
+                    Connection.$on('inbox_notify', function(e, msg){ $scope.inbox_notify(msg); });
+                }
+
                 Connection.$on('peer', function(e, msg){ $scope.add_peer(msg); });
-                Connection.$on('order_notify', function(e, msg){ $scope.order_notify(msg); });
+                Connection.$on('goodbye', function(e, msg){ $scope.goodbye(msg); });
+                Connection.$on('hello_response', function(e, msg){ $scope.hello_response(msg); });
                 Connection.$on('peers', function(e, msg){ $scope.update_peers(msg); });
                 Connection.$on('peer_remove', function(e, msg){ $scope.remove_peer(msg); });
+                if(!listeners.hasOwnProperty('inbox_count')) {
+                    Connection.$on('inbox_count', function (e, msg) {
+                        $scope.parse_inbox_count(msg);
+                    });
+                }
                 Connection.$on('myself', function(e, msg){ $scope.parse_myself(msg); });
                 Connection.$on('shout', function(e, msg){ $scope.parse_shout(msg); });
+                Connection.$on('btc_ticker', function(e, msg){ $scope.parse_btc_ticker(msg); });
                 Connection.$on('log_output', function(e, msg){ $scope.parse_log_output(msg); });
                 Connection.$on('messages', function(e, msg){ $scope.parse_messages(msg); });
                 Connection.$on('notaries', function(e, msg){ $scope.parse_notaries(msg); });
                 Connection.$on('reputation', function(e, msg){ $scope.parse_reputation(msg); });
                 Connection.$on('burn_info_available', function(e, msg){ $scope.parse_burn_info(msg); });
+
+                Connection.$on('inbox_messages', function(e, msg){ $scope.parse_inbox_messages(msg); });
+                Connection.$on('inbox_sent_messages', function(e, msg){ $scope.parse_inbox_sent_messages(msg); });
 
                 Connection.$on('hello', function(e, msg){
                     console.log('Received a hello', msg);
@@ -64,24 +87,41 @@ angular.module('app')
                 Connection.send('peers', {});
             };
 
-            //$interval(refresh_peers,60000,0,true);
+            $interval(refresh_peers, 5000, 0, true);
 
             /**
              * Create a shout and send it to all connected peers
              * Display it in the interface
              */
             $scope.createShout = function() {
+
+                if($scope.newShout === '') {
+                    return;
+                }
+
                 // launch a shout
-                console.log($scope);
                 var newShout = {
                     'type': 'shout',
                     'text': $scope.newShout,
                     'pubkey': $scope.myself.pubkey,
-                    'senderGUID': $scope.myself.guid
+                    'senderGUID': $scope.myself.guid,
+                    'avatar_url': $scope.myself.settings.avatar_url ? $scope.myself.settings.avatar_url : ''
                 };
                 Connection.send('shout', newShout);
                 $scope.shouts.push(newShout);
                 $scope.newShout = '';
+            };
+
+            /**
+             * Handles inbox count message from the server
+             * @msg - Message from server
+             */
+            $scope.parse_inbox_count = function(msg) {
+                console.log('Inbox count', msg);
+                $scope.inbox_count = msg.count;
+                if (!$scope.$$phase) {
+                    $scope.$apply();
+                }
             };
 
             // Toggle the sidebar hidden/shown
@@ -128,8 +168,6 @@ angular.module('app')
                 }
             };
 
-
-
             /**
              * Send log line to GUI
              * @msg - Message from server
@@ -154,29 +192,23 @@ angular.module('app')
 
             };
 
+            $scope.guid_to_avatar = function(guid) {
+
+            };
+
             $scope.getNumber = function(num) {
                 return new Array(num);
             };
 
             $scope.orders_page_changed = function() {
-                console.log($scope.orders_current_page);
+                console.log(this.orders_current_page);
                 var query = {
-                    'page': $scope.orders_current_page - 1,
+                    'page': this.orders_current_page - 1,
                     'merchant': $scope.merchant
                 };
                 Connection.send('query_orders', query);
 
             };
-
-            $scope.parse_myorders = function(msg) {
-
-                $scope.orders = msg.orders;
-                $scope.orders_total = msg.total;
-                $scope.orders_pages = msg.total % 10;
-                $scope.orders_current_page = msg.page + 1;
-
-            };
-
 
             $scope.parse_contracts = function(msg) {
 
@@ -221,6 +253,19 @@ angular.module('app')
                 }
             };
 
+            $scope.inbox_messages = {};
+            $scope.inbox_sent_messages = {};
+
+            $scope.parse_inbox_messages = function(msg) {
+                console.log(msg);
+                $scope.inbox_messages = msg.messages;
+            };
+
+            $scope.parse_inbox_sent_messages = function(msg) {
+                console.log(msg);
+                $scope.inbox_sent_messages = msg.messages;
+            };
+
             $scope.parse_burn_info = function(msg) {
                 // console.log('Burn info available!');
                 var SATOSHIS_IN_BITCOIN = 100000000;
@@ -257,8 +302,30 @@ angular.module('app')
                 }
             };
 
-            $scope.update_peers = function(msg) {
 
+            $scope.goodbye = function(msg) {
+
+                console.log('Goodbye');
+                /* get index if peer is already known */
+                var index = [-1].concat($scope.myself.peers).reduce(
+                    function(previousValue, currentValue, index, array) {
+                        return currentValue.guid == msg.senderGUID ? index : previousValue;
+                    });
+
+                if (index >= 0) {
+                    /* it is a new peer */
+                    console.log('Removing peer');
+                    $scope.myself.peers.splice(index, 1);
+                    $scope.peers = $scope.myself.peers;
+                }
+            };
+
+            $scope.hello_response = function(msg) {
+                console.log('Hello Response', msg);
+                refresh_peers();
+            };
+
+            $scope.update_peers = function(msg) {
                 console.log('Refresh peers: ', msg);
                 $scope.peers = msg.peers;
             };
@@ -312,7 +379,9 @@ angular.module('app')
                 //});
 
                 msg.peers.forEach(function(peer) {
-                    $scope.add_peer(peer);
+                    if(peer.guid !== '') {
+                        $scope.add_peer(peer);
+                    }
                 });
 
             };
@@ -321,6 +390,12 @@ angular.module('app')
             $scope.parse_shout = function(msg) {
                 $scope.shouts.push(msg);
                 console.log('Shout', $scope.shouts);
+            };
+
+            $scope.parse_btc_ticker = function(msg) {
+                var data = JSON.parse(msg.data);
+                console.log('BTC Ticker', data.USD);
+                $scope.last_price_usd = data.USD.last;
             };
 
             $scope.checkOrderCount = function() {
@@ -342,6 +417,13 @@ angular.module('app')
             $scope.order_notify = function(msg) {
                 console.log(msg);
                 Notifier.info('Order Update', msg.msg);
+            };
+            $scope.republish_notify = function(msg) {
+                Notifier.info('Network Update', msg.msg);
+            };
+            $scope.inbox_notify = function(msg) {
+                console.log(msg);
+                Notifier.info('"' + msg.msg.subject + '"', 'Message from ' + msg.msg.senderNick);
             };
 
             // Create a new order and send to the network
@@ -679,7 +761,7 @@ angular.module('app')
                             },
                             msg: function() {
                                 return msg;
-                            },
+                            }
                         },
                         size: size
                     });
@@ -788,6 +870,205 @@ angular.module('app')
                 };
 
 
+            };
+
+            $scope.NewMessageCtrl = function($scope, $modal, $log) {
+
+                $scope.$on("compose_inbox_message", function(event, args) {
+                    console.log('compose_inbox_message');
+
+                    $scope.guid = args.guid;
+                    $scope.size = args.size;
+                    $scope.subject = args.subject;
+                    $scope.myself = args.myself;
+
+                    $scope.compose($scope.size, $scope.myself, $scope.guid, $scope.subject);
+                });
+
+                $scope.guid_to_nickname = function(guid) {
+                    if(guid == $scope.myself.guid) {
+                        return $scope.myself.settings.nickname;
+                    }
+
+                    for(var peer in $scope.myself.peers) {
+                        peer = $scope.myself.peers[peer];
+                        if(peer.guid == guid) {
+                            return peer.nick;
+                        }
+                    }
+                    return '';
+                };
+
+                $scope.compose = function(size, myself, recipient, msg) {
+
+                    var composeModal = $modal.open({
+                        templateUrl: 'partials/modal/newMessage.html',
+                        controller: $scope.NewMessageInstanceCtrl,
+                        resolve: {
+                            myself: function() {
+                                return myself;
+                            },
+                            recipient: function() {
+                                return recipient;
+                            },
+                            msg: function() {
+                                return msg;
+                            },
+                            scope: function() {
+                                return $scope;
+                            }
+                        },
+                        size: size
+                    });
+                    var afterFunc = function() {
+                        return;
+                    };
+                    composeModal.result.then(
+                        afterFunc,
+                        function() {
+                            $log.info('Modal dismissed at: ' + new Date());
+                        }
+                    );
+                };
+
+                $scope.view = function(size, myself, msg) {
+                    var viewModal = $modal.open({
+                        templateUrl: 'partials/modal/viewInboxMessage.html',
+                        controller: ViewInboxMessageInstanceCtrl,
+                        resolve: {
+                            myself: function() {
+                                return myself;
+                            },
+                            msg: function() {
+                                return msg;
+                            },
+                            scope: function() {
+                                return $scope;
+                            }
+                        },
+                        size: size
+                    });
+                    var afterFunc = function() {
+                        $scope.showDashboardPanel('inbox');
+                    };
+                    viewModal.result.then(
+                        afterFunc,
+                        function() {
+                            $log.info('Modal dismissed at: ' + new Date());
+                        }
+                    );
+                };
+            };
+
+            $scope.NewMessageInstanceCtrl = function($scope, $modalInstance, myself, recipient, msg, scope) {
+
+                function guid_to_peer(guid) {
+                    for(var peer in $scope.myself.peers) {
+                        peer = $scope.myself.peers[peer];
+                        if(peer.guid == guid) {
+                            return peer;
+                        }
+                    }
+                    return {};
+                }
+
+                $scope.myself = myself;
+                $scope.recipient = (recipient !== '') ? guid_to_peer(recipient) : '';
+                $scope.msg = msg;
+
+                // Fill in form if msg is passed - reply mode
+                if (msg !== null) {
+                    $scope.recipient = msg.recipient;
+
+                    // Make sure subject start with RE:
+                    var sj = msg.subject;
+                    if (sj.match(/^RE:/) === null) {
+                        sj = "RE: " + sj;
+                    }
+                    $scope.subject = sj;
+
+                    // Quote message
+                    var quote_re = /^(.*?)/mg;
+                    var quote_msg = msg.message.replace(quote_re, "> $1");
+                    $scope.body = "\n" + quote_msg;
+                }
+
+                $scope.send = function() {
+                    // Trigger validation flag.
+                    $scope.submitted = true;
+
+                    // If form is invalid, return and let AngularJS show validation errors.
+                    if (sendMessageForm.$invalid) {
+                        return;
+                    }
+
+                    var query = {
+                        'type': 'send_inbox_message',
+                        'recipient': this.recipient.guid,
+                        'subject': subject.value,
+                        'body': body.value
+                    };
+
+                    Connection.send('send_inbox_message', query);
+                    $modalInstance.close();
+                };
+
+                $scope.cancel = function() {
+                    $modalInstance.dismiss('cancel');
+                };
+
+
+            };
+
+            var ViewInboxMessageInstanceCtrl = function($scope, $modalInstance, myself, msg, scope) {
+                $scope.myself = myself;
+                $scope.inbox = {};
+                $scope.inbox.message = msg;
+
+                $scope.inbox.message.nickname = scope.guid_to_nickname(msg.sender_guid);
+
+                console.log('test', $scope);
+
+                // Fill in form if msg is passed - reply mode
+                if (msg !== null) {
+
+                    // Make sure subject start with RE:
+                    var sj = msg.subject;
+                    if (sj.match(/^RE:/) === null) {
+                        sj = "RE: " + sj;
+                    }
+                    $scope.subject = sj;
+                    // Quote message
+                    var quote_re = /^(.*?)/mg;
+
+                    //var quote_msg = $scope.msg.body.replace(quote_re, "> $1");
+                    //$scope.body = "\n" + quote_msg;
+                }
+
+                $scope.send = function() {
+                    // Trigger validation flag.
+                    $scope.submitted = true;
+
+                    // If form is invalid, return and let AngularJS show validation errors.
+                    if (composeForm.$invalid) {
+                        return;
+                    }
+
+                    var query = {
+                        'type': 'send_message',
+                        'to': toAddress.value,
+                        'subject': subject.value,
+                        'body': body.value
+                    };
+                    console.log('sending message with subject ' + subject);
+                    Connection.send('send_message', query);
+
+                    $modalInstance.close();
+                };
+
+                $scope.close = function() {
+                    $modalInstance.dismiss('cancel');
+                };
             };
 
             // Modal Code
