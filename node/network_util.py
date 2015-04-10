@@ -169,17 +169,17 @@ class PacketStats(object):
     def logStats(self, incoming=True, outgoing=True):
         if incoming:
             self.log.info("Incoming Packet Stats.")
-            self.log.info("Total Incoming Packets:       {}".format(self.num_packets_incoming))
-            self.log.info("Total Incoming bytes:         {}".format(self.total_bytes_incoming))
-            self.log.info("Average Incoming Packet Size: {}".format(
-                self.total_bytes_incoming/self.num_packets_incoming))
+            self.log.info("Total Incoming Packets:       %d", self.num_packets_incoming)
+            self.log.info("Total Incoming bytes:         %d", self.total_bytes_incoming)
+            self.log.info("Average Incoming Packet Size: %d",
+                          self.total_bytes_incoming/self.num_packets_incoming)
 
         if outgoing:
             self.log.info("Outgoing Packet Stats.")
-            self.log.info("Total Outgoing Packets:       {}".format(self.num_packets_outgoing))
-            self.log.info("Total Outgoing bytes:         {}".format(self.total_bytes_outgoing))
-            self.log.info("Average Outgoing Packet Size: {}".format(
-                self.total_bytes_outgoing/self.num_packets_outgoing))
+            self.log.info("Total Outgoing Packets:       %d", self.num_packets_outgoing)
+            self.log.info("Total Outgoing bytes:         %d", self.total_bytes_outgoing)
+            self.log.info("Average Outgoing Packet Size: %d",
+                          self.total_bytes_outgoing/self.num_packets_outgoing)
 
 PACKET_STATS = PacketStats()
 PACKET_STATS_LOGS_EVERY_N_PACKETS = 50

@@ -9,7 +9,6 @@ import random
 import urllib2
 from bitcoin import (
     apply_multisignatures,
-    eligius_pushtx,
     mk_multisig_script,
     mktx,
     multisign,
@@ -219,7 +218,6 @@ class ProtocolHandler(object):
 
             def get_history_callback(escrow, history, order):
 
-                settings = self.market.get_settings()
                 private_key = self.get_signing_key(order_id)
 
                 if escrow is not None:
@@ -254,7 +252,7 @@ class ProtocolHandler(object):
                 self.log.debug('Notary Fee: %s satoshis', notary_fee)
                 self.log.debug('Recipient Will Get: %s satoshis', refund_amount)
 
-                if(recipient_id == 1):
+                if recipient_id == 1:
                     recipient_guid = buyer.get('buyer_GUID')
                     recipient_address = buyer.get('buyer_refund_addr')
                 else:
@@ -654,7 +652,6 @@ class ProtocolHandler(object):
 
             def get_history_callback(escrow, history, order):
 
-                settings = self.market.get_settings()
                 private_key = self.get_signing_key(msg['orderId'])
 
                 if escrow is not None:
@@ -974,8 +971,6 @@ class ProtocolHandler(object):
                     )
 
                 seller_signatures = []
-
-                settings = self.market.get_settings()
 
                 for inpt in range(0, len(inputs)):
                     mltsgn = multisign(

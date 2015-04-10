@@ -366,10 +366,9 @@ class CryptoTransportLayer(TransportLayer):
         guid = peer_tuple[3]
         nickname = peer_tuple[4]
 
-        # Update query
-        self.db.deleteEntries("peers", {"hostname": hostname, "guid": guid}, "OR")
+        self.db_connection.deleteEntries("peers", {"hostname": hostname, "guid": guid}, "OR")
         if guid is not None:
-            self.db.insertEntry("peers", {
+            self.db_connection.insertEntry("peers", {
                 "hostname": hostname,
                 "port": port,
                 "pubkey": pubkey,
@@ -520,7 +519,7 @@ class CryptoTransportLayer(TransportLayer):
                 # Send raw socket punch
                 peer.sock.sendto('punch %s' % self.guid, (peer.hostname, peer.port))
                 self.log.debug('Sending punch to %s:%d', peer.hostname, peer.port)
-                self.log.debug("UDP punching package {0} sent".format(count))
+                self.log.debug("UDP punching package %d sent", count)
                 if peer.punching:
                     ioloop.IOLoop.instance().call_later(0.5, send, count + 1)
                 if count >= 25:

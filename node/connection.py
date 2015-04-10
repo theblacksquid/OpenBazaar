@@ -253,10 +253,12 @@ class CryptoPeerConnection(PeerConnection):
 
     def __repr__(self):
         try:
-            return '{ guid: %s, hostname: %s, port: %s, pubkey: %s reachable: %s nat: %s relaying: %s avatar: %s}' % (
-                self.guid, self.hostname, self.port, self.pub, self.reachable, self.nat_type,
-                self.relaying, self.avatar_url
-            )
+            return '{ guid: %s, hostname: %s, port: %s, pubkey: ' \
+                   '%s reachable: %s nat: %s relaying: %s avatar: %s}' % \
+                   (
+                       self.guid, self.hostname, self.port, self.pub, self.reachable, self.nat_type,
+                       self.relaying, self.avatar_url
+                   )
         except AttributeError as e:
             self.log.error('Attribute is missing: %s', e)
             return ''

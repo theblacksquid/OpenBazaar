@@ -49,18 +49,18 @@ angular.module('app')
                 $scope.searchNetwork();
             };
 
-            function getJsonFromUrl() {
+            var getJsonFromUrl = function() {
 
                 console.log($routeParams);
                 return $routeParams.search;
-                var query = location.search.substr(1);
-                var result = {};
-                query.split("&").forEach(function(part) {
-                    var item = part.split("=");
-                    result[item[0]] = decodeURIComponent(item[1]);
-                });
-                return result;
-            }
+                //var query = location.search.substr(1);
+                //var result = {};
+                //query.split("&").forEach(function(part) {
+                //    var item = part.split("=");
+                //    result[item[0]] = decodeURIComponent(item[1]);
+                //});
+                //return result;
+            };
 
             //var url_json = getJsonFromUrl();
             $scope.search = $routeParams.search;
@@ -72,8 +72,9 @@ angular.module('app')
 
             $scope.isEmpty = function(obj) {
                 for(var prop in obj) {
-                    if(obj.hasOwnProperty(prop))
+                    if(obj.hasOwnProperty(prop)) {
                         return false;
+                    }
                 }
 
                 return true;
@@ -94,7 +95,7 @@ angular.module('app')
                 //$scope.search_results.push(contract_body);
                 console.log('Search Results', $scope.search_results);
 
-            }
+            };
 
             $scope.search_results = {};
             $scope.parse_search_result = function(msg) {

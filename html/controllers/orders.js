@@ -249,7 +249,7 @@ angular.module('app')
                     Connection.send("refund_recipient", {
                         recipientId: $scope.Market.modalOrder.refundRecipientId,
                         orderId: orderId
-                    })
+                    });
                 };
 
                 $scope.guid_to_nickname = guid_to_nickname;

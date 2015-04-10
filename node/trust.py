@@ -32,7 +32,7 @@ def burnaddr_from_guid(guid_hex):
 def get_unspent(addr, callback):
     _log.debug('get_unspent call')
 
-    def get_unspent():
+    def _get_unspent():
         try:
             unspent = bitcoin.unspent(addr)
         except Exception as e:
@@ -42,7 +42,7 @@ def get_unspent(addr, callback):
         total = sum(tx['value'] for tx in unspent)
         callback(total)
 
-    reactor.callFromThread(get_unspent)
+    reactor.callFromThread(_get_unspent)
 
 def get_global(guid, callback):
     get_unspent(burnaddr_from_guid(guid), callback)

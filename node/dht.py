@@ -97,7 +97,7 @@ class DHT(object):
             if peer.guid == guid:
 
                 # Check if hostname/port combo changed
-                if (hostname != peer.hostname or port != peer.port):
+                if hostname != peer.hostname or port != peer.port:
                     peer.hostname = hostname
                     peer.port = port
                     peer.nat_type = nat_type
@@ -648,7 +648,6 @@ class DHT(object):
 
             if not peer:
                 peer = self.transport.get_crypto_peer(guid, node[0], node[1])
-                peer.start_handshake()
 
             peer.send(proto_store(key, value, original_publisher_id, age))
 
