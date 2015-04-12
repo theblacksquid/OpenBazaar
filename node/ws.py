@@ -1358,7 +1358,7 @@ class ProtocolHandler(object):
                     peer_item['pubkey'] = 'unknown'
 
                 peer_item['guid'] = peer.guid
-                if peer.guid:
+                if peer.guid and peer.guid[:4] != 'seed':
                     peer_item['sin'] = obelisk.EncodeBase58Check(
                         '\x0F\x02%s' + peer.guid.decode('hex')
                     )
