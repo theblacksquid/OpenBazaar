@@ -333,7 +333,6 @@ class PeerListener(GUIDMixin):
         self._data_cb = data_cb
         self.is_listening = False
         self.socket = None
-        self.stream = None
         self._ok_msg = None
         self._connections = {}
 
@@ -347,7 +346,6 @@ class PeerListener(GUIDMixin):
             return
 
         try:
-            self.stream.close()
             self.listen()
         except Exception as e:
             self.log.error('[Requests] error: %s', e)

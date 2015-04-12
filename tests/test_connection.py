@@ -1,10 +1,7 @@
 import unittest
 
-import mock
-
 from node import connection, guid, transport
 from tests import test_transport
-import json
 import socket
 
 
@@ -43,7 +40,8 @@ class TestPeerConnection(unittest.TestCase):
         cls.default_nickname = ""
 
     def setUp(self):
-        self.pc1 = connection.PeerConnection(self.guid, self.transport, self.hostname, self.port, peer_socket=self.socket, nat_type='Restric NAT')
+        self.pc1 = connection.PeerConnection(self.guid, self.transport, self.hostname, self.port,
+                                             peer_socket=self.socket, nat_type='Restric NAT')
         self.pc2 = connection.PeerConnection(
             self.guid,
             self.transport,
@@ -183,17 +181,6 @@ class TestCryptoPeerConnection(TestPeerConnection):
 
     def test_repr(self):
         self.assertEqual(self.pc2.__repr__(), str(self.pc2))
-
-    def test_is_handshake(self):
-
-        real_handshake_dict = json.dumps({
-            'type': 'ok'
-        })
-        fake_handshake_encrypted = "safjklawejfwoijsicjewiocjo"
-        fake_handshake_no_type = json.dumps({
-            'notype': 'ok'
-        })
-
 
     def test_validate_signature(self):
         signature = "304502201797bf55914db1ce4010d0787879dbc99f13dd127e96f666f61a66fa14d61d27022100a3aac2496558a2" \
