@@ -65,7 +65,10 @@ def is_private_ip_address(addr):
 def get_my_ip(ip_site=IP_DETECT_SITE):
     try:
         request = requests.get(ip_site)
-        return request.text.strip()
+        if request:
+            return request.text.strip()
+        else:
+            return None
     except (AttributeError, requests.RequestException) as exc:
         print '[Requests] error: %s' % exc
     return None
