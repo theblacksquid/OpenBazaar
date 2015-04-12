@@ -867,6 +867,9 @@ class CryptoTransportLayer(TransportLayer):
             self.log.error('Cannot get CryptoPeerConnection for your own node')
             return
 
+        if not guid:
+            guid = 'seed%d' % len(self.peers)
+
         if guid not in self.peers:
             self.peers[guid] = connection.CryptoPeerConnection(
                 self,
