@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pysqlcipher import dbapi2
+from sqlite3 import dbapi2
 
 from db.migrations import migrations_util
 from node import constants # pylint: disable=import-error
