@@ -26,7 +26,7 @@ class TestNodeNetworkUtil(unittest.TestCase):
         dict_response = {key: value for key, value in zip(keys, stun_response)}
 
         self.assertEqual(dict_response, network_util.get_NAT_status())
-        method_mock.assert_called_once_with(source_port=0, stun_host=None)
+        method_mock.assert_called_once_with(source_port=0, stun_host=None, stun_port=19302)
 
     def test_is_loopback_addr(self):
         self.assertTrue(network_util.is_loopback_addr("127.0.0.1"))
