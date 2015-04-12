@@ -22,10 +22,12 @@ class TestTransportLayerCallbacks(unittest.TestCase):
         self.validator3 = mock.Mock()
 
         ob_ctx = get_mock_open_bazaar_context()
+        ob_ctx.nat_status = {'nat_type': 'Restric NAT'}
         guid = 1
         nickname = None
 
         self.tl = transport.TransportLayer(ob_ctx, guid, nickname)
+
         self.tl.add_callback('section_one', {'cb': self.callback1, 'validator_cb': self.validator1})
         self.tl.add_callback('section_one', {'cb': self.callback2, 'validator_cb': self.validator2})
         self.tl.add_callback('all', {'cb': self.callback3, 'validator_cb': self.validator3})
