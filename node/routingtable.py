@@ -66,6 +66,10 @@ class RoutingTable(object):
 
         @raises: ValueError: The strings have improper lengths for IDs.
         """
+
+        if node_id1[:4] == 'seed' or node_id2[:4] == 'seed':
+            return
+
         if isinstance(node_id1, guid.GUIDMixin):
             key1 = node_id1.guid
         else:
