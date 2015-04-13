@@ -135,6 +135,9 @@ angular.module('app')
                             },
                             edit: function() {
                                 return true;
+                            },
+                            scope: function() {
+                                return $scope;
                             }
                         }
                     });
