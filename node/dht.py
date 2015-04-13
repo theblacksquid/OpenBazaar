@@ -642,15 +642,18 @@ class DHT(object):
             self.log.debug('Sending data to store in DHT: %s', node)
             #uri = network_util.get_peer_url(node[0], node[1])
             guid = node[2]
-            peer = self.routing_table.get_contact(guid)
 
-            if guid == self.transport.guid:
-                break
+            if guid[:4] != 'seed':
 
-            if not peer:
-                peer = self.transport.get_crypto_peer(guid, node[0], node[1])
+                peer = self.routing_table.get_contact(guid)
 
-            peer.send(proto_store(key, value, original_publisher_id, age))
+                if guid == self.transport.guid:
+                    break
+
+                if not peer:
+                    peer = self.transport.get_crypto_peer(guid, node[0], node[1])
+
+                peer.send(proto_store(key, value, original_publisher_id, age))
 
     @_synchronized
     def _on_store_value(self, msg):
