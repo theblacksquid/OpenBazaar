@@ -324,6 +324,7 @@ angular.module('app')
 
                     // Send socket a request for order info
                     //Connection.send('query_order', { orderId: orderId } )
+                    Connection.send('get_notaries', {});
 
                     notaries = [];
                     console.log('notaries', $scope.settings.notaries);
