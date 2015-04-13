@@ -850,6 +850,8 @@ class CryptoTransportLayer(TransportLayer):
 
             # self.dht.active_peers.append(peer_obj)
 
+        ioloop.IOLoop.instance().call_later(15, self.search_for_my_node)
+
         if callback is not None:
             callback('Joined')
 

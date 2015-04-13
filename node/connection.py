@@ -93,7 +93,6 @@ class PeerConnection(GUIDMixin, object):
                     self.send_ping()
 
                 self.pinging = False
-                ioloop.IOLoop.instance().call_later(2, self.transport.search_for_my_node)
 
             ioloop.IOLoop.instance().call_later(2, no_response)
 
@@ -253,11 +252,12 @@ class CryptoPeerConnection(PeerConnection):
 
     def __repr__(self):
         try:
+            last_reached = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.last_reached))
             return '{ guid: %s, hostname: %s, port: %s, pubkey: ' \
-                   '%s reachable: %s nat: %s relaying: %s avatar: %s}' % \
+                   '%s reachable: %s nat: %s relaying: %s avatar: %s reached: %s}' % \
                    (
                        self.guid, self.hostname, self.port, self.pub, self.reachable, self.nat_type,
-                       self.relaying, self.avatar_url
+                       self.relaying, self.avatar_url, last_reached
                    )
         except AttributeError as e:
             self.log.error('Attribute is missing: %s', e)
