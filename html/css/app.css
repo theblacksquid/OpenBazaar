@@ -94,7 +94,6 @@ h4 {
 .peers-table td { padding:3px 5px; }
 .peers-table td:hover { cursor:pointer; }
 .no-hover td:hover { cursor:default; }
-
  .animated {
     -webkit-transition: height 0.2s;
     -moz-transition: height 0.2s;
@@ -175,6 +174,10 @@ body {
     border-bottom: 1px dotted #ccc;
   }
 
+  .rtable .rtd.images {
+    text-align: center;
+  }
+
   .rtable .rtd:last-child {
     border-bottom: 0;
   }
@@ -185,4 +188,26 @@ body {
     text-transform: uppercase;
     font-weight: bold;
   }
+}
+
+.table-responsive {
+  text-align: center;
+}
+
+div.signed-contract {
+  display: none;
+}
+pre.signed-contract {
+  height: 200px;
+  text-overflow: auto;
+}
+.contract-image {
+  width: 100%;
+  max-width: 200px;
+  margin: 5px auto;
+}
+
+.btn.contract {
+  width: 100%;
+  margin: 4px auto 1px auto;
 }
