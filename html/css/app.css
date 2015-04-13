@@ -211,3 +211,9 @@ pre.signed-contract {
   width: 100%;
   margin: 4px auto 1px auto;
 }
+
+.demo-gif {
+  width: 100%;
+  margin: 3% auto;
+  border: 3px solid #ccc;
+}
