@@ -105,6 +105,7 @@ class Market(object):
             {"welcome": "disable"},
             {'market_id': self.transport.market_id}
         )
+        self.settings['welcome'] = 'disable'
 
     def private_key(self):
         """Returns private key for local node"""

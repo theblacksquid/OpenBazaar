@@ -48,6 +48,7 @@ angular.module('app')
                 Connection.$on('peer', function(e, msg){ $scope.add_peer(msg); });
                 Connection.$on('goodbye', function(e, msg){ $scope.goodbye(msg); });
                 Connection.$on('hello_response', function(e, msg){ $scope.hello_response(msg); });
+                listeners.peers = [];
                 Connection.$on('peers', function(e, msg){ $scope.update_peers(msg); });
                 Connection.$on('peer_remove', function(e, msg){ $scope.remove_peer(msg); });
                 if(!listeners.hasOwnProperty('inbox_count')) {
@@ -57,6 +58,8 @@ angular.module('app')
                 }
                 Connection.$on('myself', function(e, msg){ $scope.parse_myself(msg); });
                 Connection.$on('shout', function(e, msg){ $scope.parse_shout(msg); });
+
+                listeners.btc_ticker = [];
                 Connection.$on('btc_ticker', function(e, msg){ $scope.parse_btc_ticker(msg); });
                 Connection.$on('log_output', function(e, msg){ $scope.parse_log_output(msg); });
                 Connection.$on('messages', function(e, msg){ $scope.parse_messages(msg); });
@@ -87,7 +90,7 @@ angular.module('app')
                 Connection.send('peers', {});
             };
 
-            $interval(refresh_peers, 5000, 0, true);
+            $interval(refresh_peers, 30000, 0, true);
 
             /**
              * Create a shout and send it to all connected peers
@@ -651,6 +654,7 @@ angular.module('app')
                     console.log('settings', $scope.settings);
                     if ($scope.settings.welcome == "enable") {
                         $scope.open('lg', 'static');
+                        Connection.send('welcome_dismissed', {});
                     } else {
                         return;
                     }
