@@ -6,6 +6,7 @@ import gnupg
 import obelisk
 import json
 import random
+import time
 import urllib2
 from bitcoin import (
     apply_multisignatures,
@@ -1347,6 +1348,10 @@ class ProtocolHandler(object):
         peers = []
 
         for peer in self.transport.dht.active_peers:
+
+            if peer.last_reached < time.time()-30:
+                peer.reachable = False
+
             if hasattr(peer, 'hostname') and peer.guid:
                 peer_item = {
                     'hostname': peer.hostname,
