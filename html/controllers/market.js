@@ -87,7 +87,7 @@ angular.module('app')
                 Connection.send('peers', {});
             };
 
-            $interval(refresh_peers, 5000, 0, true);
+            $interval(refresh_peers, 30000, 0, true);
 
             /**
              * Create a shout and send it to all connected peers
