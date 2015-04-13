@@ -66,18 +66,19 @@ class DHT(object):
                             'findNode')
 
     def remove_peer(self, guid):
-        for i, x in enumerate(self.active_peers):
-            if x.guid == guid:
-                self.log.debug('Remove Node: %s', guid)
-                del self.active_peers[i]
-        self.routing_table.remove_contact(guid)
+        if guid[:4] != 'seed':
+            for i, x in enumerate(self.active_peers):
+                if x.guid == guid:
+                    self.log.debug('Remove Node: %s', guid)
+                    del self.active_peers[i]
+            self.routing_table.remove_contact(guid)
 
-        if guid in self.transport.mediation_mode:
-            del self.transport.mediation_mode[guid]
+            if guid in self.transport.mediation_mode:
+                del self.transport.mediation_mode[guid]
 
-        # Refresh GUI peer list
-        if self.transport.handler:
-            self.transport.handler.refresh_peers()
+            # Refresh GUI peer list
+            if self.transport.handler:
+                self.transport.handler.refresh_peers()
 
     @_synchronized
     def add_peer(self, hostname, port, pubkey=None, guid=None, nickname=None, nat_type=None, avatar_url=None):
@@ -785,7 +786,7 @@ class DHT(object):
         new_search.slow_node_count[0] = len(new_search.active_probes)
 
         for i, x in enumerate(self.active_peers):
-            if not x.guid and not x.seed:
+            if not x.guid and not x.seed and x.guid[:4] != 'seed':
                 self.log.debug('Deleting active peer with no GUID')
                 del self.active_peers[i]
 
