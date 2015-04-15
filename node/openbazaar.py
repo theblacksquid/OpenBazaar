@@ -299,7 +299,7 @@ def create_openbazaar_contexts(arguments, nat_status):
 
             if i:
                 seed_mode = False
-                seeds = [('127.0.0.1', 12345)]
+                seeds = [(server_ip, server_port)]
             else:
                 seed_mode = True
                 seeds = []
