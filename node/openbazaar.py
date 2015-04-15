@@ -293,9 +293,13 @@ def create_openbazaar_contexts(arguments, nat_status):
             dev_log_file = log_file.format(i)
             log_path = os.path.join(defaults['log_dir'], dev_log_file)
 
+            http_port = arguments.http_port
+            if http_port != 0:
+                http_port += i
+
             if i:
                 seed_mode = False
-                seeds = [('127.0.0.1', 12345)]
+                seeds = [(server_ip, server_port)]
             else:
                 seed_mode = True
                 seeds = []
@@ -304,7 +308,7 @@ def create_openbazaar_contexts(arguments, nat_status):
                                              server_ip,
                                              server_port + i,
                                              arguments.http_ip,
-                                             arguments.http_port,
+                                             http_port,
                                              db_path,
                                              log_path,
                                              arguments.log_level,
