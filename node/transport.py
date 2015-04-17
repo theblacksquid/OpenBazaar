@@ -19,6 +19,7 @@ from node.dht import DHT
 from rudp.packet import Packet
 from node.crypto_util import Cryptor
 from node import constants
+import string
 
 
 class TransportLayer(object):
@@ -745,7 +746,7 @@ class CryptoTransportLayer(TransportLayer):
             self._generate_new_keypair()
 
         if not self.settings.get('nickname'):
-            newsettings = {'nickname': 'Default'}
+            newsettings = {'nickname': 'User %s'.join(random.choice(string.lowercase) for i in range(5))}
             self.db_connection.update_entries('settings', newsettings, {"market_id": self.market_id})
             self.settings.update(newsettings)
 
