@@ -274,6 +274,8 @@ class CryptoTransportLayer(TransportLayer):
                 if peer:
                     peer.reachable = True
                     peer.relaying = False
+                    peer._rudp_connection._sender._packet_sender.reachable = True
+                    peer._rudp_connection._sender._packet_sender.relaying = False
                 else:
                     self.log.debug('Do not know about this peer yet.')
                 return
@@ -746,7 +748,7 @@ class CryptoTransportLayer(TransportLayer):
             self._generate_new_keypair()
 
         if not self.settings.get('nickname'):
-            newsettings = {'nickname': 'User %s'.join(random.choice(string.lowercase) for i in range(5))}
+            newsettings = {'nickname': 'User %s' % ''.join(random.choice(string.lowercase) for i in range(5))}
             self.db_connection.update_entries('settings', newsettings, {"market_id": self.market_id})
             self.settings.update(newsettings)
 
