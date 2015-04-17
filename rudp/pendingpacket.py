@@ -31,7 +31,7 @@ class PendingPacket(object):
                 if self._sending:
                     self.log.info('Packet %s Lost', self._packet.get_sequence_number())
 
-            if self._sending and counter < 10:
+            if self._sending and counter < 2:
                 self.log.debug('Sending Packet #%s: %s', self._packet.get_sequence_number(), self._sending)
                 self._packet_sender.send(self._packet)
                 packet_send(counter+1)
