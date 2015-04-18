@@ -184,6 +184,13 @@ class CryptoTransportLayer(TransportLayer):
                     'v': constants.VERSION
                 })
 
+    def update_avatar(self, guid, avatar_url):
+        peer = self.dht.routing_table.get_contact(guid)
+        if peer:
+            peer.avatar_url = avatar_url
+        else:
+            self.log.error('Cannot find peer to update avatar')
+
     def start_listener(self):
         self.add_callbacks([
             (
@@ -319,8 +326,6 @@ class CryptoTransportLayer(TransportLayer):
                     else:
 
                         inbound_peer._rudp_connection.receive(packet)
-
-                    self.log.debug('Updated peers: %s', self.dht.active_peers)
 
                 else:
                     self.log.debug('Did not find a peer')
