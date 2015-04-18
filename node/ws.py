@@ -96,6 +96,7 @@ class ProtocolHandler(object):
             "republish_contracts": self.client_republish_contracts,
             "import_raw_contract": self.client_import_raw_contract,
             "create_contract": self.client_create_contract,
+            "update_contract": self.client_update_contract,
             "clear_dht_data": self.client_clear_dht_data,
             "clear_peers_data": self.client_clear_peers_data,
             "read_log": self.client_read_log,
@@ -117,12 +118,14 @@ class ProtocolHandler(object):
 
     def validate_on_page(self, *data):
         self.log.debug('Validating on page message.')
-        keys = ("senderGUID", "sin")
-        return all(k in data for k in keys)
+        data = data[0]
+        keys = ("senderGUID")
+        return True
 
     def on_page(self, page):
 
         guid = page.get('senderGUID')
+        avatar_url = page.get('avatar_url')
         self.log.info(page)
 
         sin = page.get('sin')
@@ -131,6 +134,8 @@ class ProtocolHandler(object):
 
         if sin and page:
             self.market.pages[sin] = page
+
+        self.transport.update_avatar(guid, avatar_url)
 
         # TODO: allow async calling in different thread
         def reputation_pledge_retrieved(amount, page):
@@ -568,6 +573,12 @@ class ProtocolHandler(object):
     def client_create_contract(self, socket_handler, contract):
         self.log.datadump('New Contract: %s', contract)
         self.market.save_contract(contract)
+
+    def client_update_contract(self, socket_handler, msg):
+        contract_id = msg.get('contract_id')
+        contract = msg.get('contract')
+        self.log.datadump('New Contract: %s', contract)
+        self.market.save_contract(contract, contract_id)
 
     def client_remove_contract(self, socket_handler, msg):
         self.log.info("Remove contract: %s", msg)
@@ -1314,6 +1325,9 @@ class ProtocolHandler(object):
         first = args[0]
         if isinstance(first, dict):
             self.send_to_client(None, first)
+            peer = self.transport.dht.routing_table.get_contact(first.get('senderGUID'))
+            if peer:
+                peer.reachable = True
         else:
             self.log.info("can't format")
 
@@ -1346,11 +1360,15 @@ class ProtocolHandler(object):
 
     def get_peers(self):
         peers = []
+        reachable_count = 0
 
         for peer in self.transport.dht.active_peers:
 
             if peer.last_reached < time.time()-30:
                 peer.reachable = False
+            else:
+                peer.reachable = True
+                reachable_count += 1
 
             if hasattr(peer, 'hostname') and peer.guid:
                 peer_item = {
@@ -1370,9 +1388,13 @@ class ProtocolHandler(object):
                 peer_item['nick'] = peer.nickname
                 peer_item['reachable'] = peer.reachable
                 peer_item['avatar_url'] = peer.avatar_url
+                peer_item['last_seen'] = int(time.time()-peer.last_reached)
 
-                self.log.debug('Peer: %s', peer)
+                # self.log.debug('Peer: %s', peer)
                 peers.append(peer_item)
+
+        if reachable_count == 0:
+            self.transport.join_network()
 
         return peers
 
