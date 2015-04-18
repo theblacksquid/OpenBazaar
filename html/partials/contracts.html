@@ -22,7 +22,7 @@
         <pagination total-items="total_contracts" num-pages="contracts_pages" data-ng-change="contracts_page_changed()" data-ng-model="contracts_current_page" max-size="4" class="pagination-sm" previous-text="&lsaquo;" next-text="&rsaquo;" first-text="&laquo;" last-text="&raquo;" boundary-links="true"></pagination>
     </div>
 
-    <div data-ng-show="undo_remove" class="alert alert-danger">Are you sure you wanted to delete that contract?<a data-ng-href="" data-ng-click="undoRemoveContract(undo_contract_id)" class="alert-link" style="cursor:pointer">Undo</a></div>
+    <div data-ng-show="undo_remove" class="alert alert-danger">Are you sure you wanted to delete that contract? <a data-ng-href="" data-ng-click="undoRemoveContract(undo_contract_id)" class="alert-link" style="cursor:pointer">Undo</a></div>
 
       <div class="table-responsive">
         <table data-ng-show="total_contracts > 0" class="rtable table-striped table-bordered contract-table">
@@ -43,11 +43,7 @@
             <td data-label="Product" class="rtd"> 
               <a class="contract-title" data-ng-click="editContract(contract)">
               {{contract.item_title}}</a>
-              <p>{{contract.item_desc}}</p>
-              <p><span class="condition">Condition:</span> {{contract.item_condition}}</div>
-              <div class="signed-contract">
-              <pre class="signed-contract" style="height:200px;text-overflow:auto;font-size:12px;">{{contract.signed_contract_body}}</pre></span>
-               </div>
+              <p>{{contract.item_desc | limitTo:120 }}</p>
              </td>
            <!-- Image -->
              <td data-label="Images" class="rtd images">
