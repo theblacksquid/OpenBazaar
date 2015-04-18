@@ -24,7 +24,6 @@ angular.module('app')
             if(!listeners.hasOwnProperty('load_page')) {
                 Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
             }
-            listeners.settings_notaries = [];
             Connection.$on('settings_notaries', function(e, msg){ $scope.parse_notaries(msg); });
             listeners.create_backup_result = [];
             Connection.$on('create_backup_result', function(e, msg){ $scope.onCreateBackupResult(msg); });
@@ -93,8 +92,7 @@ angular.module('app')
                 );
 
                 Notifier.success('Success', 'Notary added successfully.');
-
-                $scope.getNotaries();
+                Connection.send('refresh_settings', {});
 
                 if (!$scope.$$phase) {
                     $scope.$apply();

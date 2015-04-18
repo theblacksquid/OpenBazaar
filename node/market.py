@@ -317,6 +317,8 @@ class Market(object):
     def add_trusted_notary(self, guid, nickname=""):
         """Add selected trusted notary to the local list"""
         self.log.debug("%s %s", guid, nickname)
+
+        self.settings = self.get_settings()
         notaries = self.settings.get('notaries')
 
         self.log.debug("Notaries: %s", notaries)
@@ -352,8 +354,8 @@ class Market(object):
     def remove_trusted_notary(self, guid):
         """Not trusted to selected notary. Dlete notary from the local list"""
         self.log.debug('Notaries %s', self.settings)
+        self.settings = self.get_settings()
         notaries = self.settings.get('notaries')
-        notaries = ast.literal_eval(notaries)
 
         for idx, notary in enumerate(notaries):
 
