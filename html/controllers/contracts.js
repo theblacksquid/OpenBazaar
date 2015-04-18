@@ -248,20 +248,30 @@ angular.module('app')
                         }
 
                         var remote_images = [];
-                        if($scope.contract.imageURL1 !== '' && $scope.contract.imageURL1 !== undefined) {
-                            remote_images.push($scope.contract.imageURL1);
+                        if($scope.contract.remoteImages[0] !== '' && $scope.contract.remoteImages[0] !== undefined) {
+                            remote_images.push($scope.contract.remoteImages[0]);
                         }
-                        if($scope.contract.imageURL2 !== '' && $scope.contract.imageURL2 !== undefined) {
-                            remote_images.push($scope.contract.imageURL2);
+                        if($scope.contract.remoteImages[1] !== '' && $scope.contract.remoteImages[1] !== undefined) {
+                            remote_images.push($scope.contract.remoteImages[0]);
                         }
-                        if($scope.contract.imageURL3 !== '' && $scope.contract.imageURL3 !== undefined) {
-                            remote_images.push($scope.contract.imageURL3);
+                        if($scope.contract.remoteImages[2] !== '' && $scope.contract.remoteImages[2] !== undefined) {
+                            remote_images.push($scope.contract.remoteImages[0]);
                         }
                         contract.Contract.item_remote_images = remote_images;
 
                         console.log('Contract: ', contract);
-                        Connection.send("create_contract", contract);
-                        Notifier.success('Success', 'Contract saved successfully.');
+
+                        if($scope.contract.id == '') {
+                            Connection.send("create_contract", contract);
+                            Notifier.success('Success', 'Contract created successfully.');
+                        } else {
+                            Connection.send("update_contract", {
+                                contract_id: $scope.contract.id,
+                                contract: contract
+                            });
+                            Notifier.success('Success', 'Contract saved successfully.');
+                        }
+
                         Connection.send("query_contracts", {});
 
 

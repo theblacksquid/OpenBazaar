@@ -163,20 +163,36 @@ class Market(object):
         hash_value.update(contract_hash)
         return hash_value.hexdigest()
 
-    def save_contract_to_db(self, contract_id, body, signed_body, key):
+    def save_contract_to_db(self, contract_id, body, signed_body, key, updating_contract=False):
         """Insert contract to database"""
-        self.db_connection.insert_entry(
-            "contracts",
-            {
-                "id": contract_id,
-                "market_id": self.transport.market_id,
-                "contract_body": json.dumps(body),
-                "signed_contract_body": str(signed_body),
-                "state": "seed",
-                "deleted": 0,
-                "key": key
-            }
-        )
+        if not updating_contract:
+            self.db_connection.insert_entry(
+                "contracts",
+                {
+                    "id": contract_id,
+                    "market_id": self.transport.market_id,
+                    "contract_body": json.dumps(body),
+                    "signed_contract_body": str(signed_body),
+                    "state": "seed",
+                    "deleted": 0,
+                    "key": key
+                }
+            )
+        else:
+            self.db_connection.update_entries(
+                "contracts",
+                {
+                    "market_id": self.transport.market_id,
+                    "contract_body": json.dumps(body),
+                    "signed_contract_body": str(signed_body),
+                    "state": "seed",
+                    "deleted": 0,
+                    "key": key
+                },
+                {
+                    "id": contract_id
+                }
+            )
 
     def update_keywords_on_network(self, key, keywords):
         """Update keyword for sharing it with nodes"""
@@ -226,16 +242,19 @@ class Market(object):
 
         return pubkey
 
-    def save_contract(self, msg):
+    def save_contract(self, contract, contract_id=None):
         """Sign, store contract in the database and update the keyword in the
         network
         """
-        contract_id = self.get_contract_id()
+        updating_contract = True if contract_id else False
+
+        if not contract_id:
+            contract_id = self.get_contract_id()
 
         # Refresh market settings
         self.settings = self.get_settings()
 
-        seller = msg['Seller']
+        seller = contract['Seller']
         seller['seller_PGP'] = self.gpg.export_keys(self.settings['PGPPubkeyFingerprint'])
         seller['seller_BTC_uncompressed_pubkey'] = self.generate_new_pubkey(contract_id)
         seller['seller_contract_id'] = contract_id
@@ -244,16 +263,16 @@ class Market(object):
         seller['seller_refund_addr'] = self.settings['refundAddress']
 
         # Process and crop thumbs for images
-        if 'item_images' in msg['Contract']:
-            if 'image1' in msg['Contract']['item_images']:
-                img = msg['Contract']['item_images']['image1']
+        if 'item_images' in contract['Contract']:
+            if 'image1' in contract['Contract']['item_images']:
+                img = contract['Contract']['item_images']['image1']
                 new_uri = self.process_contract_image(img)
-                msg['Contract']['item_images'] = new_uri
+                contract['Contract']['item_images'] = new_uri
         else:
             self.log.debug('No image for contract')
 
         # Line break the signing data
-        out_text = self.linebreak_signing_data(msg)
+        out_text = self.linebreak_signing_data(contract)
 
         # Sign the contract
         signed_data = self.gpg.sign(
@@ -265,7 +284,7 @@ class Market(object):
         contract_key = self.generate_contract_key(signed_data)
 
         # Store contract in database
-        self.save_contract_to_db(contract_id, msg, signed_data, contract_key)
+        self.save_contract_to_db(contract_id, contract, signed_data, contract_key, updating_contract)
 
         # Store listing
         self.transport.store(
@@ -276,7 +295,7 @@ class Market(object):
         self.update_listings_index()
 
         # If keywords are present
-        keywords = msg['Contract']['item_keywords']
+        keywords = contract['Contract']['item_keywords']
         self.update_keywords_on_network(contract_key, keywords)
 
     def shipping_address(self):
@@ -802,7 +821,10 @@ class Market(object):
                 settings['homepage'],
                 settings['avatar_url']))
 
-        send_page_query()
+        if peer:
+            send_page_query()
+        else:
+            self.log.error('Could not find peer to send page to.')
 
     def validate_on_query_myorders(self, *data):
         self.log.debug('Validating on query myorders message.')

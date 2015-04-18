@@ -142,11 +142,10 @@ body {
 
 .rtable .rth, .rtable .rtd {
   padding: 10px;
-  text-align: center;
+  text-align: left;
 }
 
 .rtable .rth {
-  text-transform: uppercase;
   font-size: 14px;
   letter-spacing: 1px;
 }

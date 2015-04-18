@@ -4,12 +4,12 @@
 
 <div class="modal-body"  style="text-align:left;">
 
-    <ul class="nav nav-pills">
-      <li class="active"><a href="#" onclick="$(this).parent().addClass('active');$(this).parent().siblings().removeClass('active');$('#add-product-fixed').show();$('#add-product-fixed').siblings().hide();return false;">Fixed Price</a></li>
-      <li><a href="#" onclick="$(this).parent().addClass('active');$(this).parent().siblings().removeClass('active');$('#add-product-import').show();$('#add-product-import').siblings().hide();return false;">Import Contract</a></li>
-    </ul>
+    <!--<ul class="nav nav-pills">-->
+      <!--<li class="active"><a href="#" onclick="$(this).parent().addClass('active');$(this).parent().siblings().removeClass('active');$('#add-product-fixed').show();$('#add-product-fixed').siblings().hide();return false;">Fixed Price</a></li>-->
+      <!--<li><a href="#" onclick="$(this).parent().addClass('active');$(this).parent().siblings().removeClass('active');$('#add-product-import').show();$('#add-product-import').siblings().hide();return false;">Import Contract</a></li>-->
+    <!--</ul>-->
 
-    <div style="margin-top: 10px;">
+    <div>
 
         <form novalidate role="form" id="newContractForm" name="newContractForm">
 
@@ -94,16 +94,16 @@
                             <div style="padding:10px;">
                                 <div class="form-group">
                                     <label for="inputImageURL1">Image URL 1</label>
-                                    <input type="text" class="form-control" ng-model="contract.imageURL1" id="inputImageURL1" name="inputImageURL1"/>
+                                    <input type="text" class="form-control" ng-model="contract.remoteImages[0]" id="inputImageURL1" name="inputImageURL1"/>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="inputImageURL2">Image URL 2</label>
-                                    <input type="text" class="form-control" ng-model="contract.imageURL2" id="inputImageURL2" name="inputImageURL2"/>
+                                    <input type="text" class="form-control" ng-model="contract.remoteImages[1]" id="inputImageURL2" name="inputImageURL2"/>
                                 </div>
                                 <div class="form-group">
                                     <label for="inputImageURL3">Image URL 3</label>
-                                    <input type="text" class="form-control" ng-model="contract.imageURL3" id="inputImageURL3" name="inputImageURL3"/>
+                                    <input type="text" class="form-control" ng-model="contract.remoteImages[2]" id="inputImageURL3" name="inputImageURL3"/>
                                 </div>
                             </div>
 
