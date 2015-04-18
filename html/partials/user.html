@@ -15,7 +15,7 @@
                 <table>
                     <tr>
                         <td width="90">
-                            <img src="{{page.avatar_url}}" class="thumb thumb-large" data-ng-show="page.avatar_url != '' && page.avatar_url != null" />
+                            <img src="{{page.avatar_url}}" class="thumb thumb-large img-circle" data-ng-show="page.avatar_url != '' && page.avatar_url != null" />
                             <identicon icon-size="80" hash="page.senderGUID" title="{{page.senderGUID}}" data-ng-show="page.avatar_url == '' || page.avatar_url == null" ></identicon>
                         </td>
                         <td>
@@ -160,7 +160,9 @@
 
             <div class="div-listing col-sm-4 col-xs-6" style="padding:5px" data-ng-repeat="listing in store_listings">
 
-                <a href="" data-ng-click="open('lg', myself, page.pubkey, listing, trusted_notaries, settings.trustedArbiters, settings.btc_pubkey)"><img class="img-thumbnail" data-ng-src="{{listing.item_remote_images[0]}}" width="100%"/></a>
+                <a href="" data-ng-click="open('lg', myself, page.pubkey, listing, trusted_notaries, settings.trustedArbiters, settings.btc_pubkey)">
+                    <img class="img-thumbnail img-rounded" data-ng-src="{{listing.item_remote_images.length > 0 ? listing.item_remote_images[0] : '/html/img/no-photo.png'}}" width="100%"/>
+                </a>
 
                         <h4 style="margin-bottom:0"><a href="" data-ng-click="open('lg', myself, page.pubkey, listing, trusted_notaries, settings.trustedArbiters, settings.btc_pubkey)" class="trim-info">{{listing.contract_body.Contract.item_title}}</a></h4>
                         <span style="font-size:16px;">&#3647;{{listing.contract_body.Contract.item_price}}</span>
