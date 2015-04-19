@@ -798,6 +798,16 @@ class Market(object):
         settings = self.get_settings()
 
         peer = self.dht.routing_table.get_contact(msg['senderGUID'])
+        if not peer:
+            peer = self.transport.dht.add_peer(
+                msg['hostname'],
+                msg['port'],
+                msg['pubkey'],
+                msg['guid'],
+                msg['senderNick'],
+                msg['nat_type'],
+                msg['avatar_url']
+            )
 
         def send_page_query():
             """Send a request for the local identity page"""
