@@ -19,6 +19,7 @@ $python = "$pythonDir\python.exe"
 $pip = "$pythonDir\Scripts\pip.exe"
 $gpg = "$gnupgDir\pub\gpg.exe"
 $libeay = "$openSSLDir\bin\libeay32.dll"
+# TODO: remove this
 $sqlite = "$packagesDir\pysqlcipher\_sqlite.pyd"
 $miniupnpc = "$packagesDir\miniupnpc.pyd"
 

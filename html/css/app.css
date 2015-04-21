@@ -94,7 +94,6 @@ h4 {
 .peers-table td { padding:3px 5px; }
 .peers-table td:hover { cursor:pointer; }
 .no-hover td:hover { cursor:default; }
-
  .animated {
     -webkit-transition: height 0.2s;
     -moz-transition: height 0.2s;
@@ -121,4 +120,99 @@ h4 {
 .store-count-box {
     padding:8px 10px;
     margin:0 0 5px 0
+}
+
+body {
+    font-family: arial;
+  }
+
+.rtable {
+  border: 1px solid #ccc;
+  width: 100%;
+  margin:0;
+  padding:0;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.rtable .rtr {
+  border: 1px solid #ddd;
+  padding: 5px;
+}
+
+.rtable .rth, .rtable .rtd {
+  padding: 10px;
+  text-align: left;
+}
+
+.rtable .rth {
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+@media screen and (max-width: 600px) {
+
+  .rtable {
+    border: 0;
+  }
+
+  .rtable .rthead {
+    display: none;
+  }
+
+  .rtable .rtr {
+    margin-bottom: 10px;
+    display: block;
+    border-bottom: 2px solid #ddd;
+  }
+
+  .rtable .rtd {
+    display: block;
+    text-align: right;
+    font-size: 18px;
+    border-bottom: 1px dotted #ccc;
+  }
+
+  .rtable .rtd.images {
+    text-align: center;
+  }
+
+  .rtable .rtd:last-child {
+    border-bottom: 0;
+  }
+
+  .rtable .rtd:before {
+    content: attr(data-label);
+    float: left;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+}
+
+.table-responsive {
+  text-align: center;
+}
+
+div.signed-contract {
+  display: none;
+}
+pre.signed-contract {
+  height: 200px;
+  text-overflow: auto;
+}
+.contract-image {
+  width: 100%;
+  max-width: 200px;
+  margin: 5px auto;
+}
+
+.btn.contract {
+  width: 100%;
+  margin: 4px auto 1px auto;
+}
+
+.demo-gif {
+  width: 100%;
+  margin: 3% auto;
+  border: 3px solid #ccc;
 }

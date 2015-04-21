@@ -2,10 +2,9 @@
 from distutils.util import strtobool as _bool
 # pylint: enable=import-error
 import os
+from tornado import ioloop
 
-from zmq.eventloop import ioloop
-
-from test_util import remove_peers_from_db
+from features.test_util import remove_peers_from_db
 
 BEHAVE_DEBUG_ON_ERROR = _bool(os.environ.get("BEHAVE_DEBUG_ON_ERROR", "no"))
 
@@ -36,7 +35,7 @@ def after_scenario(context, scenario):
     if context.feature.name == 'CryptoTransportLayer':
         # reset database peers
         for layer in context.layers:
-            layer.db.deleteEntries('peers')
+            layer.db.delete_entries('peers')
     elif context.feature.name == 'Websocket Client Interface':
         # reset database peers
         for i in range(len(context.app)):

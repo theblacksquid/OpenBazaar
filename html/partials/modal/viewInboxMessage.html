@@ -1,0 +1,45 @@
+<div class="modal-header">
+    <h3 class="modal-title">View Message</h3>
+</div>
+
+<div class="modal-body"  style="text-align:left;">
+
+<div class="row">
+    <form class="form-horizontal" name="viewInboxForm" role="form">
+
+        <div class="col-sm-12">
+            <table width="100%">
+                <tr>
+                    <td colspan="100%" style="font-size:30px;padding:0 0 10px 0;">{{inbox.message.subject}}</td>
+                </tr>
+                <tr>
+                    <td width="60">
+                        <img src="{{sender.avatar_url}}" class="thumb thumb-inbox img-rounded" data-ng-show="sender.avatar_url !== null && sender.avatar_url !== ''"/>
+                        <identicon data-ng-show="sender.avatar === null || sender.avatar_url === ''" icon-size="50" hash="inbox.message.sender_guid" title="{{inbox.message.sender_guid}}"></identicon>
+                    </td>
+                    <td>
+                        <strong>{{inbox.message.nickname}}</strong>
+                        <BR>
+                        {{inbox.message.sender_guid}}
+                    </td>
+                    <td width="200">
+                        {{inbox.message.received * 1000 | date: 'medium'}}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="100%"><div style="padding:10px;background-color:#efefef;margin-top:10px;">{{inbox.message.body}}</div></td>
+                </tr>
+
+            </table>
+        </div>
+
+
+    </form>
+
+</div>
+
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-info" role="button" ng-click="close()" type="submit">Close</button>
+</div>

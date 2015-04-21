@@ -8,7 +8,7 @@ $ cd util/docker/logelk
 $ bash build.sh -a
 ```
 
-## Run a node base on github offical repo master branch with a elk container.
+## Run a node base on GitHub official repo master branch with a elk container.
 
 ```
 $ bash build.sh -o

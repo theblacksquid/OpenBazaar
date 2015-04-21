@@ -3,10 +3,10 @@
 <img src="http://s29.postimg.org/82z3qgz87/Open_Bazaar_Banner.png" width="800px"/>
 
 ## Introduction
-*OpenBazaar* allows for the decentralised exchange of types of currencies using the flexible Ricardian contract system. Currency exchanges are not limited trades between crypto-currencies, but can also facilitate exchanges with fiat currencies using reverisble and non-reversible payment systems. 
+*OpenBazaar* allows for the decentralised exchange of types of currencies using the flexible Ricardian contract system. Currency exchanges are not limited trades between crypto-currencies, but can also facilitate exchanges with fiat currencies using reversible and non-reversible payment systems. 
 
 ## Currency Exchanges
-Fundamentally, currency exchanges require a matching of buy and sell orders at a certain price for a given volume. Firstly, buy and sell orders will be created and issued as a Ricardian contract, formatted according to a specialised 'currency' template in *OpenBazaar*. Secondly, matching buy and sell orders theoretically will be mediated over *exchange nodes*, which may also function as arbiters for each exchange. Alternative, buy and sell orders may be matched over the *OpenBazaar* distributed hash table. Finally, private exchanges can be made between peers, using *OpenBazaar* to merely faciliate the signing/counter-signing of the contract and finding an arbiter for the trade. After matching buy and sell order, the use of Bitcoin multisignature transactions is the key to managing counterparty risk for an exchange between different crypto-currencies, irrespective of whether Bitcoin is the final currency to be exchanged. 
+Fundamentally, currency exchanges require a matching of buy and sell orders at a certain price for a given volume. Firstly, buy and sell orders will be created and issued as a Ricardian contract, formatted according to a specialised 'currency' template in *OpenBazaar*. Secondly, matching buy and sell orders theoretically will be mediated over *exchange nodes*, which may also function as arbiters for each exchange. Alternative, buy and sell orders may be matched over the *OpenBazaar* distributed hash table. Finally, private exchanges can be made between peers, using *OpenBazaar* to merely facilitate the signing/counter-signing of the contract and finding an arbiter for the trade. After matching buy and sell order, the use of Bitcoin multisignature transactions is the key to managing counterparty risk for an exchange between different crypto-currencies, irrespective of whether Bitcoin is the final currency to be exchanged. 
 
 Currency contract can be further sub-categorised into:
 
@@ -206,7 +206,7 @@ The contract with the buyer's digital signature is sent back to the seller (Alic
 
 #### Chargeback Risk
 
-If an irreversible payment processor (e.g. OKPay) is used, then the multisignature bitcoin address is a sufficient means of managing the exchange risk as chargebacks are theoretically impossible. However, if Alice in this case did not use such an non-reverisble payment processor, the trade can still occur with the punative measures to appropriately manage the charageback risk:
+If an irreversible payment processor (e.g. OKPay) is used, then the multisignature bitcoin address is a sufficient means of managing the exchange risk as chargebacks are theoretically impossible. However, if Alice in this case did not use such an non-reversible payment processor, the trade can still occur with the punative measures to appropriately manage the chargeback risk:
 
 1. Probation
   - The purchased bitcoin funds are kept within the multisignature address until the chargeback risk duration has elapsed. This period will be variable, depending on the bank that is used.

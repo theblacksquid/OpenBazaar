@@ -1,3 +1,81 @@
+openbazaar (0.4.0) unstable; urgency=low
+
+  Install/OS:
+  * Ansible support.
+  * Better install through configure.sh
+
+  Documentation/UI/UX:
+  * Animated intro gif images on main page.
+  * Avatars now available for users to set in profiles.
+  * Notary Services (refunds, releases)
+  * Updated contract management UI (edits enabled)
+  * Search cleaned up.
+  * Messaging now native to OpenBazaar.
+
+  Bitcoin:
+  * HD BIP32 keys used for generating unique multi-sig addresses.
+
+  Network:
+  * Networking stack now relies on rUDP and UDP-based transport.
+  * Fixes for socket overload crashes.
+  * No longer using ZeroMQ for OpenBazaar. Obelisk still does.
+
+  Testing:
+  * Bandit checks enabled.
+  * nosetests and jscheck enabled.
+
+  Bug fixes:
+  * Too many to count. Please refer to GitHub closed issues for this period.
+
+  Miscellaneous:
+  * No longer leverage BitMessage for internal messaging.
+
+ -- OpenBazaar Team <project@openbazaar.org>  Tue, 21 Apr 2015 5:00:00 -0000
+
+openbazaar (0.3.1) unstable; urgency=low
+  OS/Install:
+  * Increased automation of the installation script.
+  * Virtualenv setup explictly requires python 2.7 on Linux and Mac.
+  * Increased POSIX compliance of startup script.
+  * Installed support for running on Manjaro Linux and Slackware Linux.
+
+  Documentation/UI/UX:
+  * Removed press coverage.
+  * Replaced references to forums with references to the reddit and Github.
+  * Updated the bitcoin donation address.
+  * Other minor GUI improvements.
+
+  Network:
+  * Reduced Kademlia constants (K, cache_K), to better leverage the P2P
+    network and lessen the pressure on individual nodes.
+  * Increased reuse of peer connections.
+
+  Security:
+  * Disabled database encryption that was causing trouble on Macs. This is a
+    temporary remedy.
+
+  Code Quality:
+  * Expanded test coverage to include the db module.
+  * Simplified testing of abstract base classes.
+  * Removed a few unused files and some dead code.
+  * Refactored some of the logging, so that medium levels are more helpful.
+  * Rewrote some code to use forward-compatible idioms and imports.
+  * Cleaned up some CSS.
+  * Updated dependencies.
+
+  Bug fixes:
+  * Installed synchronization for DB access.
+  * Fixed a bug that could hang the stopping script.
+  * Fixed argument processing in migration scripts.
+  * Notaries are now properly added/removed; multiple notaries are supported.
+  * Now sanitize bad URIs from other nodes that crash ZeroMQ
+
+  Miscellaneous:
+  * Restructured Makefile and test scripts to better expose the build process.
+  * Installed issue handling via waffle.io.
+
+ -- OpenBazaar Team <project@openbazaar.org>  Fri, 21 Nov 2014 12:00:00 +0000
+
 openbazaar (0.3.0) unstable; urgency=low
   OS/Install:
   * Windows: Scripts to configure and run OpenBazaar on Windows 7 and up.

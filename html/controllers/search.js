@@ -9,6 +9,7 @@ angular.module('app')
     .controller('Search', ['$scope', '$interval', '$routeParams', '$location', 'Connection',
         function($scope, $interval, $routeParams, $location, Connection) {
 
+            //alert('test');
             $scope.searchPanel = true;
             $scope.path = $location.path();
             $scope.$emit('sidebar', false);
@@ -17,8 +18,30 @@ angular.module('app')
              * Establish message handlers
              * @msg - message from websocket to pass on to handler
              */
+
+            var listeners = Connection.$$listeners;
+
+            listeners.load_page = [];
             Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
             Connection.$on('global_search_result', function(e, msg){ $scope.parse_search_result(msg); });
+            listeners.query_listing_result = [];
+            Connection.$on('query_listing_result', function(e, msg){ $scope.parse_query_listing_result(msg); });
+
+            $scope.searchNetwork = function() {
+
+                var query = {
+                    'type': 'search',
+                    'key': $scope.search
+                };
+                $scope.searching = $scope.search;
+
+                $scope.search_results = {};
+                $scope.awaitingQuery = $scope.search;
+                Connection.send('search', query);
+                $scope.search = "";
+                $scope.showDashboardPanel('search');
+
+            };
 
             $scope.load_page = function(msg) {
                 console.log($location.search());
@@ -26,36 +49,55 @@ angular.module('app')
                 $scope.searchNetwork();
             };
 
-            function getJsonFromUrl() {
-                var query = location.search.substr(1);
-                var result = {};
-                query.split("&").forEach(function(part) {
-                    var item = part.split("=");
-                    result[item[0]] = decodeURIComponent(item[1]);
-                });
-                return result;
-            }
+            var getJsonFromUrl = function() {
 
-            var url_json = getJsonFromUrl();
-            $scope.search = url_json.searchterm;
+                console.log($routeParams);
+                return $routeParams.search;
+                //var query = location.search.substr(1);
+                //var result = {};
+                //query.split("&").forEach(function(part) {
+                //    var item = part.split("=");
+                //    result[item[0]] = decodeURIComponent(item[1]);
+                //});
+                //return result;
+            };
 
-            $scope.searchNetwork = function() {
+            //var url_json = getJsonFromUrl();
+            $scope.search = $routeParams.search;
+            $scope.searchlabel = $routeParams.search;
+            $scope.searchNetwork();
 
-                var query = {
-                    'type': 'search',
-                    'key': url_json.searchterm
-                };
-                $scope.searching = $scope.search;
+            //$scope.search = $scope.search.replace("+", " ");
+            console.log('Search term: ', $scope.search);
 
-                $scope.search_results = [];
-                $scope.awaitingShop = $scope.search;
-                Connection.send('search', query);
-                $scope.search = "";
-                $scope.showDashboardPanel('search');
+            $scope.isEmpty = function(obj) {
+                for(var prop in obj) {
+                    if(obj.hasOwnProperty(prop)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            };
+
+
+            $scope.parse_query_listing_result = function(msg) {
+
+                var contract_data = msg.listing[0];
+                var key = contract_data.key;
+                var contract_body = JSON.parse(contract_data.contract_body);
+                console.log(contract_body.Seller);
+
+                if(!(key in $scope.search_results)) {
+                    $scope.search_results[key] = contract_body;
+                }
+
+                //$scope.search_results.push(contract_body);
+                console.log('Search Results', $scope.search_results);
 
             };
 
-            $scope.search_results = [];
+            $scope.search_results = {};
             $scope.parse_search_result = function(msg) {
                 console.log('Global Search Result', msg);
                 var contract_data = msg.data;

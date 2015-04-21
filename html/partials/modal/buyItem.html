@@ -2,132 +2,255 @@
     <h3 class="modal-title">Purchase this Contract</h3>
 </div>
 
-<div class="modal-body"  style="text-align:left;">
-
-    <!--<div class="alert alert-info">Wow you're almost ready to purchase an item from an Open Bazaar merchant!</div>-->
+<div class="modal-body" style="text-align:left;">
     <form id="form-item-purchase" role="form" novalidate="novalidate" name="buyItem">
 
-    <div class="alert alert-danger" role="alert" ng-show="!notaries.length" >
-                You don't have any notaries trusted. Please add one before you purchase contracts or you are putting yourself at risk.
+        <div class="alert alert-danger" role="alert" ng-show="!notaries.length">
+            <strong>No notaries online</strong><br/>
+            You have not trusted any notaries or none of them are online. Make sure to have an online notary in your
+            Settings before purchasing items or services.
+        </div>
+
+        <div id="purchase_step1" ng-show="!order.step2 && !order.step3 && !order.confirmation">
+
+            <h2 style="margin-top:0">{{listing.item_title}}</h2>
+
+            <h3 style="margin-top:0px;font-weight:bold;"><span class="badge alert-info badge-alert"
+                                                               style="font-size:20px;font-weight:normal;">{{listing.contract_body.Contract.item_price}} BTC</span>
+                </h3>
+
+            <p style="background-color: #efefef;padding:10px;">{{listing.item_desc}}</p>
+
+            <h4>More Information</h4>
+            <ul>
+                <li><strong>Shipping & Handling:</strong> {{(listing.contract_body.Contract.item_delivery.shipping_price
+                    > 0) ? listing.contract_body.Contract.item_delivery.shipping_price : 'Free'}}
+                </li>
+                <li><strong>Quantity Available:</strong> {{listing.contract_body.Contract.item_quantity}}</li>
+                <li><strong>Item Condition:</strong> {{listing.contract_body.Contract.item_condition}}</li>
+            </ul>
+
+            <button type="button" class="btn btn-primary" data-ng-show="!showContract"
+                    ng-click="showContract=(showContract+1)%2;" onclick="return false;"><span
+                    class="glyphicon glyphicon-resize-full"></span> Show Raw Contract
+            </button>
+            <button type="button" class="btn btn-primary" data-ng-show="showContract"
+                    ng-click="showContract=(showContract+1)%2;" onclick="return false;"><span
+                    class="glyphicon glyphicon-resize-small"></span> Hide Raw Contract
+            </button>
+            <div data-ng-show="showContract" style="padding:5px 0">
+                <pre style="word-wrap:break-word;font-size:12px;height:250px;">{{listing.signed_contract_body}}</pre>
+                </li>
             </div>
 
-    <div id="purchase_step1" ng-show="!order.step2 && !order.confirmation">
+            </br>
+            </br>
+            <h4>Photos</h4>
+            <div class="row">
+            	<div class="col-lg-4 col-sm-4 col-xs-12">
+		            <div id="product-images" data-ng-show="listing.item_remote_images" style="padding:5x">
+		                <img class="img-thumbnail" src="{{listing.item_remote_images[0]}}" style="max-width: 100%; margin-left: auto; margin-right: auto"/>
+		            </div>
+	            </div>
+            	<div class="col-lg-4 col-sm-4 col-xs-12">
+		            <div id="product-images" data-ng-show="listing.item_remote_images" style="padding:5x">
+		                <img class="img-thumbnail" src="{{listing.item_remote_images[1]}}" style="max-width: 100%; margin-left: auto; margin-right: auto"/>
+		            </div>
+	            </div>
+            	<div class="col-lg-4 col-sm-4 col-xs-12">
+		            <div id="product-images" data-ng-show="listing.item_remote_images" style="padding:5x">
+		                <img class="img-thumbnail" src="{{listing.item_remote_images[2]}}" style="max-width: 100%; margin-left: auto; margin-right: auto"/>
+		            </div>
+	            </div>
+	        </div>
 
-    <table class="table table-striped" style="margin-bottom:0">
-        <tr>
-            <td style="background-color:#efefef; width:100px; height:100px; background-image:url('{{productImageData}}');background-size: 80px 80px; background-repeat:no-repeat;background-position:center;padding:20px;"></td>
-            <td style="vertical-align:top;font-size:24px;">
-                <strong>{{productTitle}}</strong>
-                <p style="font-size:14px">{{productDescription}}</p>
-            </td>
-            <td width="75">
-                <div class="form-group" ng-class="{'has-error': buyItem.itemQuantity.$invalid}">
-                    <input type="number" min="1" name="itemQuantity" ng-model="order.productQuantity" id="itemQuantity" ng-change="updateTotal()" class="form-control" required />
-                </div>
-            </td>
-            <td width="100" style="font-size:24px;"><strong>&#3647;{{productPrice}}</strong></td>
-        </tr>
-        <tr>
-            <td colspan="100%" style="font-size:16px;padding:20px 20px 0 20px;text-align:right;font-weight:bold;">
-                Shipping: &#3647;<span id="shippingPrice" ng-model="order.shippingPrice">{{shippingPrice}}</span><br/>
-                Total: &#3647;<span id="totalPrice" ng-model="order.orderTotal">{{totalPrice}}</span>
-            </td>
-        </tr>
-    </table>
+            <!--<table class="table table-striped" style="margin-bottom:0">-->
+            <!--<tr>-->
+            <!--<td class="productImageCol" style="background-image:url('{{productRemoteImages.length > 0 ? productRemoteImages[0] : 'img/no-photo.png'}}');"></td>-->
+            <!--<td style="vertical-align:top;font-size:24px;">-->
+            <!--<strong>{{productTitle}}</strong>-->
+            <!--<p style="font-size:14px">{{productDescription}}</p>-->
+            <!--</td>-->
+            <!--<td width="75">-->
+            <!--<div class="form-group" ng-class="{'has-error': buyItem.itemQuantity.$invalid}">-->
+            <!--<input type="number" min="1" max="{{order.productQuantity}}" name="itemQuantity" ng-model="order.productQuantity" id="itemQuantity" ng-change="updateTotal()" class="form-control" required />-->
+            <!--</div>-->
+            <!--</td>-->
+            <!--<td width="100" style="font-size:24px;"><strong>&#3647;{{productPrice}}</strong></td>-->
+            <!--</tr>-->
+            <!--<tr>-->
+            <!--<td colspan="100%" style="font-size:16px;padding:20px 20px 0 20px;text-align:right;font-weight:bold;">-->
+            <!--Shipping: &#3647;<span id="shippingPrice" ng-model="order.shippingPrice">{{shippingPrice}}</span><br/>-->
+            <!--Total: &#3647;<span id="totalPrice" ng-model="order.orderTotal">{{totalPrice}}</span>-->
+            <!--</td>-->
+            <!--</tr>-->
+            <!--</table>-->
 
 
-    <!--<div class="row">-->
-        <!--<div class="form-group col-sm-12">-->
+            <!--<div class="row">-->
+            <!--<div class="form-group col-sm-12">-->
             <!--<label for="inputBitcoinPubkey">Bitcoin Public Key:</label>-->
             <!--<p>This public key will be used for refunds in multisignature transactions. <a href="http://www.reddit.com/r/Bitcoin/comments/1wvph2/what_is_the_difference_between_an_address_and_a/" target="_blank">What's a public key?</a></p>-->
             <!--<textarea rows="2" ng-model="order.btc_pubkey" class="form-control" id="inputBitcoinPubkey" placeholder="Enter a valid public key; not an address"></textarea>-->
-        <!--</div>-->
-    <!--</div>-->
-
-
-      <div class="row">
-          <div class="form-group col-sm-12">
-        <label for="inputMerchantMessage">Note for Merchant:</label>
-        <textarea ng-model="order.message" class="form-control" rows="5" id="inputMerchantMessage" placeholder="Enter message for the merchant (optional)"></textarea>
-
-      </div>
-
-
-
-    <div>
-
-
-        <!-- Hidden form fields for item -->
-        <input type="hidden" id="rawContract" ng-model="order.rawContract" value="{{rawContract}}"/>
-        <input type="hidden" id="inputMerchantGUID" ng-model="order.merchantGUID" value=""/>
-        <input type="hidden" id="inputProductKey" ng-model="order.listingKey" value=""/>
-        <input type="hidden" id="inputProductPrice" ng-model="order.listingTotal" value="{{productPrice}}"/>
-
-
-    </div>
-    </div>
-    </div>
-
-        <div id="purchase_step2" ng-show="order.step2" >
-
-            <div class="alert alert-warning">Use the form below to select an arbiter and notary. By doing this you are protecting yourself in the
-            case that something goes wrong with your transaction and ensures things go smoothly.<br/><br/>You can add a notary or
-            arbiter on the <strong>Settings Page</strong> or <a href="https://github.com/OpenBazaar/OpenBazaar/wiki/Contracts-and-Listings" target="_blank">find out more here</a>.
-            </div>
-
-            <div class="form-group row" ng-show="!!notaries.length">
-                <div class="col-sm-12">
-                <label for="notary">Choose an online notary:</label>
-
-                <select id="notary" ng-model="order.notary" ng-options="notary.guid as notary.nickname+' ('+notary.guid+')' for notary in notaries" class="form-control col-sm-12"></select>
-                </div>
-            </div>
-
-
-
-            <!--<div class="form-group row">-->
-                <!--<div class="col-sm-6">-->
-                    <!--<label for="arbiter">Arbiter</label>-->
-                    <!--<select id="arbiter" ng-model="order.arbiter" ng-options="arbiter for arbiter in arbiters" class="form-control col-sm-4"></select>-->
-                <!--</div>-->
+            <!--</div>-->
             <!--</div>-->
 
         </div>
 
-        <div id="purchase_confirmation" ng-show="order.confirmation" >
+        <div id="purchase_step2" ng-show="order.step2">
+
+            <!--<div class="alert-warning alert" style="padding:10px;">-->
+                <!--Here-->
+            <!--</div>-->
+
+            <h4>Order Details:</h4>
+
+            <table>
+                <tr>
+                    <td class="col-xs-3" style="vertical-align: top;">
+                        <div class="form-group">
+                            <label for="itemQuantity">Quantity Desired:</label>
+                            <input class="form-control col-xs-1" type="number" min="1"
+                                   max="{{listing.contract_body.Contract.item_quantity}}" name="itemQuantity"
+                                   ng-model="order.productQuantity" id="itemQuantity" ng-change="updateTotal()"
+                                   required/>
+                        </div>
+                    </td>
+                    <td class="col-xs-9 text-right">
+
+                        <div class="form-group">
+                            <label for="inputMerchantMessage">Note for Merchant:</label>
+                            <textarea ng-model="order.message" class="form-control" rows="5" id="inputMerchantMessage"
+                                      placeholder="Enter message for the merchant (optional)"></textarea>
+
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <h4>Shipping Information</h4>
+
+            <div class="alert alert-danger" data-ng-show="myself.settings.recipient_name == '' && myself.settings.street1 == '' && myself.settings.street2 == '' && myself.settings.city == '' && myself.settings.stateRegion == ''"><span class="glyphicon glyphicon-flag"></span> <em>You have no shipping address specified. Please update your info in the <a href="#/settings" data-ng-click="cancel()">Settings Panel</a>.</em></div>
+
+            <div style="padding:0 10px;">
+
+
+                <address>
+                  <span data-ng-show="myself.settings.recipient_name"><strong>{{myself.settings.recipient_name}}</strong><br></span>
+                  <span data-ng-show="myself.settings.street1">{{myself.settings.street1}}<br></span>
+                  <span data-ng-show="myself.settings.street2">{{myself.settings.street2}}<br></span>
+                  <span data-ng-show="myself.settings.city">{{myself.settings.city}}, </span>{{myself.settings.stateRegion}} {{myself.settings.zip}}
+                </address>
+            </div>
+
+            <table class="col-xs-12">
+                <tr>
+                    <td class="col-xs-9 text-right">
+                        <strong>Shipping & Handling:</strong>
+                    </td>
+                    <td class="col-xs-3 text-right"><span id="shippingPrice" ng-model="order.shippingPrice">{{listing.contract_body.Contract.item_delivery.shipping_price}} BTC</span></td>
+                </tr>
+                <tr>
+                    <td class="col-xs-9 text-right">
+                        <strong>Total:</strong>
+                    </td>
+                    <td class="col-xs-3 text-right"><span id="totalPrice" ng-model="order.orderTotal">{{totalPrice}}</span> BTC</td>
+                </tr>
+            </table>
+
+            <br clear="all"/>
+
+            <h4>Refund Information</h4>
+
+            <div class="form-group">
+            <label for="inputRefundAddress">Bitcoin address for refunds:</label>
+            <input type="text" id="inputRefundAddress" name="inputRefundAddress" class="form-control col-sm-4" placeholder="Bitcoin Address" data-ng-model="order.buyerRefundAddress" value="{{myself.settings.refundAddress}}"/>
+            </div>
+
+            <!-- Hidden form fields for item -->
+            <input type="hidden" id="rawContract" ng-model="order.rawContract" value="{{rawContract}}"/>
+            <input type="hidden" id="inputMerchantGUID" ng-model="order.merchantGUID" value=""/>
+            <input type="hidden" id="inputProductKey" ng-model="order.listingKey" value=""/>
+            <input type="hidden" id="inputProductPrice" ng-model="order.listingTotal" value="{{productPrice}}"/>
+        </div>
+
+        <div id="purchase_step3" ng-show="order.step3">
+
+            <h4>Choose a Notary</h4>
+
+            <div class="alert alert-warning">Use the form below to select an arbiter and notary. By doing this you are
+                protecting yourself in the
+                case that something goes wrong with your transaction and ensures things go smoothly.<br/><br/>You can
+                add a
+                notary or
+                arbiter on the <strong>Settings Page</strong> or <a
+                        href="https://github.com/OpenBazaar/OpenBazaar/wiki/Contracts-and-Listings" target="_blank">find
+                    out
+                    more here</a>.
+            </div>
+
+            <div class="form-group row" ng-show="!!notaries.length">
+                <div class="col-sm-12">
+                    <label for="notary">Online Notaries:</label>
+
+                    <select id="notary" ng-model="order.notary"
+                            ng-options="notary.guid as notary.nickname+' ('+notary.guid+')' for notary in notaries"
+                            class="form-control col-sm-12"></select>
+                </div>
+            </div>
+
+
+            <!--<div class="form-group row">-->
+            <!--<div class="col-sm-6">-->
+            <!--<label for="arbiter">Arbiter</label>-->
+            <!--<select id="arbiter" ng-model="order.arbiter" ng-options="arbiter for arbiter in arbiters" class="form-control col-sm-4"></select>-->
+            <!--</div>-->
+            <!--</div>-->
+
+        </div>
+
+        <div id="purchase_confirmation" ng-show="order.confirmation">
 
 
             <h4>Order Confirmation</h4>
 
             <p>Your order has been submitted. What happens next?
-                <ul>
-                    <li>Notary receives and ensures contract is valid</li>
-                    <li>Merchant receives order from notary</li>
-                    <li>You receive a notification to pay up</li>
-                </ul>
+            <ul>
+                <li>Notary receives and ensures contract is valid</li>
+                <li>Merchant receives order from notary</li>
+                <li>You receive a notification to pay up</li>
+            </ul>
 
             </p>
 
             <!--<div class="form-group row">-->
-                <!--<div class="col-sm-6">-->
-                    <!--<label for="arbiter">Arbiter</label>-->
-                    <!--<select id="arbiter" ng-model="order.arbiter" ng-options="arbiter for arbiter in arbiters" class="form-control col-sm-4"></select>-->
-                <!--</div>-->
+            <!--<div class="col-sm-6">-->
+            <!--<label for="arbiter">Arbiter</label>-->
+            <!--<select id="arbiter" ng-model="order.arbiter" ng-options="arbiter for arbiter in arbiters" class="form-control col-sm-4"></select>-->
+            <!--</div>-->
             <!--</div>-->
 
         </div>
 
 
-     </form>
+    </form>
 
 </div>
 
 <div class="modal-footer">
-    <a class="btn btn-default" ng-show="!order.step2 && !order.confirmation" ng-click="cancel()" type="cancel">Cancel</a>
-    <a class="btn btn-success" ng-show="!order.step2 && !order.confirmation
-    " ng-click="gotoStep2()" type="button">Next</a>
+    <a class="btn btn-default" ng-show="!order.step2 && !order.step3 && !order.confirmation" ng-click="cancel()"
+       type="cancel">Cancel</a>
+    <a class="btn btn-success" ng-show="!order.step2 && !order.step3 && !order.confirmation" ng-click="gotoStep2()"
+       type="button">Order Details</a>
+
     <a class="btn btn-default" ng-show="order.step2" ng-click="gotoStep1()" type="button">Back</a>
-    <a class="btn btn-success" ng-show="order.step2" ng-click="submitOrder()" type="button">Submit Order</a>
-    <a class="btn btn-success" ng-show="order.confirmation" ng-click="closeConfirmation()" type="button">Go to Orders</a>
+    <a class="btn btn-success" ng-show="order.step2" ng-click="gotoStep3()" type="button">Choose a Notary</a>
+
+    <a class="btn btn-default" ng-show="order.step3" ng-click="gotoStep2()" type="button">Back</a>
+    <a class="btn btn-success" ng-show="order.step3" ng-click="submitOrder()" type="button">Submit Order</a>
+
+    <a class="btn btn-success" ng-show="order.confirmation" ng-click="closeConfirmation()" type="button">Go to
+        Orders</a>
 
 </div>
+

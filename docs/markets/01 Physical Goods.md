@@ -9,7 +9,7 @@
 
 It is becoming increasingly clear that *OpenBazaar* will become a powerful platform that will support a variety of peer-to-peer market transactions. One of the most fundamental market transaction types is the *auction* of a good by a seller to discover the market price. In this article, we cover one possible way of auctioning a good using *Ricardian contracts*. 
 
-It should be noted that this proposal essentially describes the 'back-end' of implementing Ricardian contracts into auctions on *OpenBazaar*. It is important that the end-user (i.e. your mother, grandfather etc with novice skills) will be unaware of digital signing, hashing etc occuring in the background unless they choose to be, in order to lower the technical barrier of entry for using *OpenBazaar*.
+It should be noted that this proposal essentially describes the 'back-end' of implementing Ricardian contracts into auctions on *OpenBazaar*. It is important that the end-user (i.e. your mother, grandfather etc with novice skills) will be unaware of digital signing, hashing etc occurring in the background unless they choose to be, in order to lower the technical barrier of entry for using *OpenBazaar*.
 
 ## Auctions
 
@@ -129,7 +129,7 @@ etGML8rzAKOEJNgewX58yNqvMq2t4VT5nNXu2RnMj5rJvzggZwkwa2i9pzvgtkGk
 
 <img src="https://img0.etsystatic.com/000/0/6342324/il_570xN.326696084.jpg" width="100px"/>
 
-Bob accesses the contract and chooses to bid on the pinata. To place a bid on the item, he draws up the following digitially signed **bid contract**:
+Bob accesses the contract and chooses to bid on the pinata. To place a bid on the item, he draws up the following digitally signed **bid contract**:
 
 ``` Contract hash: 57074779f93235c88a07b7c6de8285c8478cc6a6 ```
 ```xml
@@ -220,7 +220,7 @@ SOL9iJiOUm4fkbPO141oovynn/4AZ1ORTR2Pw/godX5SsplWnuF16px7BXuDiomu
 
 Alice may receive five different bids on the yellow pinata and according to her conditions, the originally contract is updated with the latest bid price. At the end of the expiration date of the contract, Alice digitally signs the final winning **bid contract**, sends it to the arbiter for digitally signing and creating a multisignature bitcoin address for the winning bidder, Bob. 
 
-Due to the architecture of the P2P network setup, Alice may not be available 24/7 during the term of her **auction contract** to update the market on the latest bid price of the item. As a result, she may choose to upload her contract on a 24/7 accessible node (a **negotiator node**) that acts as a contract *server*. If so, the **negotiator node** will create their own contract for the item, digitally sign **bid contracts**, update the ```<item_price>```, and turn over the final **bid contract** to Alice for her digital signature at the end of the contract/auction expiration date. If Alice digitally signs the contract, the contract is sent to an arbiter for sigining and creation of the multisignature bitcoin address for Bob, the winning bidder, to send funds to. As a reward for hosting the contract, the **negotiator node** is rewarded by a fee paid for by Alice (via another multisignature address setup with anoter arbiter). If Alice disapproves of how the contract was negotiated by the **negotiator node** on her behalf, she can simply refuse to sign the contract and raise a dispute to the arbiter for a refund of the fee from the multisignature address.
+Due to the architecture of the P2P network setup, Alice may not be available 24/7 during the term of her **auction contract** to update the market on the latest bid price of the item. As a result, she may choose to upload her contract on a 24/7 accessible node (a **negotiator node**) that acts as a contract *server*. If so, the **negotiator node** will create their own contract for the item, digitally sign **bid contracts**, update the ```<item_price>```, and turn over the final **bid contract** to Alice for her digital signature at the end of the contract/auction expiration date. If Alice digitally signs the contract, the contract is sent to an arbiter for signing and creation of the multisignature bitcoin address for Bob, the winning bidder, to send funds to. As a reward for hosting the contract, the **negotiator node** is rewarded by a fee paid for by Alice (via another multisignature address setup with another arbiter). If Alice disapproves of how the contract was negotiated by the **negotiator node** on her behalf, she can simply refuse to sign the contract and raise a dispute to the arbiter for a refund of the fee from the multisignature address.
 
 #### Insurance
 
@@ -228,7 +228,7 @@ For the seller (Alice), she can have confidence that the funds for the item actu
 
 To further promote good behavior, the arbiter may require a **surety bond** from one or both parties. The surety bond is a quantity of bitcoins sent from either the buyer or seller (or both) held in a multisignature bitcoin address that is refundable upon a successful trade. If a dispute arises, and one party is found to be at *malicious* fault, the funds within the surety bond are transferred to the arbiter and opposing party as compensation.
 
-A *non-malicious* versus *malicous* fault may be, for example, a shipping comapany damaging the goods during transport (*non-malicious*) versus the seller knowingly sending a damaged good (*malicious*). The value of the surety bond is negotiable and completely optional. However, it is reasonable to expect that surety bonds will become less necessary between individuals with a high *web of trust* reputation and/or *proof of burn* identity.
+A *non-malicious* versus *malicious* fault may be, for example, a shipping company damaging the goods during transport (*non-malicious*) versus the seller knowingly sending a damaged good (*malicious*). The value of the surety bond is negotiable and completely optional. However, it is reasonable to expect that surety bonds will become less necessary between individuals with a high *web of trust* reputation and/or *proof of burn* identity.
 
 ## Conclusion
 

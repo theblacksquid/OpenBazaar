@@ -1,34 +1,36 @@
 import threading
 import logging
 import subprocess
-import protocol
 import pycountry
 import gnupg
 import obelisk
 import json
 import random
+import time
+import urllib2
 from bitcoin import (
     apply_multisignatures,
-    eligius_pushtx,
     mk_multisig_script,
     mktx,
     multisign,
     scriptaddr
 )
+from tornado import iostream
 import tornado.websocket
 from twisted.internet import reactor
-from backuptool import BackupTool, Backup, BackupJSONEncoder
-import trust
+from node import protocol, trust, constants
+from node.backuptool import BackupTool, Backup, BackupJSONEncoder
+import bitcoin
 
 
 class ProtocolHandler(object):
-    def __init__(self, transport, market_application, handler, db,
+    def __init__(self, transport, market_application, handler, db_connection,
                  loop_instance):
         self.market_application = market_application
         self.market = self.market_application.market
         self.transport = transport
         self.handler = handler
-        self.db = db
+        self.db_connection = db_connection
 
         self.transport.set_websocket_handler(self)
 
@@ -72,11 +74,16 @@ class ProtocolHandler(object):
             "remove_trusted_notary": self.client_remove_trusted_notary,
             "query_store_products": self.client_query_store_products,
             "check_order_count": self.client_check_order_count,
+            "check_inbox_count": self.client_check_inbox_count,
             "query_orders": self.client_query_orders,
             "query_contracts": self.client_query_contracts,
             "stop_server": self.client_stop_server,
             "query_messages": self.client_query_messages,
             "send_message": self.client_send_message,
+            "send_inbox_message": self.client_send_inbox_message,
+            "get_inbox_messages": self.client_get_inbox_messages,
+            "get_inbox_sent_messages": self.client_get_inbox_sent_messages,
+            "get_btc_ticker": self.client_get_btc_ticker,
             "update_settings": self.client_update_settings,
             "query_order": self.client_query_order,
             "pay_order": self.client_pay_order,
@@ -89,12 +96,15 @@ class ProtocolHandler(object):
             "republish_contracts": self.client_republish_contracts,
             "import_raw_contract": self.client_import_raw_contract,
             "create_contract": self.client_create_contract,
+            "update_contract": self.client_update_contract,
             "clear_dht_data": self.client_clear_dht_data,
             "clear_peers_data": self.client_clear_peers_data,
             "read_log": self.client_read_log,
             "create_backup": self.client_create_backup,
             "get_backups": self.get_backups,
             "undo_remove_contract": self.client_undo_remove_contract,
+            "refresh_settings": self.client_refresh_settings,
+            "refund_recipient": self.client_refund_recipient,
         }
 
         self.timeouts = []
@@ -108,12 +118,14 @@ class ProtocolHandler(object):
 
     def validate_on_page(self, *data):
         self.log.debug('Validating on page message.')
-        keys = ("senderGUID", "sin")
-        return all(k in data for k in keys)
+        # data = data[0]
+        # keys = ("senderGUID")
+        return True
 
     def on_page(self, page):
 
         guid = page.get('senderGUID')
+        avatar_url = page.get('avatar_url')
         self.log.info(page)
 
         sin = page.get('sin')
@@ -123,18 +135,23 @@ class ProtocolHandler(object):
         if sin and page:
             self.market.pages[sin] = page
 
+        self.transport.update_avatar(guid, avatar_url)
+
         # TODO: allow async calling in different thread
         def reputation_pledge_retrieved(amount, page):
             self.log.debug(
                 'Received reputation pledge amount %s for guid %s',
                 amount, guid
             )
-            SATOSHIS_IN_BITCOIN = 100000000
-            bitcoins = float(amount) / SATOSHIS_IN_BITCOIN
+            bitcoins = float(amount) / constants.SATOSHIS_IN_BITCOIN
             bitcoins = round(bitcoins, 4)
             self.market.pages[sin]['reputation_pledge'] = bitcoins
             self.send_to_client(
-                None, {'type': 'reputation_pledge_update', 'value': bitcoins}
+                None, {
+                    'type': 'reputation_pledge_update',
+                    'value': bitcoins,
+                    'v': constants.VERSION
+                }
             )
 
         trust.get_global(
@@ -142,12 +159,141 @@ class ProtocolHandler(object):
             lambda amount, page=page: reputation_pledge_retrieved(amount, page)
         )
 
+    def client_refresh_settings(self, socket_handler, msg):
+        self.log.debug('Refreshing user settings')
+        self.send_opening()
+
+    def client_refund_recipient(self, socket_handler, msg):
+        self.log.debug('Refunding recipient: %s', msg)
+        self.refund_recipient(msg.get('recipientId'), msg.get('orderId'))
+
+    def refund_recipient(self, recipient_id, order_id):
+        # Get Order
+        order = self.market.orders.get_order(order_id)
+
+        contract = order['signed_contract_body']
+
+        # Find Seller Data in Contract
+        offer_data = ''.join(contract.split('\n')[8:])
+        index_of_seller_signature = offer_data.find(
+            '- - -----BEGIN PGP SIGNATURE-----', 0, len(offer_data)
+        )
+        offer_data_json = offer_data[:index_of_seller_signature]
+        offer_data_json = json.loads(offer_data_json)
+        self.log.info('Offer Data: %s', offer_data_json)
+
+        # Find Buyer Data in Contract
+        bid_data_index = offer_data.find(
+            '"Buyer"', index_of_seller_signature, len(offer_data)
+        )
+        end_of_bid_index = offer_data.find(
+            '- -----BEGIN PGP SIGNATURE', bid_data_index, len(offer_data)
+        )
+        bid_data_json = "{"
+        bid_data_json += offer_data[bid_data_index:end_of_bid_index]
+        bid_data_json = json.loads(bid_data_json)
+
+        # Find Notary Data in Contract
+        notary_data_index = offer_data.find(
+            '"Notary"', end_of_bid_index, len(offer_data)
+        )
+        end_of_notary_index = offer_data.find(
+            '-----BEGIN PGP SIGNATURE', notary_data_index, len(offer_data)
+        )
+        notary_data_json = "{"
+        notary_data_json += offer_data[notary_data_index:end_of_notary_index]
+        notary_data_json = json.loads(notary_data_json)
+
+        try:
+            client = obelisk.ObeliskOfLightClient(
+                'tcp://%s' % self.transport.settings['obelisk']
+            )
+
+            seller = offer_data_json['Seller']
+            buyer = bid_data_json['Buyer']
+            notary = notary_data_json['Notary']
+
+            pubkeys = [
+                seller['seller_BTC_uncompressed_pubkey'],
+                buyer['buyer_BTC_uncompressed_pubkey'],
+                notary['notary_BTC_uncompressed_pubkey']
+            ]
+
+            script = mk_multisig_script(pubkeys, 2, 3)
+            multi_address = scriptaddr(script)
+
+            def get_history_callback(escrow, history, order):
+
+                private_key = self.get_signing_key(order_id)
+
+                if escrow is not None:
+                    self.log.error("Error fetching history: %s", escrow)
+                    # TODO: Send error message to GUI
+                    return
+
+                # Create unsigned transaction
+                unspent = [row[:4] for row in history if row[4] is None]
+
+                # Send all unspent outputs (everything in the address) minus
+                # the fee
+                total_amount = 0
+                inputs = []
+                for row in unspent:
+                    assert len(row) == 4, 'Obelisk returned a wonky row'
+                    inputs.append("%s:%s" % (row[0].encode('hex'), row[1]))
+                    value = row[3]
+                    total_amount += value
+
+                # Constrain fee so we don't get negative amount to send
+                network_fee = min(total_amount, 10000)
+                send_amount = total_amount - network_fee
+
+                # Notary Fee (% of post-network fee amount)
+                notary_fee = int((float(notary['notary_fee'])/100) * send_amount)
+                notary_address = notary.get('notary_refund_addr')
+
+                # Amount to Refund to User(s)
+                refund_amount = max(send_amount-notary_fee, 0)
+
+                self.log.debug('Notary Fee: %s satoshis', notary_fee)
+                self.log.debug('Recipient Will Get: %s satoshis', refund_amount)
+
+                if recipient_id == 1:
+                    recipient_guid = buyer.get('buyer_GUID')
+                    recipient_address = buyer.get('buyer_refund_addr')
+                else:
+                    recipient_guid = seller.get('seller_GUID')
+                    recipient_address = seller.get('seller_refund_addr')
+
+                transaction = mktx(inputs, [
+                    "%s:%s" % (recipient_address, refund_amount),
+                    "%s:%s" % (notary_address, notary_fee)
+                ])
+
+                signatures = [multisign(transaction, x, script, private_key)
+                              for x in range(len(inputs))]
+
+                self.market.release_funds_to_recipient(
+                    buyer['buyer_order_id'], transaction, script, signatures,
+                    recipient_guid, buyer.get('buyer_GUID'), refund=recipient_id
+                )
+
+            def get_history():
+                client.fetch_history(
+                    multi_address,
+                    lambda escrow, history, order=order: get_history_callback(escrow, history, order))
+
+            reactor.callFromThread(get_history)
+
+        except Exception as exc:
+            self.log.error('%s', exc)
+
     def send_opening(self):
         peers = self.get_peers()
 
-        countryCodes = []
+        country_codes = []
         for country in pycountry.countries:
-            countryCodes.append({"code": country.alpha2, "name": country.name})
+            country_codes.append({"code": country.alpha2, "name": country.name})
 
         settings = self.market.get_settings()
 
@@ -157,30 +303,32 @@ class ProtocolHandler(object):
             'peers': peers,
             'settings': settings,
             'guid': self.transport.guid,
-            'sin': self.transport.sin,
-            'uri': self.transport.uri,
-            'countryCodes': countryCodes,
+            # 'sin': self.transport.sin,
+            # 'uri': self.transport.uri,
+            'countryCodes': country_codes,
+            'v': constants.VERSION
         }
 
         self.send_to_client(None, message)
 
-        burnAddr = trust.burnaddr_from_guid(self.transport.guid)
+        burn_addr = trust.burnaddr_from_guid(self.transport.guid)
 
         def found_unspent(amount):
             self.send_to_client(None, {
                 'type': 'burn_info_available',
                 'amount': amount,
-                'addr': burnAddr
+                'addr': burn_addr,
+                'v': constants.VERSION
             })
 
-        trust.get_unspent(burnAddr, found_unspent)
+        trust.get_unspent(burn_addr, found_unspent)
 
     def client_read_log(self, socket_handler, msg):
         self.market.p = subprocess.Popen(
             ["tail", "-f", "logs/development.log", "logs/production.log"],
             stdout=subprocess.PIPE)
 
-        self.stream = tornado.iostream.PipeIOStream(
+        self.stream = iostream.PipeIOStream(
             self.market.p.stdout.fileno()
         )
         self.stream.read_until("\n", self.line_from_nettail)
@@ -194,7 +342,7 @@ class ProtocolHandler(object):
         return "contracts" in data
 
     def on_listing_results(self, msg):
-        self.log.debug('Found results %s', msg)
+        self.log.datadump('Found results %s', msg)
         self.send_to_client(None, {
             "type": "store_contracts",
             "products": msg['contracts']
@@ -215,7 +363,7 @@ class ProtocolHandler(object):
         return True
 
     def on_listing_result(self, msg):
-        self.log.debug('Found result %s', msg)
+        self.log.datadump('Found result %s', msg)
         self.send_to_client(None, {
             "type": "store_contract",
             "contract": msg
@@ -235,10 +383,10 @@ class ProtocolHandler(object):
     def client_add_guid(self, socket_handler, msg):
         self.log.info('Adding node by guid %s', msg)
 
-        def cb(msg):
+        def get_peers_callback(msg):
             self.get_peers()
 
-        self.transport.dht.iterativeFindNode(msg.get('guid'), cb)
+        self.transport.dht.iterative_find_node(msg.get('guid'), get_peers_callback)
 
     def client_remove_trusted_notary(self, socket_handler, msg):
         self.log.info('Removing trusted notary %s', msg)
@@ -255,11 +403,11 @@ class ProtocolHandler(object):
 
     def client_clear_dht_data(self, socket_handler, msg):
         self.log.debug('Clearing DHT Data')
-        self.db.deleteEntries("datastore")
+        self.db_connection.delete_entries("datastore")
 
     def client_clear_peers_data(self, socket_handler, msg):
         self.log.debug('Clearing Peers Data')
-        self.db.deleteEntries("peers")
+        self.db_connection.delete_entries("peers")
 
     # Requests coming from the client
     def client_connect(self, socket_handler, msg):
@@ -279,12 +427,13 @@ class ProtocolHandler(object):
 
     def client_check_order_count(self, socket_handler, msg):
         self.log.debug('Checking order count')
-        orders = self.db.selectEntries(
+        orders = self.db_connection.select_entries(
             "orders",
             {
                 "market_id": self.transport.market_id,
                 "state": "Waiting for Payment"
-            }
+            },
+            select_fields="order_id"
         )
 
         self.send_to_client(
@@ -292,12 +441,17 @@ class ProtocolHandler(object):
             {"type": "order_count", "count": len(orders)}
         )
 
+    def client_check_inbox_count(self, socket_handler, msg):
+        self.log.debug('Checking inbox count')
+        self.market.check_inbox_count()
+
     def refresh_peers(self):
         self.log.info("Peers command")
         self.send_to_client(None, {"type": "peers", "peers": self.get_peers()})
 
     def client_query_page(self, socket_handler, msg):
-        findGUID = msg['findGUID']
+        find_guid = msg['findGUID']
+        self.log.info('Looking for Store: %s', find_guid)
 
         query_id = random.randint(0, 1000000)
         self.timeouts.append(query_id)
@@ -306,7 +460,7 @@ class ProtocolHandler(object):
             self.log.info('Received a query page response: %s', query_id)
 
         self.market.query_page(
-            findGUID,
+            find_guid,
             lambda msg, query_id=query_id: cb(msg, query_id)
         )
 
@@ -367,8 +521,39 @@ class ProtocolHandler(object):
         # Send message with market's bitmessage
         self.market.send_message(msg)
 
-    def client_republish_contracts(self, socket_handler, msg):
+    def client_send_inbox_message(self, socket_handler, msg):
 
+        self.log.info("Sending internal message")
+        self.market.send_inbox_message(msg)
+
+    def client_get_inbox_messages(self, socket_handler, msg):
+
+        self.log.info("Getting inbox messages")
+        messages = self.market.get_inbox_messages()
+        self.send_to_client(None, {"type": "inbox_messages", "messages": messages})
+
+    def client_get_inbox_sent_messages(self, socket_handler, msg):
+
+        self.log.info("Getting inbox sent messages")
+        messages = self.market.get_inbox_sent_messages()
+        self.send_to_client(None, {"type": "inbox_sent_messages", "messages": messages})
+
+    def client_get_btc_ticker(self, socket_handler, msg):
+        self.log.info('Get BTC Ticker')
+        url = 'https://blockchain.info/ticker'
+
+        def get_ticker():
+            usock = urllib2.urlopen(url)
+            data = usock.read()
+            usock.close()
+            self.send_to_client(None, {
+                'type': 'btc_ticker',
+                'data': data
+            })
+
+        threading.Thread(target=get_ticker).start()
+
+    def client_republish_contracts(self, socket_handler, msg):
         self.log.info("Republishing contracts")
         self.market.republish_contracts()
 
@@ -390,8 +575,14 @@ class ProtocolHandler(object):
         self.market.save_settings(msg['settings'])
 
     def client_create_contract(self, socket_handler, contract):
-        self.log.info("New Contract: %s", contract)
+        self.log.datadump('New Contract: %s', contract)
         self.market.save_contract(contract)
+
+    def client_update_contract(self, socket_handler, msg):
+        contract_id = msg.get('contract_id')
+        contract = msg.get('contract')
+        self.log.datadump('New Contract: %s', contract)
+        self.market.save_contract(contract, contract_id)
 
     def client_remove_contract(self, socket_handler, msg):
         self.log.info("Remove contract: %s", msg)
@@ -459,7 +650,7 @@ class ProtocolHandler(object):
 
         try:
             client = obelisk.ObeliskOfLightClient(
-                'tcp://obelisk.coinkite.com:9091'
+                'tcp://%s' % self.transport.settings['obelisk']
             )
 
             seller = offer_data_json['Seller']
@@ -475,13 +666,12 @@ class ProtocolHandler(object):
             script = mk_multisig_script(pubkeys, 2, 3)
             multi_address = scriptaddr(script)
 
-            def cb(ec, history, order):
+            def get_history_callback(escrow, history, order):
 
-                settings = self.market.get_settings()
-                private_key = settings.get('privkey')
+                private_key = self.get_signing_key(msg['orderId'])
 
-                if ec is not None:
-                    self.log.error("Error fetching history: %s", ec)
+                if escrow is not None:
+                    self.log.error("Error fetching history: %s", escrow)
                     # TODO: Send error message to GUI
                     return
 
@@ -503,28 +693,71 @@ class ProtocolHandler(object):
                 send_amount = total_amount - fee
 
                 payment_output = order['payment_address']
-                tx = mktx(inputs, ["%s:%s" % (payment_output, send_amount)])
+                transaction = mktx(inputs, ["%s:%s" % (payment_output, send_amount)])
 
-                signatures = [multisign(tx, x, script, private_key)
+                signatures = [multisign(transaction, x, script, private_key)
                               for x in range(len(inputs))]
 
-                self.market.release_funds_to_merchant(
-                    buyer['buyer_order_id'], tx, script, signatures,
+                self.market.release_funds_to_recipient(
+                    buyer['buyer_order_id'], transaction, script, signatures,
                     order.get('merchant')
                 )
 
             def get_history():
                 client.fetch_history(
                     multi_address,
-                    lambda ec, history, order=order: cb(ec, history, order))
+                    lambda escrow, history, order=order: get_history_callback(escrow, history, order))
 
             reactor.callFromThread(get_history)
 
-        except Exception as e:
-            self.log.error('%s', e)
+        except Exception as exc:
+            self.log.error('%s', exc)
+
+    def get_signing_key(self, order_id):
+        # Get BIP32 child signing key for this order id
+        rows = self.db_connection.select_entries("keystore", {
+            'order_id': order_id
+        })
+
+        if len(rows):
+            key_id = rows[0]['id']
+
+            settings = self.transport.settings
+
+            wallet = bitcoin.bip32_ckd(bitcoin.bip32_master_key(settings.get('bip32_seed')), 1)
+            wallet_chain = bitcoin.bip32_ckd(wallet, 0)
+            bip32_identity_priv = bitcoin.bip32_ckd(wallet_chain, key_id)
+            # bip32_identity_pub = bitcoin.bip32_privtopub(bip32_identity_priv)
+            return bitcoin.encode_privkey(bitcoin.bip32_extract_key(bip32_identity_priv), 'wif')
+
+        else:
+            self.log.error('No keys found for that contract id: #%s', order_id)
+            return
+
+    def get_signing_key_by_contract_id(self, contract_id):
+        # Get BIP32 child signing key for this order id
+        rows = self.db_connection.select_entries("keystore", {
+            'contract_id': contract_id
+        })
+
+        if len(rows):
+            key_id = rows[0]['id']
+
+            settings = self.transport.settings
+
+            wallet = bitcoin.bip32_ckd(bitcoin.bip32_master_key(settings.get('bip32_seed')), 1)
+            wallet_chain = bitcoin.bip32_ckd(wallet, 0)
+            bip32_identity_priv = bitcoin.bip32_ckd(wallet_chain, key_id)
+            # bip32_identity_pub = bitcoin.bip32_privtopub(bip32_identity_priv)
+            return bitcoin.encode_privkey(bitcoin.bip32_extract_key(bip32_identity_priv), 'wif')
+
+        else:
+            self.log.error('No keys found for that contract id: #%s', contract_id)
+            return
 
     def client_release_payment(self, socket_handler, msg):
         self.log.info('Releasing payment to Merchant %s', msg)
+        self.log.info('Using Obelisk at tcp://%s', self.transport.settings['obelisk'])
 
         order = self.market.orders.get_order(msg['orderId'])
         contract = order['signed_contract_body']
@@ -563,7 +796,7 @@ class ProtocolHandler(object):
 
         try:
             client = obelisk.ObeliskOfLightClient(
-                'tcp://obelisk.coinkite.com:9091'
+                'tcp://%s' % self.transport.settings['obelisk']
             )
 
             seller = offer_data_json['Seller']
@@ -575,21 +808,24 @@ class ProtocolHandler(object):
                 buyer['buyer_BTC_uncompressed_pubkey'],
                 notary['notary_BTC_uncompressed_pubkey']
             ]
+            self.log.debug('Pubkeys: %s', pubkeys)
 
             script = mk_multisig_script(pubkeys, 2, 3)
             multi_address = scriptaddr(script)
 
-            def cb(ec, history, order):
-                settings = self.market.get_settings()
-                private_key = settings.get('privkey')
+            def get_history_callback(escrow, history, order):
 
-                if ec is not None:
-                    self.log.error("Error fetching history: %s", ec)
+                private_key = self.get_signing_key(msg['orderId'])
+                self.log.debug('private key %s', msg)
+
+                if escrow is not None:
+                    self.log.error("Error fetching history: %s", escrow)
                     # TODO: Send error message to GUI
                     return
 
                 # Create unsigned transaction
                 unspent = [row[:4] for row in history if row[4] is None]
+                self.log.debug('Unspent Inputs: %s', unspent)
 
                 # Send all unspent outputs (everything in the address) minus
                 # the fee
@@ -607,45 +843,87 @@ class ProtocolHandler(object):
                 fee = min(total_amount, 10000)
                 send_amount = total_amount - fee
 
-                payment_output = order['payment_address']
-                tx = mktx(
-                    inputs, [str(payment_output) + ":" + str(send_amount)]
-                )
+                if send_amount == 0:
+                    self.log.debug('No money in this address any longer.')
+                    return
 
-                signatures = []
+                self.log.debug('Total amount to release to merchant: %s ', send_amount)
+
+                # Get buyer signatures on inputs
+                buyer_signatures = []
+                self.log.debug('merchant tx %s, merchant script: %s', order['merchant_tx'],
+                               order['merchant_script'])
                 for x in range(0, len(inputs)):
-                    ms = multisign(tx, x, script, private_key)
-                    signatures.append(ms)
+                    ms = multisign(order['merchant_tx'], x, order['merchant_script'], private_key)
+                    buyer_signatures.append(ms)
 
-                print signatures
+                merchant_sigs = order['merchant_sigs']
+                merchant_sigs = merchant_sigs.encode('ascii')
+                merchant_sigs = json.loads(merchant_sigs)
 
-                self.market.release_funds_to_merchant(
-                    buyer['buyer_order_id'],
-                    tx, script, signatures,
-                    order.get('merchant')
-                )
+                # Apply signatures to mulsignature tx script
+                self.log.debug('TX: %s', order)
+                self.log.debug('Buyer Sigs: %s', buyer_signatures)
+                self.log.debug('Merchant Sigs: %s', order['merchant_sigs'])
+                self.log.debug('Script: %s', script)
+
+                transaction = order['merchant_tx']
+
+                for x in range(0, len(inputs)):
+                    transaction = apply_multisignatures(
+                        transaction, x, order['merchant_script'], merchant_sigs[x], buyer_signatures[x]
+                    )
+
+                self.log.debug('Broadcast TX to network: %s', transaction)
+                result = bitcoin.pushtx(transaction)
+                self.log.debug('BCI result: %s', result)
+
+                if result == 'Transaction Submitted':
+
+                    # Update database
+                    self.db_connection.update_entries("orders", {
+                        'state': 'Completed'
+                    }, {
+                        'order_id': msg['orderId']
+                    })
+
 
             def get_history():
+                self.log.debug('Getting history')
+
                 client.fetch_history(
                     multi_address,
-                    lambda ec, history, order=order: cb(ec, history, order)
+                    lambda escrow, history, order=order: get_history_callback(escrow, history, order)
                 )
 
             reactor.callFromThread(get_history)
 
-        except Exception as e:
-            self.log.error('%s', e)
+        except Exception as exc:
+            self.log.error('%s', exc)
 
     def validate_on_release_funds_tx(self, *data):
-        self.log.debug('Validating on release funds tx message.')
-        keys = ("senderGUID", "buyer_order_id", "script", "tx")
-        return all(k in data for k in keys)
+        self.log.debug('Validating on release funds tx message. %s', data)
+        return True
 
     def on_release_funds_tx(self, msg):
-        self.log.info('Receiving signed tx from buyer')
 
-        buyer_order_id = "%s-%s" % (msg['senderGUID'], msg['buyer_order_id'])
-        order = self.market.orders.get_order(buyer_order_id, by_buyer_id=True)
+        self.log.info('Receiving signed tx from buyer %s', msg)
+
+        recipient_id = int(msg.get('refund'))
+
+        if recipient_id == 0 or recipient_id == 2:
+            buyer_order_id = "%s-%s" % (msg.get('buyer_id'), msg.get('buyer_order_id'))
+
+            if recipient_id == 2:
+                order = self.market.orders.get_order(buyer_order_id, by_buyer_id=True)
+            else:
+                order = self.market.orders.get_order(buyer_order_id, by_buyer_id=True)
+                signing_key = self.get_signing_key(order.get('order_id'))
+
+        else:
+            order = self.market.orders.get_order(msg.get('buyer_order_id'))
+            signing_key = self.get_signing_key(order.get('order_id'))
+
         contract = order['signed_contract_body']
 
         # Find Seller Data in Contract
@@ -657,6 +935,9 @@ class ProtocolHandler(object):
         offer_data_json = json.loads(offer_data_json)
         self.log.info('Offer Data: %s', offer_data_json)
 
+        if recipient_id == 2:
+            signing_key = self.get_signing_key_by_contract_id(offer_data_json['Seller']['seller_contract_id'])
+
         # Find Buyer Data in Contract
         bid_data_index = offer_data.find(
             '"Buyer"', index_of_seller_signature, len(offer_data)
@@ -664,9 +945,6 @@ class ProtocolHandler(object):
         end_of_bid_index = offer_data.find(
             '- -----BEGIN PGP SIGNATURE', bid_data_index, len(offer_data)
         )
-        bid_data_json = "{"
-        bid_data_json += offer_data[bid_data_index:end_of_bid_index]
-        bid_data_json = json.loads(bid_data_json)
 
         # Find Notary Data in Contract
         notary_data_index = offer_data.find(
@@ -682,16 +960,18 @@ class ProtocolHandler(object):
 
         try:
             client = obelisk.ObeliskOfLightClient(
-                'tcp://obelisk.coinkite.com:9091'
+                'tcp://%s' % self.transport.settings['obelisk']
             )
 
             script = msg['script']
-            tx = msg['tx']
             multi_addr = scriptaddr(script)
 
-            def cb(ec, history, order):
-                if ec is not None:
-                    self.log.error("Error fetching history: %s", ec)
+            def get_history_callback(escrow, history, order):
+
+                transaction = msg['tx']
+
+                if escrow is not None:
+                    self.log.error("Error fetching history: %s", escrow)
                     # TODO: Send error message to GUI
                     return
 
@@ -707,20 +987,21 @@ class ProtocolHandler(object):
                     )
 
                 seller_signatures = []
-                print 'private key ', self.transport.settings['privkey']
-                for x in range(0, len(inputs)):
-                    ms = multisign(
-                        tx, x, script, self.transport.settings['privkey']
+
+                for inpt in range(0, len(inputs)):
+                    mltsgn = multisign(
+                        transaction, inpt, script, signing_key
                     )
-                    print 'seller sig', ms
-                    seller_signatures.append(ms)
+                    print 'seller sig', mltsgn
+                    seller_signatures.append(mltsgn)
 
-                tx2 = apply_multisignatures(
-                    tx, 0, script, seller_signatures[0], msg['signatures'][0]
-                )
+                for x in range(0, len(inputs)):
+                    transaction = apply_multisignatures(
+                        transaction, x, script, seller_signatures[x], msg['signatures'][x]
+                    )
 
-                print 'FINAL SCRIPT: %s' % tx2
-                print 'Sent', eligius_pushtx(tx2)
+                print 'FINAL SCRIPT: %s' % transaction
+                print 'Sent', bitcoin.pushtx(transaction)
 
                 self.send_to_client(
                     None,
@@ -733,13 +1014,13 @@ class ProtocolHandler(object):
             def get_history():
                 client.fetch_history(
                     multi_addr,
-                    lambda ec, history, order=order: cb(ec, history, order)
+                    lambda escrow, history, order=order: get_history_callback(escrow, history, order)
                 )
 
             reactor.callFromThread(get_history)
 
-        except Exception as e:
-            self.log.error('%s', e)
+        except Exception as exc:
+            self.log.error('%s', exc)
 
     def client_generate_secret(self, socket_handler, msg):
         self.transport._generate_new_keypair()
@@ -759,7 +1040,7 @@ class ProtocolHandler(object):
     def client_search(self, socket_handler, msg):
 
         self.log.info("[Search] %s", msg)
-        self.transport.dht.iterativeFindValue(
+        self.transport.dht.iterative_find_value(
             msg['key'], callback=self.on_node_search_value
         )
 
@@ -768,7 +1049,6 @@ class ProtocolHandler(object):
         self.log.info("Querying for Contracts %s", msg)
 
         self.transport.dht.find_listings_by_keyword(
-            self.transport,
             msg['key'].upper(),
             callback=self.on_find_products
         )
@@ -777,7 +1057,6 @@ class ProtocolHandler(object):
         self.log.info("Searching network for contracts")
 
         self.transport.dht.find_listings(
-            self.transport,
             msg['key'],
             callback=self.on_find_products_by_store
         )
@@ -795,16 +1074,20 @@ class ProtocolHandler(object):
         def on_backup_done(backupPath):
             self.log.info('Backup successfully created at %s', backupPath)
             self.send_to_client(None,
-                                {'type': 'create_backup_result',
-                                 'result': 'success',
-                                 'detail': backupPath})
+                                {
+                                    'type': 'create_backup_result',
+                                    'result': 'success',
+                                    'detail': backupPath,
+                                    'v': constants.VERSION
+                                })
 
         def on_backup_error(error):
             self.log.info('Backup error: %s', error.strerror)
             self.send_to_client(None,
                                 {'type': 'create_backup_result',
                                  'result': 'failure',
-                                 'detail': error.strerror})
+                                 'detail': error.strerror,
+                                 'v': constants.VERSION})
 
         BackupTool.backup(BackupTool.get_installation_path(),
                           BackupTool.get_backup_path(),
@@ -819,28 +1102,37 @@ class ProtocolHandler(object):
                            Backup.get_backups(BackupTool.get_backup_path())]
                 self.send_to_client(None, {'type': 'on_get_backups_response',
                                            'result': 'success',
-                                           'backups': backups
-                                           })
+                                           'backups': backups,
+                                           'v': constants.VERSION})
             except Exception:
                 self.send_to_client(None, {'type': 'on_get_backups_response',
-                                           'result': 'failure'})
+                                           'result': 'failure',
+                                           'v': constants.VERSION})
 
     def on_find_products_by_store(self, results):
+        """Results should come in as a dictionary like:
+        { u'listings': [{
+            u'guid': u'18b3a8bc360fa4dd3350559c4f278fb183375d16',
+            u'key': u'381ee35104d10f6249d225114f38152685d43798'
+        }]}"""
 
-        self.log.info('Found Contracts: %s', type(results))
-        self.log.info(results)
+        # TODO: Needs investigation but don't think this is currently used
+        self.log.debug('Found Contracts: %s', type(results))
+        self.log.debug(results)
 
-        if len(results) > 0 and type(results['data']) == unicode:
+        # if type(results) is not 'dict':
+        #     self.log.error('Legacy node returned list of close nodes.')
+        #     return
+
+        if results.get('data') and isinstance(results['data'], unicode):
             results = json.loads(results[0])
-
-        self.log.info(results)
 
         if 'type' not in results:
             return
         else:
             self.log.debug('Results: %s', results['contracts'])
 
-        if len(results) > 0 and 'data' in results:
+        if results and 'data' in results:
 
             data = results['data']
             contracts = data['contracts']
@@ -849,7 +1141,7 @@ class ProtocolHandler(object):
 
             # Go get listing metadata and then send it to the GUI
             for contract in contracts:
-                self.transport.dht.iterativeFindValue(
+                self.transport.dht.iterative_find_value(
                     contract,
                     callback=lambda msg, key=contract: (
                         self.on_node_search_value(msg, key)
@@ -861,7 +1153,7 @@ class ProtocolHandler(object):
         self.log.info('Found Contracts: %s', type(results))
         self.log.info(results)
 
-        if len(results):
+        if results:
             if 'listings' in results:
                 # TODO: Validate signature of listings matches data
 
@@ -870,18 +1162,30 @@ class ProtocolHandler(object):
                     self.log.debug('Results contract %s', contract)
                     key = contract.get('key', contract)
 
-                    self.transport.dht.iterativeFindValue(
-                        key,
-                        callback=lambda msg, key=key: (
-                            self.on_global_search_value(msg, key)
-                        )
+                    self.transport.send(
+                        {
+                            'type': 'query_listing',
+                            'v': constants.VERSION,
+                            'listing_id': key,
+                            'senderGUID': self.transport.guid
+                        },
+                        contract.get('guid')
                     )
 
+                    # TODO: Find listings on DHT when they're published there
+                    # self.transport.dht.iterative_find_value(
+                    #     key,
+                    #     callback=lambda msg, key=key: (
+                    #         self.on_global_search_value(msg, key)
+                    #     )
+                    # )
+
     def client_shout(self, socket_handler, msg):
-        msg['uri'] = self.transport.uri
+        #msg['uri'] = self.transport.uri
         msg['pubkey'] = self.transport.pubkey
         msg['senderGUID'] = self.transport.guid
         msg['senderNick'] = self.transport.nickname
+        msg['avatar_url'] = self.transport.avatar_url
         self.transport.send(protocol.shout(msg))
 
     def on_node_search_value(self, results, key):
@@ -906,8 +1210,7 @@ class ProtocolHandler(object):
 
             gpg.import_keys(seller_pubkey)
 
-            v = gpg.verify(results)
-            if v:
+            if gpg.verify(results):
                 self.send_to_client(None, {
                     "type": "new_listing",
                     "data": contract_data_json,
@@ -924,7 +1227,7 @@ class ProtocolHandler(object):
     def on_global_search_value(self, results, key):
 
         self.log.info('global search: %s %s', results, key)
-        if results and type(results) is not list:
+        if results and not isinstance(results, list):
             self.log.debug('Listing Data: %s %s', results, key)
 
             # Import gpg pubkey
@@ -948,8 +1251,7 @@ class ProtocolHandler(object):
 
                 gpg.import_keys(seller_pubkey)
 
-                v = gpg.verify(results)
-                if v:
+                if gpg.verify(results):
 
                     seller = contract_data_json.get('Seller')
                     contract_guid = seller.get('seller_GUID')
@@ -957,8 +1259,8 @@ class ProtocolHandler(object):
                     if contract_guid == self.transport.guid:
                         nickname = self.transport.nickname
                     else:
-                        routing_table = self.transport.dht.routingTable
-                        peer = routing_table.getContact(contract_guid)
+                        routing_table = self.transport.dht.routing_table
+                        peer = routing_table.get_contact(contract_guid)
                         nickname = peer.nickname if peer is not None else ""
 
                     self.send_to_client(None, {
@@ -998,13 +1300,11 @@ class ProtocolHandler(object):
         self.log.info("Add peer: %s", peer)
 
         response = {'type': 'peer',
-                    'pubkey': peer.pub
-                    if peer.pub
-                    else 'unknown',
-                    'guid': peer.guid
-                    if peer.guid
-                    else '',
-                    'uri': peer.address}
+                    'pubkey': peer.pub if peer.pub else 'unknown',
+                    'guid': peer.guid if peer.guid else '',
+                    'uri': peer.address,
+                    'v': constants.VERSION}
+
         self.send_to_client(None, response)
 
     def validate_on_peer_remove(self, *data):
@@ -1029,12 +1329,15 @@ class ProtocolHandler(object):
         first = args[0]
         if isinstance(first, dict):
             self.send_to_client(None, first)
+            peer = self.transport.dht.routing_table.get_contact(first.get('senderGUID'))
+            if peer:
+                peer.reachable = True
         else:
             self.log.info("can't format")
 
     # send a message
     def send_to_client(self, error, result):
-        assert error is None or type(error) == str
+        assert error is None or isinstance(error, str)
         response = {
             "id": random.randint(0, 1000000),
             "result": result
@@ -1055,30 +1358,47 @@ class ProtocolHandler(object):
             return False
         params = request["params"]
         # Create callback handler to write response to the socket.
-        self.log.debug('found a handler!')
+        self.log.debugv('found a handler!')
         self._handlers[command](socket_handler, params)
         return True
 
     def get_peers(self):
         peers = []
+        reachable_count = 0
 
-        for peer in self.transport.dht.activePeers:
+        for peer in self.transport.dht.active_peers:
 
-            if hasattr(peer, 'address'):
-                peer_item = {'uri': peer.address}
+            if peer.last_reached < time.time()-30:
+                peer.reachable = False
+            else:
+                peer.reachable = True
+                reachable_count += 1
+
+            if hasattr(peer, 'hostname') and peer.guid:
+                peer_item = {
+                    'hostname': peer.hostname,
+                    'port': peer.port
+                }
                 if peer.pub:
                     peer_item['pubkey'] = peer.pub
                 else:
                     peer_item['pubkey'] = 'unknown'
 
                 peer_item['guid'] = peer.guid
-                if peer.guid:
+                if peer.guid and peer.guid[:4] != 'seed':
                     peer_item['sin'] = obelisk.EncodeBase58Check(
                         '\x0F\x02%s' + peer.guid.decode('hex')
                     )
                 peer_item['nick'] = peer.nickname
-                self.log.debug('Peer Nick %s', peer)
+                peer_item['reachable'] = peer.reachable
+                peer_item['avatar_url'] = peer.avatar_url
+                peer_item['last_seen'] = int(time.time()-peer.last_reached)
+
+                # self.log.debug('Peer: %s', peer)
                 peers.append(peer_item)
+
+        if reachable_count == 0:
+            self.transport.join_network()
 
         return peers
 
@@ -1089,7 +1409,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     # Protects listeners
     listen_lock = threading.Lock()
 
-    def initialize(self, transport, market_application, db):
+    def initialize(self, transport, market_application, db_connection):
         # pylint: disable=arguments-differ
         # FIXME: Arguments shouldn't differ.
         self.loop = tornado.ioloop.IOLoop.instance()
@@ -1101,7 +1421,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             transport,
             self.market_application,
             self,
-            db,
+            db_connection,
             self.loop
         )
         self.transport = transport
@@ -1132,10 +1452,10 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     @staticmethod
     def _check_request(request):
         return "command" in request and "id" in request and \
-               "params" in request and type(request["params"]) == dict
+               "params" in request and isinstance(request["params"], dict)
 
     def on_message(self, message):
-        self.log.info('[On Message]: %s', message)
+        self.log.datadump('Received message: %s', message)
         try:
             request = json.loads(message)
         except Exception:
@@ -1161,3 +1481,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             self.loop.current().add_callback(send_response)
         except Exception:
             logging.error("Error adding callback", exc_info=True)
+
+    # overwrite tornado.websocket.WebSocketHandler's check_origin
+    # https://github.com/tornadoweb/tornado/blob/master/tornado/websocket.py#L311
+    def check_origin(self, origin):
+        return True

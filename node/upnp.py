@@ -50,8 +50,8 @@ class PortMapper(object):
         try:
             self.upnp.selectigd()
             self.UPNP_DEVICE_AVAILABLE = True
-        except Exception as e:
-            print 'Exception :', e
+        except Exception as exc:
+            print 'Exception :', exc
             self.UPNP_DEVICE_AVAILABLE = False
             return
 
@@ -144,20 +144,20 @@ class PortMapper(object):
         if self.UPNP_DEVICE_AVAILABLE:
             i = 0
             while True:
-                p = self.upnp.getgenericportmapping(i)
-                if p is None:
+                port_mapping = self.upnp.getgenericportmapping(i)
+                if port_mapping is None:
                     break
-                port, proto, (ihost, iport), desc, c, d, e = p
-                mapping = PortMappingEntry(port, proto, ihost, iport, desc, e)
+                port, proto, (ihost, iport), desc, cxx, dxx, exx = port_mapping
+                mapping = PortMappingEntry(port, proto, ihost, iport, desc, exx)
                 self.debug(
                     "port:", port,
                     desc, ihost,
                     "iport:", iport,
-                    "c", c,
-                    "d", d,
-                    "e", e
+                    "c", cxx,
+                    "d", dxx,
+                    "e", exx
                 )
-                i = i + 1
+                i += 1
                 mappings.append(mapping)
 
         return mappings
@@ -166,12 +166,12 @@ class PortMapper(object):
         """Delete previous OpenBazaar UPnP Port mappings if found."""
         if self.UPNP_DEVICE_AVAILABLE:
             mappings = self.get_mapping_list()
-            for m in mappings:
-                if m.description.startswith(PortMapper.OPEN_BAZAAR_DESCRIPTION) \
-                   and m.port == port:
-                    self.debug('delete_port_mapping -> Found:', str(m))
+            for mapping in mappings:
+                if mapping.description.startswith(PortMapper.OPEN_BAZAAR_DESCRIPTION) \
+                   and mapping.port == port:
+                    self.debug('delete_port_mapping -> Found:', str(mapping))
                     try:
-                        self.delete_port_mapping(m.port, m.protocol)
+                        self.delete_port_mapping(mapping.port, mapping.protocol)
                     except Exception:
                         pass
 

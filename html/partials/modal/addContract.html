@@ -4,13 +4,12 @@
 
 <div class="modal-body"  style="text-align:left;">
 
-    <ul class="nav nav-pills">
-      <li class="active"><a href="#" onclick="$(this).parent().addClass('active');$(this).parent().siblings().removeClass('active');$('#add-product-fixed').show();$('#add-product-fixed').siblings().hide();return false;">Fixed Price</a></li>
-      <!--<li><a href="#" onclick="$(this).parent().addClass('active');$(this).parent().siblings().removeClass('active');$('#add-product-auction').show();$('#add-product-auction').siblings().hide();return false;">Auction</a></li>-->
-      <li><a href="#" onclick="$(this).parent().addClass('active');$(this).parent().siblings().removeClass('active');$('#add-product-import').show();$('#add-product-import').siblings().hide();return false;">Import Contract</a></li>
-    </ul>
+    <!--<ul class="nav nav-pills">-->
+      <!--<li class="active"><a href="#" onclick="$(this).parent().addClass('active');$(this).parent().siblings().removeClass('active');$('#add-product-fixed').show();$('#add-product-fixed').siblings().hide();return false;">Fixed Price</a></li>-->
+      <!--<li><a href="#" onclick="$(this).parent().addClass('active');$(this).parent().siblings().removeClass('active');$('#add-product-import').show();$('#add-product-import').siblings().hide();return false;">Import Contract</a></li>-->
+    <!--</ul>-->
 
-    <div style="margin-top: 10px;">
+    <div>
 
         <form novalidate role="form" id="newContractForm" name="newContractForm">
 
@@ -22,21 +21,10 @@
 
             <div id="add-product-fixed" class="col-sm-12" style="margin-top:20px">
 
-                <div class="alert alert-info">Fields in red are required.</div>
-
-
                     <div class="row">
-                        <div class="col-sm-3">
-                            <div class="fileinput fileinput-new" data-provides="fileinput">
-                                <div class="fileinput-preview thumbnail" data-trigger="fileinput" style="border:none;background-image:url('img/no-photo.png');background-size:150px 150px; background-repeat: no-repeat;background-position:center;width: 200px; height: 150px;"></div>
-                                <div class="text-center">
-                                    <span class="btn btn-info btn-file"><span class="fileinput-new">Select image</span><span class="fileinput-exists">Change</span><input type="file" id="inputProductImage" class="form-control" ng-model="contract.productImage" name="..."></span>
-                                    <a href="#" class="btn btn-info fileinput-exists" data-dismiss="fileinput">Remove</a>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="col-sm-9">
+
+                        <div class="col-sm-12">
 
                             <div class="form-group {{newContractForm.inputProductTitle.$invalid ? 'has-error' : ''}}">
                                 <label class="control-label" for="inputProductTitle">Product Name</label>
@@ -52,9 +40,9 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-sm-2">
+                        <div class="col-sm-3">
                             <div class="form-group {{newContractForm.inputProductPrice.$invalid ? 'has-error' : ''}}">
-                                <label class="control-label" for="inputProductPrice">Price (&#3647;)</label>
+                                <label class="control-label" for="inputProductPrice">Price (${{last_price_usd*contract.productPrice | number:2}} USD)</label>
                                 <!--<number-only-input input-value="contract.productPrice" input-name="inputProductPrice"/>-->
                                 <input required type="text" min="0" class="form-control" ng-model="contract.productPrice" id="inputProductPrice" name="inputProductPrice" placeholder="0.01"/>
                             </div>
@@ -67,11 +55,11 @@
                         </div>
                         <div class="col-sm-2">
                             <div class="form-group">
-                                <label for="inputProductQuantity">Quantity</label>
+                                <label for="inputProductQuantity"># Available</label>
                                 <input type="number" class="form-control" ng-model="contract.productQuantity" name="inputProductQuantity" id="inputProductQuantity" min="1" value="1"/>
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-sm-5">
                             <label for="inputProductCondition">Condition</label>
                             <select class="form-control" id="inputProductCondition" ng-model="contract.productCondition">
                               <option value="New" selected="selected">New</option>
@@ -87,13 +75,59 @@
                         </div>
                     </div>
 
+                    <h4>Additional Listing Data</h4>
 
-                    <div>
+                    <div style="background-color:#efefef;padding:5px;">
+
+                    <div role="tabpanel">
+
+                      <!-- Nav tabs -->
+                      <ul id="product-tabs" class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a data-taget="photos" aria-controls="home" role="tab" data-toggle="tab" href="#" onclick="$('#product-photos').show();$('#product-photos').siblings().hide();return false;">Photos</a></li>
+                        <li role="presentation"><a data-target="keywords" aria-controls="profile" role="tab" data-toggle="tab" href="#" onclick="$('#product-keywords').show();$('#product-keywords').siblings().hide();return false;">Keywords</a></li>
+                      </ul>
+
+                      <!-- Tab panes -->
+                      <div class="tab-content">
+                        <div role="tabpanel" class="product-tab-pane tab-pane active" id="product-photos">
+
+                            <div style="padding:10px;">
+                                <div class="form-group">
+                                    <label for="inputImageURL1">Image URL 1</label>
+                                    <input type="text" class="form-control" ng-model="contract.remoteImages[0]" id="inputImageURL1" name="inputImageURL1"/>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="inputImageURL2">Image URL 2</label>
+                                    <input type="text" class="form-control" ng-model="contract.remoteImages[1]" id="inputImageURL2" name="inputImageURL2"/>
+                                </div>
+                                <div class="form-group">
+                                    <label for="inputImageURL3">Image URL 3</label>
+                                    <input type="text" class="form-control" ng-model="contract.remoteImages[2]" id="inputImageURL3" name="inputImageURL3"/>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div role="tabpanel" class="product-tab-pane tab-pane" id="product-keywords">
+
+                        <div style="padding:10px;">
                         <div class="form-group">
+                            <div class="alert alert-info" style="margin-bottom:5px;">Keywords make your listings discoverable on the network.</div>
                             <label for="inputProductKeywords">Keywords</label>
                             <input type="text" class="form-control" ng-model="contract.productKeywords" id="inputProductKeywords" name="inputProductKeywords" placeholder="Comma separated keywords that describe the item. Used for searching."/>
                         </div>
+                            </div>
+
+                        </div>
+                      </div>
+
                     </div>
+
+
+</div>
+
+
+
 
 
 
@@ -117,10 +151,9 @@
 </div>
 
 <div class="modal-footer">
-    <button class="btn btn-default" ng-click="cancel()">Cancel</button>
+    <button class="btn btn-default" data-ng-click="cancel()">Cancel</button>
     <!--<button class="btn btn-primary" ng-click="saveProduct()">Save</button>-->
-    <button class="btn btn-primary {{!newContractForm.$valid ? 'disabled': ''}}" ng-click="createContract()">Save</button>
+    <button class="btn btn-primary {{!newContractForm.$valid ? 'disabled': ''}}" data-ng-click="saveContract()">Save</button>
 </div>
-
 
 

@@ -20,19 +20,6 @@ import obelisk
 # You will need 3 keys for buyer, seller and arbitrer
 
 
-def build_output_info_list(unspent_rows):
-    unspent_infos = []
-    for row in unspent_rows:
-        assert len(row) == 4
-        outpoint = obelisk.OutPoint()
-        outpoint.hash = row[0]
-        outpoint.index = row[1]
-        value = row[3]
-        unspent_infos.append(
-            obelisk.OutputInfo(outpoint, value))
-    return unspent_infos
-
-
 class Multisig(object):
     def __init__(self, client, number_required, pubkeys):
         if number_required > len(pubkeys):
@@ -69,14 +56,14 @@ class Multisig(object):
 
     def _fetched(self, history, destination, finished_cb):
         unspent = [row[:4] for row in history if row[4] is None]
-        tx = self._build_actual_tx(unspent, destination)
-        finished_cb(tx)
+        transaction = self._build_actual_tx(unspent, destination)
+        finished_cb(transaction)
 
     @staticmethod
     def _build_actual_tx(unspent, destination):
 
         # Send all unspent outputs (everything in the address) minus the fee
-        tx = obelisk.Transaction()
+        transaction = obelisk.Transaction()
         total_amount = 0
         for row in unspent:
             assert len(row) == 4
@@ -85,21 +72,21 @@ class Multisig(object):
             outpoint.index = row[1]
             value = row[3]
             total_amount += value
-            add_input(tx, outpoint)
+            add_input(transaction, outpoint)
 
         # Constrain fee so we don't get negative amount to send
         fee = min(total_amount, 10000)
         send_amount = total_amount - fee
-        add_output(tx, destination, send_amount)
-        return tx
+        add_output(transaction, destination, send_amount)
+        return transaction
 
-    def sign_all_inputs(self, tx, secret):
+    def sign_all_inputs(self, transaction, secret):
         signatures = []
         key = obelisk.EllipticCurveKey()
         key.set_secret(secret)
 
-        for i, _ in enumerate(tx.inputs):
-            sighash = generate_signature_hash(tx, i, self.script)
+        for i, _ in enumerate(transaction.inputs):
+            sighash = generate_signature_hash(transaction, i, self.script)
             # Add sighash::all to end of signature.
             signature = key.sign(sighash) + "\x01"
             signatures.append(signature.encode('hex'))
@@ -114,56 +101,56 @@ class Multisig(object):
         )]
         try:
             return opener.open(*args).read().strip()
-        except Exception as e:
+        except Exception as exc:
             try:
-                p = e.read().strip()
+                stripped_exc = exc.read().strip()
             except Exception:
-                p = e
-            raise Exception(p)
+                stripped_exc = exc
+            raise Exception(stripped_exc)
 
     @staticmethod
-    def eligius_pushtx(tx):
-        print 'FINAL TRANSACTION: %s' % tx
-        s = Multisig.make_request(
+    def eligius_pushtx(transaction):
+        print 'FINAL TRANSACTION: %s' % transaction
+        request = Multisig.make_request(
             'http://eligius.st/~wizkid057/newstats/pushtxn.php',
-            'transaction=' + tx + '&send=Push'
+            'transaction=' + transaction + '&send=Push'
         )
-        strings = re.findall('string[^"]*"[^"]*"', s)
+        strings = re.findall('string[^"]*"[^"]*"', request)
         for string in strings:
             quote = re.findall('"[^"]*"', string)[0]
             if len(quote) >= 5:
                 return quote[1:-1]
 
     @staticmethod
-    def broadcast(tx):
-        raw_tx = tx.serialize().encode("hex")
+    def broadcast(transaction):
+        raw_tx = transaction.serialize().encode("hex")
         Multisig.eligius_pushtx(raw_tx)
         # gateway_broadcast(raw_tx)
         # bci_pushtx(raw_tx)
 
 
-def add_input(tx, prevout):
+def add_input(transaction, prevout):
     tx_input = obelisk.TxIn()
     tx_input.previous_output.hash = prevout.hash
     tx_input.previous_output.index = prevout.index
-    tx.inputs.append(tx_input)
+    transaction.inputs.append(tx_input)
 
 
-def add_output(tx, address, value):
+def add_output(transaction, address, value):
     output = obelisk.TxOut()
     output.value = value
     output.script = obelisk.output_script(address)
-    tx.outputs.append(output)
+    transaction.outputs.append(output)
 
 
 def generate_signature_hash(parent_tx, input_index, script_code):
-    tx = obelisk.copy_tx(parent_tx)
-    if input_index >= len(tx.inputs):
+    transaction = obelisk.copy_tx(parent_tx)
+    if input_index >= len(transaction.inputs):
         return None
-    for tx_input in tx.inputs:
+    for tx_input in transaction.inputs:
         tx_input.script = ""
-    tx.inputs[input_index].script = script_code
-    raw_tx = tx.serialize() + "\x01\x00\x00\x00"
+    transaction.inputs[input_index].script = script_code
+    raw_tx = transaction.serialize() + "\x01\x00\x00\x00"
     return obelisk.Hash(raw_tx)
 
 
@@ -177,20 +164,20 @@ class Escrow(object):
     def deposit_address(self):
         return self.multisig.address
 
-    # 2. BUYER: Send unsigned tx to seller
+    # 2. BUYER: Send unsigned transaction to seller
     def initiate(self, destination_address, finished_cb):
         self.multisig.create_unsigned_transaction(
             destination_address, finished_cb)
 
     # ...
     # 3. BUYER: Release funds by sending signature to seller
-    def release_funds(self, tx, secret):
-        return self.multisig.sign_all_inputs(tx, secret)
+    def release_funds(self, transaction, secret):
+        return self.multisig.sign_all_inputs(transaction, secret)
 
     # 4. SELLER: Claim your funds by generating a signature.
-    def claim_funds(self, tx, secret, buyer_sigs):
-        seller_sigs = self.multisig.sign_all_inputs(tx, secret)
-        return Escrow.complete(tx, buyer_sigs, seller_sigs,
+    def claim_funds(self, transaction, secret, buyer_sigs):
+        seller_sigs = self.multisig.sign_all_inputs(transaction, secret)
+        return Escrow.complete(transaction, buyer_sigs, seller_sigs,
                                self.multisig.script)
 
     @staticmethod
