@@ -7,13 +7,16 @@
 <div class="row">
     <form class="form-horizontal" name="viewInboxForm" role="form">
 
-        <div style="margin:0 20px;" class="col-sm-12">
+        <div class="col-sm-12">
             <table width="100%">
                 <tr>
                     <td colspan="100%" style="font-size:30px;padding:0 0 10px 0;">{{inbox.message.subject}}</td>
                 </tr>
                 <tr>
-                    <td width="60"><identicon icon-size="50" hash="inbox.message.sender_guid" title="{{inbox.message.sender_guid}}"></identicon></td>
+                    <td width="60">
+                        <img src="{{sender.avatar_url}}" class="thumb thumb-inbox img-rounded" data-ng-show="sender.avatar_url !== null && sender.avatar_url !== ''"/>
+                        <identicon data-ng-show="sender.avatar === null || sender.avatar_url === ''" icon-size="50" hash="inbox.message.sender_guid" title="{{inbox.message.sender_guid}}"></identicon>
+                    </td>
                     <td>
                         <strong>{{inbox.message.nickname}}</strong>
                         <BR>
