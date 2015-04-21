@@ -118,8 +118,8 @@ class ProtocolHandler(object):
 
     def validate_on_page(self, *data):
         self.log.debug('Validating on page message.')
-        data = data[0]
-        keys = ("senderGUID")
+        # data = data[0]
+        # keys = ("senderGUID")
         return True
 
     def on_page(self, page):
@@ -541,13 +541,17 @@ class ProtocolHandler(object):
     def client_get_btc_ticker(self, socket_handler, msg):
         self.log.info('Get BTC Ticker')
         url = 'https://blockchain.info/ticker'
-        usock = urllib2.urlopen(url)
-        data = usock.read()
-        usock.close()
-        self.send_to_client(None, {
-            'type': 'btc_ticker',
-            'data': data
-        })
+
+        def get_ticker():
+            usock = urllib2.urlopen(url)
+            data = usock.read()
+            usock.close()
+            self.send_to_client(None, {
+                'type': 'btc_ticker',
+                'data': data
+            })
+
+        threading.Thread(target=get_ticker).start()
 
     def client_republish_contracts(self, socket_handler, msg):
         self.log.info("Republishing contracts")
