@@ -46,8 +46,8 @@
                                             <br/>
                                             {{message.body | limitTo:105}}
                                         </td>
-                                        <td width="40" style="border-left:none;"><a href="#"
-                                            ng-click="compose('lg', myself, message.fromAddress, message)"><button class="btn btn-info">Reply</button></a></td>
+                                        <td width="40" style="border-left:none;">
+                                            <button class="btn btn-info" data-ng-click="compose_inbox_message('lg', myself, message.sender_guid, null)">Reply</button></td>
                                     </tr>
                                 </table>
                             </div>

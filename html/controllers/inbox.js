@@ -6,8 +6,8 @@
  * @constructor
  */
 angular.module('app')
-    .controller('Inbox', ['$scope', '$interval', '$routeParams', '$location', 'Connection',
-        function($scope, $interval, $routeParams, $location, Connection) {
+    .controller('Inbox', ['$scope', '$interval', '$routeParams', '$location', '$rootScope', 'Connection',
+        function($scope, $interval, $routeParams, $location, $rootScope, Connection) {
 
             $scope.path = $location.path();
             $scope.$emit('sidebar', false);
@@ -48,6 +48,17 @@ angular.module('app')
                 $scope.load_page({});
             }
 
+            $scope.compose_inbox_message = function(size, myself, guid, subject) {
+                console.log('Composing Inbox Message');
+
+                $rootScope.$broadcast("compose_inbox_message", {
+                    size: size,
+                    myself: myself,
+                    guid: guid,
+                    subject: subject
+                });
+            };
+
             $scope.message = {};
             $scope.parse_messages = function(msg) {
                 console.log('parsing messages',msg);
@@ -64,7 +75,6 @@ angular.module('app')
                     }
                 }
             };
-
 
         }
     ]);
