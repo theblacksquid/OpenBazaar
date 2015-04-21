@@ -111,7 +111,7 @@ class PeerConnection(GUIDMixin, object):
                 # else:
                 #     self.send_relayed_ping()
             else:
-                self.ping_task.stop()
+                # self.ping_task.stop()
                 self.reachable = False
                 if self.guid:
                     self.log.error('Peer not responding. Removing.')
@@ -156,7 +156,6 @@ class PeerConnection(GUIDMixin, object):
                 except Exception as e:
                     self.log.debug('not yet %s', e)
                     self.transport.listener.on_raw_message(msg.get('payload'))
-
 
     def send_ping(self):
         self.sock.sendto('ping', (self.hostname, self.port))
@@ -529,10 +528,6 @@ class CryptoPeerListener(PeerListener):
                 if CryptoPeerListener.validate_signature(signature, signed_data):
                     message = signed_data.decode('hex')
                     message = json.loads(message)
-
-                    if message.get('guid') != self.guid:
-                        return False
-
                 else:
                     return
             except RuntimeError as e:
