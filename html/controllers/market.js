@@ -194,10 +194,6 @@ angular.module('app')
 
             };
 
-            $scope.guid_to_avatar = function(guid) {
-
-            };
-
             $scope.getNumber = function(num) {
                 return new Array(num);
             };
@@ -1023,12 +1019,24 @@ angular.module('app')
 
             };
 
+            var guid_to_peer = function(guid) {
+                for(var peer in $scope.myself.peers) {
+                    peer = $scope.myself.peers[peer];
+                    if(peer.guid == guid) {
+                        return peer;
+                    }
+                }
+                return {};
+            };
+
             var ViewInboxMessageInstanceCtrl = function($scope, $modalInstance, myself, msg, scope) {
                 $scope.myself = myself;
                 $scope.inbox = {};
                 $scope.inbox.message = msg;
 
                 $scope.inbox.message.nickname = scope.guid_to_nickname(msg.sender_guid);
+
+                $scope.sender = guid_to_peer(msg.sender_guid);
 
                 console.log('test', $scope);
 
