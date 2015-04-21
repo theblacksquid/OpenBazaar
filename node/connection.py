@@ -105,13 +105,10 @@ class PeerConnection(GUIDMixin, object):
             self.log.debug('Pinging: %s', self.guid)
 
             if time.time() - self.last_reached <= 30:
+                self.reachable = True
                 self.send_ping()
-                # if not self.relaying or self.transport.seed_mode:
-                #     self.send_ping()
-                # else:
-                #     self.send_relayed_ping()
             else:
-                # self.ping_task.stop()
+                self.send_ping()
                 self.reachable = False
                 if self.guid:
                     self.log.error('Peer not responding. Removing.')
