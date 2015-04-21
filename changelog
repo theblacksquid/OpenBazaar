@@ -1,3 +1,37 @@
+openbazaar (0.4.0) unstable; urgency=low
+
+  Install/OS:
+  * Ansible support.
+  * Better install through configure.sh
+
+  Documentation/UI/UX:
+  * Animated intro gif images on main page.
+  * Avatars now available for users to set in profiles.
+  * Notary Services (refunds, releases)
+  * Updated contract management UI (edits enabled)
+  * Search cleaned up.
+  * Messaging now native to OpenBazaar.
+
+  Bitcoin:
+  * HD BIP32 keys used for generating unique multi-sig addresses.
+
+  Network:
+  * Networking stack now relies on rUDP and UDP-based transport.
+  * Fixes for socket overload crashes.
+  * No longer using ZeroMQ for OpenBazaar. Obelisk still does.
+
+  Testing:
+  * Bandit checks enabled.
+  * nosetests and jscheck enabled.
+
+  Bug fixes:
+  * Too many to count. Please refer to GitHub closed issues for this period.
+
+  Miscellaneous:
+  * No longer leverage BitMessage for internal messaging.
+
+ -- OpenBazaar Team <project@openbazaar.org>  Tue, 21 Apr 2015 5:00:00 -0000
+
 openbazaar (0.3.1) unstable; urgency=low
   OS/Install:
   * Increased automation of the installation script.
