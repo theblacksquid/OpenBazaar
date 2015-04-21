@@ -1,7 +1,6 @@
 """
 This module manages all market related activities
 """
-import ast
 from base64 import b64decode, b64encode
 import gnupg
 import hashlib
