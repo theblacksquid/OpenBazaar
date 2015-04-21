@@ -261,7 +261,7 @@ angular.module('app')
 
                         console.log('Contract: ', contract);
 
-                        if($scope.contract.id == '') {
+                        if($scope.contract.id === '') {
                             Connection.send("create_contract", contract);
                             Notifier.success('Success', 'Contract created successfully.');
                         } else {
