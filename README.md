@@ -38,7 +38,7 @@ You can financially support the project by either:
 - Identity/Reputation system
 
 ## Project Status
-- *OpenBazaar* is currently in **beta 3.1**
+- *OpenBazaar* is currently in **beta 4.0**
 - New versions are scheduled for release at the end of each month
 - [Development Roadmap](https://github.com/OpenBazaar/OpenBazaar/wiki/Development-Roadmap)
 
