@@ -14,7 +14,7 @@ However, there are several security considerations that must be factored into wi
 
 While these approaches may be technically sound, there are some key disadvantages. A central issuer/mediator that validates transactions between peers introduces a centralisation and security risk, which only grows as the share price moves in a direction contrary to the interest of the issuer. In the case of a central mediator(s) (e.g. an exchange server), while the use of Ricardian contracts would prevent any fraudulent manipulation of the share contracts, the mediators themselves are central points of failure for secure asset transfers.  
 
-Using the Bitcoin blockchain for asset issuance and P2P transfers consumes additional resources that are paid for by other members of the network. Moreover, transaction times between peers are limited to the existing contraints within the Bitcoin network. Creating a custom blockchain is a significant risk if there is a failure to gain a critical mass of honest nodes, contributing sufficient hashing power to security the network. It is also unclear how successful projects such as *Ethereum* will be addressing these issues and managing their own network security. 
+Using the Bitcoin blockchain for asset issuance and P2P transfers consumes additional resources that are paid for by other members of the network. Moreover, transaction times between peers are limited to the existing constraints within the Bitcoin network. Creating a custom blockchain is a significant risk if there is a failure to gain a critical mass of honest nodes, contributing sufficient hashing power to security the network. It is also unclear how successful projects such as *Ethereum* will be addressing these issues and managing their own network security. 
 
 A preferable solution to this problem is to leverage the existing network and contractual infrastructure of *OpenBazaar* without relying on a trusted third party or a blockchain. While we do not presume to forsee what approach users may use, or force users to follow any one model, in this article we propose a scheme called **one-time key revocation asset transfer** (OTK-RAT).
 
@@ -35,7 +35,7 @@ Shares will be represented as individual Ricardian contracts, or 'asset contract
 3. Share nonce (unique identifier for the share)
 4. Share entitlement (message outlining what the bearer is entitled to from the company)
 5. Issuer Public PGP key
-6. Issuer digitial signature of (1)-(5)
+6. Issuer digital signature of (1)-(5)
 
 One of the most important pieces of data within the share contract is the share nonce. The share nonce is a unique identifier for each share, which can be verified by cross-referencing against a list of all shares issued (**share listing**) and their corresponding nonces in the initial public offering. The share listing will be digitally signed by the issuer and other arbiters.
 

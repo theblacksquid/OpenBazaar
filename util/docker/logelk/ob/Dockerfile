@@ -5,7 +5,7 @@ MAINTAINER Y12STUDIO <y12studio@gmail.com>
 # package for OB
 #
 RUN apt-get -y update
-RUN apt-get install -y build-essential python-zmq rng-tools
+RUN apt-get install -y build-essential rng-tools
 RUN apt-get install -y python-dev g++ libjpeg-dev sqlite3 openssl
 RUN apt-get install -y alien libssl-dev wget lintian libjs-jquery
 #

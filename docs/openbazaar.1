@@ -1,20 +1,146 @@
-.TH OPENBAZAAR 1 "Aug 27, 2014" "version 0.1.0"
+.TH OPENBAZAAR 1 "Apr 2015" "OpenBazaar 0.4.0"
+
+
 .SH NAME
+
 openbazaar \- OpenBazaar (Decentralized p2p marketplace)
+
+
 .SH SYNOPSIS
-.B openbazaar
+openbazaar [options] <command>
+
+
 .SH DESCRIPTION
 
-\fBOpenBazaar\fB is an open source project to create a decentralized
+\fBOpenBazaar\fR is an open source project to create a decentralized
 network for commerce online (using Bitcoin) that has no fees and
 cannot be censored.
 
+
+.SH COMMANDS
+
+.IP "\fBstart\fR"
+Start OpenBazaar
+.br
+.IP "\fBstop\fR"
+Stop OpenBazaar
+.br
+.IP "\fBhelp\fR"
+Output help
+
+
+.SH OPTIONS
+
+.IP "\fB\-i\fR, \fB\-\-server\-ip <ip address>\fR"
+Server public IP
+.br
+Notes:
+  * Default value will be the external ip your network configuration exposes to the internet.
+  * If '--disable-stun-check' is used and you don't specify '--server-ip' OpenBazaar
+    will refuse to start unless you are on development mode ('--dev-mode').
+
+.IP "\fB\-p\fR, \fB\-\-server\-port <port number>\fR"
+Server public (P2P) port
+.br
+Notes:
+  * Default value will be an arbitrary port number set by a STUN server check.
+  * If '--disable-stun-check' is used, default value will be port 12345.
+  * If you don't specify '--disable-stun-check' this number will be overwritten
+    by the port number obtained via STUN check.
+
+
+.IP "\fB\-k\fR, \fB\-\-http\-ip <ip address>\fR"
+Web interface IP (default 127.0.0.1; use 0.0.0.0 for any)
+
+.IP "\fB\-q\fR, \fB\-\-http\-port <port number>\fR"
+Web interface port (-1 = random by default)
+
+.IP "\fB\-l\fR, \fB\-\-log <file path>\fR"
+Log file path (default 'logs/production.log')
+
+.IP "\fB\-\-log\-level <level>\fR"
+Log verbosity level (default: 30 - WARNING).
+.br
+Expected <level> values are:
+.br
+  0 - NOT SET
+.br
+  5 - DATADUMP
+.br
+  10 - DEBUG
+.br
+  20 - INFO
+.br
+  30 - WARNING
+.br
+  40 - ERROR
+.br
+  50 - CRITICAL
+
+.IP "\fB\-d\fR, \fB\-\-dev\-mode\fR"
+Enable development mode
+
+.IP "\fB\-n\fR, \fB\-\-dev\-nodes\fR"
+Number of dev nodes to start up
+
+.IP "\fB\-\-db\-path\fR"
+Database file path. (default 'db/od.db')
+
+.IP "\fB\-\-disable\-sqlite\-crypt\fR"
+Disable encryption on sqlite database
+
+.IP "\fB\-\-bm\-user\fR"
+Bitmessage API username
+
+.IP "\fB\-\-bm\-pass\fR"
+Bitmessage API password
+
+.IP "\fB\-\-bm\-port\fR"
+Bitmessage API port
+
+.IP "\fB\-u\fR, \fB\-\-market\-id\fR"
+Market ID
+
+.IP "\fB\-j\fR, \fB\-\-disable\-upnp\fR"
+Disable automatic UPnP port mappings
+
+.IP "\fB\-\-disable\-stun\-check\fR"
+Disable automatic server port setting via STUN servers (NAT Punching attempt)
+
+.IP "\fB\-S\fR, \fB\-\-seed\-mode\fR"
+Enable seed mode
+
+.IP "\fB\-\-disable\-open\-browser\fR"
+Don't open preferred web browser automatically on start
+
+.IP "\fB\-\-config\-file\fR"
+Disk path to an OpenBazaar configuration file
+
+.IP "\fB\-\-enable\-ip\-checker\fR"
+Enable periodic IP address checking.
+.br
+Useful in case you expect your IP to change rapidly.
+
+
 .SH SEE ALSO
+
 For more information on the usage of the program visit
-http://www.openbazaar.org
+<https://openbazaar.org/>
 
-openbazaar homepage: http://www.openbazaar.org
+OpenBazaar home page: <https://openbazaar.org/>
+.br
+OpenBazaar GitHub: <https://github.com/OpenBazaar/OpenBazaar>
+
+
 .SH AUTHOR
-OpenBazaar is written by the OpenBazaar Team <project@openbazaar.org>
 
-This manual page was written by Angel Leon <gubatron@openbazaar.org>
+OpenBazaar is written by the OpenBazaar Team <project@openbazaar.org>
+.br
+This manual page was written by Angel Leon <gubatron@openbazaar.org> and Abderraouf Adjal.
+
+
+.SH COPYRIGHT
+
+Copyright (C) 2014 OpenBazaar Developers
+
+License: OpenBazaar is licensed under the MIT license.

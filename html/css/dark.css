@@ -10,19 +10,35 @@ a:hover {
 }
 
 /* Custom default button */
-.btn-default,
-.btn-default:hover,
-.btn-default:focus {
+.btn-default {
   color: #333;
   text-shadow: none; /* Prevent inheritence from `body` */
   background-color: #fff;
   border: 1px solid #fff;
 }
 
+.btn-default:hover,
+.btn-default:focus {
+  background-color: #ddd;
+  border: 1px solid #ddd;
+}
+
+/* Save button  */
+.btn-save {
+  text-align:right;
+}
+
+.badge-alert {
+    border-radius: 1em;
+}
 
 /*
  * Base structure
  */
+
+html {
+  overflow-y:scroll;
+}
 
 html,
 body {
@@ -30,7 +46,7 @@ body {
   background-color: #efefef;
 }
 body {
-    color: #666;
+  color: #666;
   text-align: center;
   /*text-shadow: 0 1px 3px rgba(0,0,0,.5);*/
   /*box-shadow: inset 0 0 100px rgba(0,0,0,.5);*/
@@ -103,6 +119,11 @@ hr { border-top:#bbb; }
 .masthead-nav > .active > a:focus {
   color: #fff;
   border-bottom-color: #fff;
+}
+
+.headerContainer {
+  border-bottom:1px solid #bbb;
+  padding:5px 0;
 }
 
 @media (min-width: 768px) {
@@ -182,6 +203,8 @@ hr { border-top:#bbb; }
 #header-navigation  .nav-pills { text-align:right; float:right; }
 #header-navigation  .nav-pills > li { display:inline-block; }
 
+.nav-pills li { cursor:pointer; }
+
 #header { height:120px; }
 #header-search { width:100%; text-align:right;}
 #header-navigation { width:100%; text-align:right; float:right; margin-top:10px; }
@@ -189,14 +212,43 @@ hr { border-top:#bbb; }
 
 #page-content { word-break:normal; }
 
+.pageContent {
+  overflow-y:auto;
+  overflow-x: hidden;
+  padding-bottom:100px
+}
+
+.fileinput .fileinput-preview {
+  border:none;
+  background-image:url('../img/no-photo.png');
+  background-size:150px 150px;
+  background-repeat: no-repeat;
+  background-position:center;
+  width: 200px;
+  height: 150px;
+  cursor:pointer;
+}
+
+.fileinput .fileinput-preview:hover {
+  background-color:#ddd;
+}
+
+.btn {
+  cursor:pointer;
+}
+
 ul.pagination { margin: 10px 0 }
 
 #settings-container { margin: 30px 0 20px 0; }
 
 #arbitration-form, #communication-form, #keys-form, #notary-form, #advanced-form { display:none; }
 
-.jumbotron { background-color:white; margin-top:20px; }
-#jumboh1 { font-weight:120; }
+.jumbotron { background-color:#ffffff; margin-top:20px; }
+/*jumboh1 { font-weight:120; }*/
+
+.coreContent {
+  margin:40px 0;
+}
 
 div.div-listing { padding:10px 0;margin-bottom:10px; }
 table.table-listing { font-size:14px; border:none; }
@@ -207,6 +259,14 @@ div#listing-loader { padding:0 0px; }
 
 .product-title { font-weight:bold; font-size: 20px; color: #666; }
 .product-price { font-weight:bold; font-size: 20px; }
+.productImageCol {
+  background-color:#efefef;
+  width:100px; height:100px;
+  background-size: 80px 80px;
+  background-repeat:no-repeat;
+  background-position:center;
+  padding:20px;
+}
 
 div.listing-button { margin-bottom: 5px; }
 div.listing-button button { width: 100%; }
@@ -220,10 +280,67 @@ table.contract-table td {
 
 div.contract-description { margin: 10px 0; font-size:16px;  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
 
+.contractButtons {
+  float:right;
+  margin-top:10px;
+  margin-right:20px;
+}
 
-# Bootstrap Pills Dropdown
+/* Bootstrap Pills Dropdown*/
 .sidebar-nav {
     padding: 9px 0;
+}
+
+.thumb {
+    display: block;
+    overflow: hidden;
+    background-position: center center;
+    -webkit-background-size: 100%;
+    -moz-background-size: 100%;
+    -o-background-size: 100%;
+    background-size: 100%;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+.thumb img {
+    display: block; /* Otherwise it keeps some space around baseline */
+    min-width: 100%;    /* Scale up to fill container width */
+    min-height: 100%;   /* Scale up to fill container height */
+    -ms-interpolation-mode: bicubic; /* Scaled images look a bit better in IE now */
+}
+
+.thumb-normal {
+    width: 100px;
+    height: 100px;
+}
+
+.thumb-small {
+    width: 40px;
+    height: 40px;
+    margin:5px;
+}
+
+.thumb-large {
+    width: 80px;
+    height: 80px;
+}
+
+.thumb-icon {
+    width: 30px;
+    height: 30px;
+}
+
+.thumb-inbox {
+    width: 50px;
+    height: 50px;
+}
+
+.thumb-tiny {
+    width: 25px;
+    height: 25px;
 }
 
 .dropdown-menu .sub-menu {
@@ -283,4 +400,11 @@ div.contract-description { margin: 10px 0; font-size:16px;  font-family: 'Helvet
     -webkit-box-shadow: 0px -2px 2px rgba(50, 50, 50, 0.20);
     -moz-box-shadow:    0px -2px 2px rgba(50, 50, 50, 0.20);
     box-shadow:         0px -2px 2px rgba(50, 50, 50, 0.20);
+}
+
+.product-tab-pane {
+    background-color:white;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
 }

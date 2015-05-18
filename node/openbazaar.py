@@ -7,14 +7,15 @@ Authors: Angel "gubatron" Leon
 import argparse
 import multiprocessing
 import os
+import shlex
 import sys
 import threading
 
 import psutil
 
-import network_util
-from openbazaar_daemon import node_starter, OpenBazaarContext, start_node
-import setup_db
+import node.network_util as network_util
+from node.openbazaar_daemon import node_starter, OpenBazaarContext, start_node
+import node.setup_db as setup_db
 
 
 def arg_to_key(arg):
@@ -56,7 +57,8 @@ def create_argument_parser():
         ('--bm-port',),
         ('--dev-nodes', '-n'),
         ('--http-port', '-q'),
-        ('--server-port', '-p')
+        ('--server-port', '-p'),
+        ('--mediator-port',)
     )
     for switches in int_args:
         key = arg_to_key(switches[0])
@@ -69,7 +71,8 @@ def create_argument_parser():
         ('--disable-stun-check',),
         ('--disable-upnp', '-j'),
         ('--enable-ip-checker',),
-        ('--seed-mode', '-S')
+        ('--seed-mode', '-S'),
+        ('--mediator', '-m')
     )
     for switches in flags:
         key = arg_to_key(switches[0])
@@ -83,7 +86,8 @@ def create_argument_parser():
     parser.add_argument('-l', '--log', default=default_log_path)
 
     # Add valid commands.
-    parser.add_argument('command', choices=('start', 'stop', 'help'))
+    parser.add_argument('command', choices=('start', 'stop', 'help'),
+                        nargs='?', default='help')
 
     return parser
 
@@ -138,6 +142,7 @@ openbazaar [options] <command>
         Expected <level> values are:
            0 - NOT SET
            5 - DATADUMP
+           9 - DEBUGV
           10 - DEBUG
           20 - INFO
           30 - WARNING
@@ -164,6 +169,12 @@ openbazaar [options] <command>
 
     --bm-port
         Bitmessage API port
+
+    --mediator-port
+        Act as a UDP mediator on this port
+
+    --mediator
+        Have traffic mediated through mediator server
 
     -u, --market-id
         Market ID
@@ -215,7 +226,7 @@ def create_openbazaar_contexts(arguments, nat_status):
     # market port
     server_port = arguments.server_port
 
-    if nat_status is not None:
+    if nat_status is not None and not arguments.disable_stun_check:
         # unless --disable-stun-check has been passed
         # override the server ip and port for p2p communications with the ones
         # obtained from the STUN server.
@@ -225,15 +236,11 @@ def create_openbazaar_contexts(arguments, nat_status):
 
     # log path (requires log_dir to exist)
     if not os.path.exists(defaults['log_dir']):
-        os.makedirs(defaults['log_dir'], 0755)
-
-    # log path (requires LOG_DIR to exist)
-    if not os.path.exists(defaults['log_dir']):
-        os.makedirs(defaults['log_dir'], 0755)
+        os.makedirs(defaults['log_dir'], 0o755)
 
     # db path
     if not os.path.exists(defaults['db_dir']):
-        os.makedirs(defaults['db_dir'], 0755)
+        os.makedirs(defaults['db_dir'], 0o755)
 
     db_path = os.path.join(defaults['db_dir'], defaults['db_file'])
     if arguments.db_path != db_path:
@@ -262,6 +269,8 @@ def create_openbazaar_contexts(arguments, nat_status):
                                          arguments.bm_user,
                                          arguments.bm_pass,
                                          arguments.bm_port,
+                                         arguments.mediator_port,
+                                         arguments.mediator,
                                          arguments.seeds,
                                          arguments.seed_mode,
                                          arguments.dev_mode,
@@ -284,9 +293,13 @@ def create_openbazaar_contexts(arguments, nat_status):
             dev_log_file = log_file.format(i)
             log_path = os.path.join(defaults['log_dir'], dev_log_file)
 
+            http_port = arguments.http_port
+            if http_port != 0:
+                http_port += i
+
             if i:
                 seed_mode = False
-                seeds = ['localhost']
+                seeds = [(server_ip, server_port)]
             else:
                 seed_mode = True
                 seeds = []
@@ -295,7 +308,7 @@ def create_openbazaar_contexts(arguments, nat_status):
                                              server_ip,
                                              server_port + i,
                                              arguments.http_ip,
-                                             arguments.http_port,
+                                             http_port,
                                              db_path,
                                              log_path,
                                              arguments.log_level,
@@ -303,6 +316,8 @@ def create_openbazaar_contexts(arguments, nat_status):
                                              arguments.bm_user,
                                              arguments.bm_pass,
                                              arguments.bm_port,
+                                             arguments.mediator_port + i,
+                                             arguments.mediator,
                                              seeds,
                                              seed_mode,
                                              arguments.dev_mode,
@@ -328,7 +343,7 @@ def ensure_database_setup(ob_ctx, defaults):
     # make sure the folder exists wherever it is
     db_dirname = os.path.dirname(db_path)
     if not os.path.exists(db_dirname):
-        os.makedirs(db_dirname, 0755)
+        os.makedirs(db_dirname, 0o755)
 
     if not os.path.exists(db_path):
         # setup the database if file not there.
@@ -348,10 +363,20 @@ def start(arguments):
         arguments.disable_upnp = True
 
     # Try to get NAT escape UDP port
-    nat_status = None
+    if not arguments.dev_mode:
+        nat_status = network_util.get_NAT_status()
+    else:
+        nat_status = {
+            'nat_type': 'Restric NAT'
+        }
+
     if not arguments.disable_stun_check:
         print "Checking NAT Status..."
-        nat_status = network_util.get_NAT_status()
+        if nat_status.get('nat_type') == 'Blocked':
+            print "openbazaar: Could not start. The network you are on currently blocks usage",
+            print "of OpenBazaar."
+            print "(We currently do not support usage on completely closed networks.)"
+            sys.exit(1)
     elif not arguments.dev_mode and network_util.is_private_ip_address(arguments.server_ip):
         print "openbazaar: Could not start. The given/default server IP address",
         print arguments.server_ip, "is not a public ip address."
@@ -366,9 +391,9 @@ def start(arguments):
     if hasattr(sys, 'frozen'):
         start_node(ob_ctxs[0])
     else:
-        p = multiprocessing.Process(target=node_starter,
-                                    args=(ob_ctxs,))
-        p.start()
+        process = multiprocessing.Process(target=node_starter,
+                                          args=(ob_ctxs,))
+        process.start()
 
 
 def terminate_or_kill_process(process):
@@ -376,9 +401,13 @@ def terminate_or_kill_process(process):
         process.terminate()  # in POSIX, sends SIGTERM.
         process.wait(5)
     except psutil.TimeoutExpired:
-        _, alive = psutil.wait_procs([process], None, None)
-        if process in alive:
+        try:
+            print "process {0} didn't terminate - sending sigkill".format(process.pid)
             process.kill()  # sends KILL signal.
+            process.wait(5)
+        except psutil.TimeoutExpired:
+            print 'timeout waiting for process {0} to end'.format(process.pid)
+            return
 
 
 def stop():
@@ -399,45 +428,19 @@ def stop():
 
 def load_config_file_arguments(parser):
     """
-    Load configuration file into sys.argv for further argument parsing.
+    Load configuration file into sys.argv for argument parsing. Insert
+    config file arguments before command line arguments so that command
+    line arguments have higher precedence.
     """
     parsed_arguments = parser.parse_args()
     if parsed_arguments.config_file is not None:
         try:
-            with open(parsed_arguments.config_file) as fp:
-                config_file_lines = fp.readlines()
-        except IOError as e:
+            with open(parsed_arguments.config_file) as opened_file:
+                sys.argv[1:1] = shlex.split(opened_file.read(), comments=True)
+        except IOError as err:
             print "NOTICE: Ignoring invalid config file: ",
             print parsed_arguments.config_file
-            print e
-            return
-
-        # in case user entered config flags
-        # in multiple lines, we'll keep only
-        # those that don't start with '#'
-        # also ignore everything after a '#' character
-        # for every line.
-        valid_config_lines = []
-        for line in config_file_lines:
-            if line.startswith('#'):
-                continue
-
-            normalized_line = line.strip()
-            if line.find('#') != -1:
-                normalized_line = line[:line.find('#')]
-
-            if len(normalized_line) > 0:
-                valid_config_lines.append(normalized_line)
-
-        # 1. join read lines list into a string,
-        # 2. re-split it to make it look like sys.argv
-        # 3. get rid of possible '' list elements
-        # 4. merge the new arguments from the file into sys.argv
-        if len(valid_config_lines) > 0:
-            config_file_arguments = [x for x in
-                                     ' '.join(valid_config_lines).split(' ')
-                                     if len(x) > 0]
-            sys.argv[1:1] = config_file_arguments
+            print err
 
 
 def main():

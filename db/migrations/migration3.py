@@ -1,21 +1,17 @@
 #!/usr/bin/env python
 
-from pysqlcipher import dbapi2 as sqlite
-import sys
+from sqlite3 import dbapi2
 
-from node import constants
-
-DB_PATH = constants.DB_PATH
+from db.migrations import migrations_util
+from node import constants # pylint: disable=import-error
 
 
 def upgrade(db_path):
-
-    con = sqlite.connect(db_path)
-    with con:
+    with dbapi2.connect(db_path) as con:
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
-        cur.execute("PRAGMA key = 'passphrase';")
+        cur.execute("PRAGMA key = '%s';" % constants.DB_PASSPHRASE)
 
         try:
             cur.execute("ALTER TABLE contracts "
@@ -26,18 +22,16 @@ def upgrade(db_path):
                         "ADD COLUMN refund_address TEXT")
             print 'Upgraded'
             con.commit()
-        except sqlite.Error as e:
+        except dbapi2.Error as e:
             print 'Exception: %s' % e
 
 
 def downgrade(db_path):
-
-    con = sqlite.connect(db_path)
-    with con:
+    with dbapi2.connect(db_path) as con:
         cur = con.cursor()
 
         # Use PRAGMA key to encrypt / decrypt database.
-        cur.execute("PRAGMA key = 'passphrase';")
+        cur.execute("PRAGMA key = '%s';" % constants.DB_PASSPHRASE)
 
         cur.execute("ALTER TABLE contracts DROP COLUMN refund_requested")
         cur.execute("ALTER TABLE contracts DROP COLUMN cancelled")
@@ -46,11 +40,14 @@ def downgrade(db_path):
         print 'Downgraded'
         con.commit()
 
-if __name__ == "__main__":
 
-    if sys.argv[1:] is not None:
-        DB_PATH = sys.argv[1:][0]
-        if sys.argv[2:] is "downgrade":
-            downgrade(DB_PATH)
-        else:
-            upgrade(DB_PATH)
+def main():
+    parser = migrations_util.make_argument_parser(constants.DB_PATH)
+    args = parser.parse_args()
+    if args.action == "upgrade":
+        upgrade(args.path)
+    else:
+        downgrade(args.path)
+
+if __name__ == "__main__":
+    main()

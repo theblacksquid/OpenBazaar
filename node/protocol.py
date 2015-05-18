@@ -1,10 +1,14 @@
+from node import constants
+
+
 def shout(data):
     data['type'] = 'shout'
     return data
 
 
 def proto_page(uri, pubkey, guid, text, signature, nickname, PGPPubKey, email,
-               bitmessage, arbiter, notary, arbiter_description, sin):
+               bitmessage, arbiter, notary, notary_description, notary_fee,
+               arbiter_description, sin, homepage, avatar_url):
     data = {
         'type': 'page',
         'uri': uri,
@@ -17,14 +21,23 @@ def proto_page(uri, pubkey, guid, text, signature, nickname, PGPPubKey, email,
         'bitmessage': bitmessage,
         'arbiter': arbiter,
         'notary': notary,
+        'notary_description': notary_description,
+        'notary_fee': notary_fee,
         'arbiter_description': arbiter_description,
-        'sin': sin
+        'sin': sin,
+        'homepage': homepage,
+        'avatar_url': avatar_url,
+        'v': constants.VERSION
     }
     return data
 
 
 def query_page(guid):
-    data = {'type': 'query_page', 'findGUID': guid}
+    data = {
+        'type': 'query_page',
+        'findGUID': guid,
+        'v': constants.VERSION
+    }
     return data
 
 
@@ -34,25 +47,7 @@ def proto_store(key, value, originalPublisherID, age):
         'key': key,
         'value': value,
         'originalPublisherID': originalPublisherID,
-        'age': age
-    }
-    return data
-
-
-def negotiate_pubkey(nickname, ident_pubkey):
-    data = {
-        'type': 'negotiate_pubkey',
-        'nickname': nickname,
-        'ident_pubkey': ident_pubkey.encode("hex")
-    }
-    return data
-
-
-def proto_response_pubkey(nickname, pubkey, signature):
-    data = {
-        'type': "proto_response_pubkey",
-        'nickname': nickname,
-        'pubkey': pubkey.encode("hex"),
-        'signature': signature.encode("hex")
+        'age': age,
+        'v': constants.VERSION
     }
     return data

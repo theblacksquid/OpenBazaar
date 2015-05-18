@@ -1,7 +1,6 @@
 import logging
 
-import constants
-import guid
+from node import constants, guid
 
 
 class BucketFull(Exception):
@@ -12,24 +11,24 @@ class BucketFull(Exception):
 class KBucket(object):
     """FILLME"""
 
-    def __init__(self, rangeMin, rangeMax, market_id):
+    def __init__(self, range_min, range_max, market_id):
         """
         Initialize a new KBucket with a range and a market_id.
 
-        @param rangeMin: The lower boundary for the range in the ID space
-                         covered by this KBucket.
+        @param range_min: The lower boundary for the range in the ID space
+                          covered by this KBucket.
         @type: int
 
-        @param rangeMax: The upper boundary for the range in the ID space
-                         covered by this KBucket.
+        @param range_max: The upper boundary for the range in the ID space
+                          covered by this KBucket.
         @type: int
 
         @param market_id: FILLME
         """
 
-        self.lastAccessed = 0
-        self.rangeMin = rangeMin
-        self.rangeMax = rangeMax
+        self.last_accessed = 0
+        self.range_min = range_min
+        self.range_max = range_max
         self.contacts = []
         self.market_id = market_id
 
@@ -43,7 +42,7 @@ class KBucket(object):
     def __iter__(self):
         return iter(self.contacts)
 
-    def addContact(self, contact):
+    def add_contact(self, contact):
         """
         Add a contact to the contact list.
 
@@ -73,41 +72,41 @@ class KBucket(object):
             # updated add-on data (e.g. optimization-specific stuff).
         except ValueError:
             # The contact wasn't there after all, so add it.
-            if len(self.contacts) < constants.k:
+            if len(self.contacts) < constants.K:
                 self.contacts.append(contact)
             else:
                 raise BucketFull('No space in bucket to insert contact')
 
-    def getContact(self, contactID):
+    def get_contact(self, contact_id):
         """
         Return the contact with the specified ID or None if not present.
 
-        @param contactID: The ID to search.
+        @param contact_id: The ID to search.
         @type contact: guid.GUIDMixin or str or unicode
 
         @rtype: guid.GUIDMixin or None
         """
-        self.log.debug('[getContact] %s', contactID)
+        self.log.debugv('[get_contact] %s', contact_id)
         for contact in self.contacts:
-            if contact == contactID:
-                self.log.debug('[getContact] Found %s', contact)
+            if contact == contact_id:
+                self.log.debugv('[get_contact] Found %s', contact)
                 return contact
-        self.log.debug('[getContact] No Results')
+        self.log.debugv('[get_contact] No Results')
         return None
 
-    def getContacts(self, count=-1, excludeContact=None):
+    def get_contacts(self, count=-1, exclude_contact=None):
         """
         Return a list containing up to the first `count` number of contacts.
 
         @param count: The amount of contacts to return;
                       if 0 or less, return all contacts.
         @type count: int
-        @param excludeContact: A contact to exclude; if this contact is in
-                               the list of returned values, it will be
-                               discarded before returning. If a str is
-                               passed as this argument, it must be the
-                               contact's ID.
-        @type excludeContact: guid.GUIDMixin or str or unicode
+        @param exclude_contact: A contact to exclude; if this contact is in
+                                the list of returned values, it will be
+                                discarded before returning. If a str is
+                                passed as this argument, it must be the
+                                contact's ID.
+        @type exclude_contact: guid.GUIDMixin or str or unicode
 
         @return: The first `count` contacts in the contact list.
                  This amount is capped by the available contacts
@@ -116,34 +115,34 @@ class KBucket(object):
         @rtype:  list of guid.GUIDMixin
         """
 
-        currentLen = len(self)
-        if not currentLen:
+        current_len = len(self)
+        if not current_len:
             return []
 
         if count <= 0:
-            count = currentLen
+            count = current_len
         else:
-            count = min(count, currentLen)
+            count = min(count, current_len)
 
         # Return no more contacts than bucket size.
-        count = min(count, constants.k)
+        count = min(count, constants.K)
 
-        contactList = self.contacts[:count]
-        if excludeContact is not None:
+        contact_list = self.contacts[:count]
+        if exclude_contact is not None:
             try:
-                # NOTE: If the excludeContact is removed, the resulting
+                # NOTE: If the exclude_contact is removed, the resulting
                 # list has one less contact than expected. Not sure if
                 # this is a bug.
-                contactList.remove(excludeContact)
+                contact_list.remove(exclude_contact)
             except ValueError:
                 self.log.debug(
-                    '[kbucket.getContacts() warning] '
+                    '[kbucket.get_contacts() warning] '
                     'tried to exclude non-existing contact (%s)',
-                    excludeContact
+                    exclude_contact
                 )
-        return contactList
+        return contact_list
 
-    def removeContact(self, contact):
+    def remove_contact(self, contact):
         """
         Remove given contact from contact list.
 
@@ -154,7 +153,7 @@ class KBucket(object):
         """
         self.contacts.remove(contact)
 
-    def keyInRange(self, key):
+    def key_in_range(self, key):
         """
         Tests whether the specified node ID is in the range of the ID
         space covered by this KBucket (in other words, it returns
@@ -169,5 +168,5 @@ class KBucket(object):
         if isinstance(key, guid.GUIDMixin):
             key = key.guid
         if isinstance(key, basestring):
-            key = long(key, 16)
-        return self.rangeMin <= key < self.rangeMax
+            key = int(key, base=16)
+        return self.range_min <= key < self.range_max

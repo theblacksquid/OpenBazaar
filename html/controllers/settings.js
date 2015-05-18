@@ -20,9 +20,14 @@ angular.module('app')
              * Establish message handlers
              * @msg - message from websocket to pass on to handler
              */
-            Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
+            var listeners = Connection.$$listeners;
+            if(!listeners.hasOwnProperty('load_page')) {
+                Connection.$on('load_page', function(e, msg){ $scope.load_page(msg); });
+            }
             Connection.$on('settings_notaries', function(e, msg){ $scope.parse_notaries(msg); });
+            listeners.create_backup_result = [];
             Connection.$on('create_backup_result', function(e, msg){ $scope.onCreateBackupResult(msg); });
+            listeners.on_get_backups_response = [];
             Connection.$on('on_get_backups_response', function(e, msg){ $scope.onGetBackupsResponse(msg); });
 
             $scope.load_page = function(msg) {
@@ -87,6 +92,7 @@ angular.module('app')
                 );
 
                 Notifier.success('Success', 'Notary added successfully.');
+                Connection.send('refresh_settings', {});
 
                 if (!$scope.$$phase) {
                     $scope.$apply();
@@ -100,15 +106,13 @@ angular.module('app')
 
             $scope.removeNotary = function(notaryGUID) {
 
-                $('#notary_'+notaryGUID).parent().hide();
                 Connection.send('remove_trusted_notary', { 'type': 'remove_trusted_notary',
                     'guid': notaryGUID
                     }
                 );
 
                 Notifier.success('Success', 'Notary removed successfully.');
-
-                $scope.getNotaries();
+                Connection.send('refresh_settings', {});
 
                 if (!$scope.$$phase) {
                     $scope.$apply();
@@ -116,7 +120,6 @@ angular.module('app')
             };
 
             $scope.getNotaries = function() {
-                console.log('Getting notaries');
                 Connection.send('get_notaries', {});
             };
 
@@ -140,11 +143,12 @@ angular.module('app')
              */
             $scope.parse_notaries = function(msg) {
                 console.log('Parsing notaries');
-                $scope.settings.notaries = msg.notaries;
-                console.log(msg.notaries);
-                if (!$scope.$$phase) {
-                    $scope.$apply();
-                }
+                //$scope.settings.notaries = myself.settings.notaries;
+                //$scope.trusted_notaries = msg.notaries;
+                //console.log(msg.notaries);
+                //if (!$scope.$$phase) {
+                //    $scope.$apply();
+                //}
             };
             
             $scope.createBackup = function() {
